@@ -164,6 +164,28 @@ export const certificates = {
   verify: (code: string) => api(`/certificate/verify/${code}`),
 };
 
+
+export const placement = {
+  status: () => api("/placement/status", { auth: true }),
+  questions: () => api("/placement/questions", { auth: true }),
+  submit: (body: any) => api("/placement/submit", { method: "POST", body, auth: true }),
+  myResult: () => api("/placement/my-result", { auth: true }),
+};
+
+// Cambiar contraseña
+export const account = {
+  changePassword: (body: { current_password: string; new_password: string }) =>
+    api("/auth/change-password", { method: "POST", body, auth: true }),
+};
+
+// Helpers para selects
+export const adminHelpers = {
+  teachers: () => api("/admin/teachers", { auth: true }),
+  studentsSimple: () => api("/admin/students-simple", { auth: true }),
+  levelsByCourse: (courseId: number) =>
+    api(`/admin/levels-by-course/${courseId}`, { auth: true }),
+};
+
 export function safeArray<T>(v: any): T[] { return Array.isArray(v) ? v : []; }
 export function safeObj<T>(v: any, fb: T): T {
   return v && typeof v === "object" && !Array.isArray(v) ? v : fb;

@@ -23,7 +23,7 @@ export default function RegisterPage() {
       const res = await auth.register(form);
       auth.saveToken(res.access_token);
       if (typeof window !== "undefined") localStorage.setItem("refresh_token", res.refresh_token);
-      router.push("/dashboard/student");
+      router.push("/placement");
     } catch (e: any) {
       setError(e.message);
       setLoading(false);

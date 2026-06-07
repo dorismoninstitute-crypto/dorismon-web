@@ -1,19 +1,33 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { studentApi, safeArray, safeObj } from "@/lib/api";
+import { useRouter } from "next/navigation";
+import { studentApi, placement, safeArray, safeObj } from "@/lib/api";
 import { LoadingScreen, ErrorBox, EmptyState, StatCard, Card, CardBody, Badge, Button, PageHeader } from "@/components/ui";
 
 export default function StudentDashboard() {
+  const router = useRouter();
   const [data, setData] = useState<any>(null);
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    studentApi.dashboard()
-      .then(d => { setData(d); setLoading(false); })
-      .catch(e => { setErr(e.message); setLoading(false); });
-  }, []);
+    // Verificar placement antes de cargar el dashboard
+    placement.status()
+      .then((s: any) => {
+        if (!s.completed) {
+          router.replace("/placement");
+          return Promise.reject("redirect");
+        }
+        return studentApi.dashboard();
+      })
+      .then(d => { if (d) { setData(d); setLoading(false); } })
+      .catch(e => {
+        if (e === "redirect") return;
+        setErr(typeof e === "string" ? e : e.message);
+        setLoading(false);
+      });
+  }, [router]);
 
   if (loading) return <LoadingScreen />;
   if (err) return <ErrorBox message={err} />;
@@ -81,7 +95,7 @@ export default function StudentDashboard() {
               <Link href="/dashboard/student/courses" className="text-xs font-semibold text-brand-600 hover:text-brand-700">Ver todos →</Link>
             </h3>
             {enrollments.length === 0 ? (
-              <EmptyState icon="📚" title="Sin cursos inscritos" />
+              <EmptyState icon="📚" title="Sin cursos inscritos" description="Un coordinador te asignará pronto a un curso." />
             ) : (
               <div className="space-y-2">
                 {enrollments.map((e: any) => (

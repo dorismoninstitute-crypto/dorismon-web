@@ -16,6 +16,7 @@ const studentItems = [
   { href: "/dashboard/student/transcript", label: "Expediente", icon: "📊" },
   { href: "/dashboard/student/certificates", label: "Certificados", icon: "🎓" },
   { href: "/dashboard/student/notifications", label: "Notificaciones", icon: "🔔" },
+  { href: "/dashboard/account", label: "Mi cuenta", icon: "⚙️" },
 ];
 const teacherItems = [
   { href: "/dashboard/teacher", label: "Inicio", icon: "🏠" },
@@ -23,18 +24,21 @@ const teacherItems = [
   { href: "/dashboard/teacher/assignments", label: "Tareas", icon: "📝" },
   { href: "/dashboard/teacher/quizzes", label: "Quizzes", icon: "✓" },
   { href: "/dashboard/teacher/materials", label: "Materiales", icon: "📖" },
+  { href: "/dashboard/account", label: "Mi cuenta", icon: "⚙️" },
 ];
 const adminItems = [
   { href: "/dashboard/admin", label: "Dashboard", icon: "📊" },
   { href: "/dashboard/admin/users", label: "Usuarios", icon: "👥" },
   { href: "/dashboard/admin/courses", label: "Cursos", icon: "📚" },
   { href: "/dashboard/admin/sessions", label: "Clases", icon: "🗓" },
+  { href: "/dashboard/admin/enrollments", label: "Inscripciones", icon: "📋" },
   { href: "/dashboard/admin/branches", label: "Sedes y aulas", icon: "🏢" },
   { href: "/dashboard/admin/plans", label: "Planes", icon: "💳" },
   { href: "/dashboard/admin/payments", label: "Pagos", icon: "💰" },
   { href: "/dashboard/admin/certificates", label: "Certificados", icon: "🎓" },
-  { href: "/dashboard/admin/audit", label: "Auditoría", icon: "📋" },
-  { href: "/dashboard/admin/settings", label: "Configuración", icon: "⚙️" },
+  { href: "/dashboard/admin/audit", label: "Auditoría", icon: "📜" },
+  { href: "/dashboard/admin/settings", label: "Configuración", icon: "🛠" },
+  { href: "/dashboard/account", label: "Mi cuenta", icon: "⚙️" },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -60,12 +64,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen flex bg-slate-50">
-      {/* Mobile overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black/40 z-30 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
       <aside className={clsx(
         "fixed lg:sticky top-0 left-0 z-40 w-64 h-screen bg-white border-r border-slate-200 flex flex-col transition-transform",
         sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
@@ -81,7 +83,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <nav className="flex-1 overflow-y-auto py-3">
           <p className="px-5 mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">{sectionLabel}</p>
           {items.map(n => {
-            const active = pathname === n.href || (n.href !== "/dashboard/admin" && n.href !== "/dashboard/teacher" && n.href !== "/dashboard/student" && pathname.startsWith(n.href));
+            const active = pathname === n.href || (
+              n.href !== "/dashboard/admin" &&
+              n.href !== "/dashboard/teacher" &&
+              n.href !== "/dashboard/student" &&
+              pathname.startsWith(n.href)
+            );
             return (
               <Link
                 key={n.href}
@@ -120,9 +127,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
-      {/* Main */}
       <div className="flex-1 min-w-0">
-        {/* Mobile header */}
         <header className="lg:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-20">
           <button onClick={() => setSidebarOpen(true)} className="text-slate-600 hover:text-slate-900">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

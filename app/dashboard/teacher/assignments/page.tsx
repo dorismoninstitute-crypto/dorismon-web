@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { teacherApi, safeArray } from "@/lib/api";
+import Link from "next/link";
+import { teacherApi, adminHelpers, safeArray } from "@/lib/api";
 import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Input, Textarea, Select, Modal, SuccessBox } from "@/components/ui";
 
 export default function TeacherAssignmentsPage() {
@@ -8,7 +9,13 @@ export default function TeacherAssignmentsPage() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ title: "", description: "", instructions: "", level_id: "", max_score: 100, due_at: "" });
+  const [courses, setCourses] = useState<any[]>([]);
+  const [levels, setLevels] = useState<any[]>([]);
+  const [form, setForm] = useState({
+    title: "", description: "", instructions: "",
+    course_id: "", level_id: "",
+    max_score: 100, due_at: "",
+  });
   const [msg, setMsg] = useState("");
 
   const load = () => {
@@ -19,17 +26,40 @@ export default function TeacherAssignmentsPage() {
   };
   useEffect(() => { load(); }, []);
 
+  const openModal = async () => {
+    try {
+      // Reusamos endpoint público de catálogo
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "https://dorismon-api.onrender.com"}/courses`);
+      setCourses(await res.json());
+      setShowModal(true);
+    } catch {}
+  };
+
+  const onCourseChange = async (course_id: string) => {
+    setForm({ ...form, course_id, level_id: "" });
+    if (course_id) {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "https://dorismon-api.onrender.com"}/courses/${course_id}`);
+        const d = await res.json();
+        setLevels(safeArray(d.levels));
+      } catch {}
+    } else { setLevels([]); }
+  };
+
   const submit = async () => {
     setMsg("");
     try {
       await teacherApi.createAssignment({
-        ...form,
+        title: form.title,
+        description: form.description || undefined,
+        instructions: form.instructions || undefined,
         level_id: form.level_id ? parseInt(form.level_id) : null,
+        max_score: form.max_score,
         due_at: form.due_at ? new Date(form.due_at).toISOString() : null,
       });
       setMsg("✓ Tarea creada");
       setShowModal(false);
-      setForm({ title: "", description: "", instructions: "", level_id: "", max_score: 100, due_at: "" });
+      setForm({ title: "", description: "", instructions: "", course_id: "", level_id: "", max_score: 100, due_at: "" });
       load();
     } catch (e: any) { setMsg("✗ " + e.message); }
   };
@@ -42,16 +72,17 @@ export default function TeacherAssignmentsPage() {
       <PageHeader
         title="Tareas"
         subtitle={`${items.length} tareas asignadas`}
-        action={<Button onClick={() => setShowModal(true)}>+ Nueva tarea</Button>}
+        action={<Button onClick={openModal}>+ Nueva tarea</Button>}
       />
       {msg.startsWith("✓") && <div className="mb-4"><SuccessBox message={msg} /></div>}
+      {msg.startsWith("✗") && <div className="mb-4"><ErrorBox message={msg.slice(2)} /></div>}
 
-      {items.length === 0 ? <EmptyState icon="📝" title="Aún no creaste tareas" /> : (
+      {items.length === 0 ? <EmptyState icon="📝" title="Aún no creaste tareas" description="Hacé clic en '+ Nueva tarea' para crear una." /> : (
         <div className="space-y-2">
           {items.map((a: any) => (
             <Card key={a.id}>
-              <CardBody className="flex items-center gap-3">
-                <div className="flex-1">
+              <CardBody className="flex items-center gap-3 flex-wrap">
+                <div className="flex-1 min-w-0">
                   <h3 className="font-semibold">{a.title}</h3>
                   <p className="text-xs text-slate-500 mt-1">
                     Máx: {a.max_score} pts · Entregadas: {a.submitted} · Calificadas: {a.graded}
@@ -61,23 +92,38 @@ export default function TeacherAssignmentsPage() {
                 {a.submitted > a.graded && (
                   <Badge variant="warning">{a.submitted - a.graded} por calificar</Badge>
                 )}
+                <Link href={`/dashboard/teacher/assignments/${a.id}`}>
+                  <Button size="sm" variant="outline">Ver entregas</Button>
+                </Link>
               </CardBody>
             </Card>
           ))}
         </div>
       )}
 
-      <Modal open={showModal} onClose={() => setShowModal(false)} title="Nueva tarea">
+      <Modal open={showModal} onClose={() => setShowModal(false)} title="Nueva tarea" size="lg">
         <div className="space-y-3">
-          <Input label="Título" value={form.title} onChange={(e: any) => setForm({ ...form, title: e.target.value })} />
+          <Input label="Título *" value={form.title} onChange={(e: any) => setForm({ ...form, title: e.target.value })} />
           <Textarea label="Descripción" value={form.description} onChange={(e: any) => setForm({ ...form, description: e.target.value })} />
-          <Textarea label="Instrucciones" value={form.instructions} onChange={(e: any) => setForm({ ...form, instructions: e.target.value })} />
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="Nivel ID (numérico)" value={form.level_id} onChange={(e: any) => setForm({ ...form, level_id: e.target.value })} />
-            <Input label="Puntaje máx" type="number" value={form.max_score} onChange={(e: any) => setForm({ ...form, max_score: Number(e.target.value) })} />
+          <Textarea label="Instrucciones detalladas" value={form.instructions} onChange={(e: any) => setForm({ ...form, instructions: e.target.value })} placeholder="• Mínimo 200 palabras&#10;• Usar al menos 5 verbos en presente perfecto" />
+
+          <div className="grid md:grid-cols-2 gap-3">
+            <Select label="Curso" value={form.course_id} onChange={(e: any) => onCourseChange(e.target.value)}>
+              <option value="">Seleccionar...</option>
+              {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </Select>
+            <Select label="Nivel *" value={form.level_id} onChange={(e: any) => setForm({ ...form, level_id: e.target.value })} disabled={!levels.length}>
+              <option value="">{levels.length ? "Seleccionar..." : "Curso primero"}</option>
+              {levels.map(l => <option key={l.id} value={l.id}>{l.code} — {l.name}</option>)}
+            </Select>
           </div>
-          <Input label="Fecha de entrega" type="datetime-local" value={form.due_at} onChange={(e: any) => setForm({ ...form, due_at: e.target.value })} />
-          <Button onClick={submit} disabled={!form.title} className="w-full">Crear tarea</Button>
+
+          <div className="grid md:grid-cols-2 gap-3">
+            <Input label="Puntaje máximo" type="number" value={form.max_score} onChange={(e: any) => setForm({ ...form, max_score: Number(e.target.value) })} />
+            <Input label="Fecha de entrega" type="datetime-local" value={form.due_at} onChange={(e: any) => setForm({ ...form, due_at: e.target.value })} />
+          </div>
+
+          <Button onClick={submit} disabled={!form.title || !form.level_id} className="w-full" size="lg">Crear tarea</Button>
         </div>
       </Modal>
     </>
