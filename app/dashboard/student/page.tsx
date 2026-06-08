@@ -95,7 +95,11 @@ export default function StudentDashboard() {
               <Link href="/dashboard/student/courses" className="text-xs font-semibold text-brand-600 hover:text-brand-700">Ver todos →</Link>
             </h3>
             {enrollments.length === 0 ? (
-              <EmptyState icon="📚" title="Sin cursos inscritos" description="Un coordinador te asignará pronto a un curso." />
+              <EmptyState
+                icon="📚"
+                title="Esperando asignación de curso"
+                description="Ya hiciste tu test de nivel. Un coordinador académico te asignará a un curso y profesor en breve."
+              />
             ) : (
               <div className="space-y-2">
                 {enrollments.map((e: any) => (

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { adminApi, adminHelpers, safeArray, safeObj } from "@/lib/api";
-import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Input, Textarea, Select, Modal, SuccessBox } from "@/components/ui";
+import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Input, Textarea, Select, Modal, SuccessBox, ConfirmModal, showToast } from "@/components/ui";
 
 export default function AdminSessionsPage() {
   const [items, setItems] = useState<any[]>([]);
@@ -24,6 +24,7 @@ export default function AdminSessionsPage() {
     starts_at: "", duration_min: 90,
     meeting_url: "", branch_id: "", classroom_id: "",
     capacity: 12,
+    is_open_event: false,
   });
 
   const load = () => {
@@ -87,6 +88,7 @@ export default function AdminSessionsPage() {
         starts_at_utc: start.toISOString(),
         ends_at_utc: end.toISOString(),
         capacity: form.capacity,
+        is_open_event: form.is_open_event,
       };
       if (form.modality === "online" || form.modality === "hibrida") {
         body.meeting_url = form.meeting_url;
@@ -103,15 +105,22 @@ export default function AdminSessionsPage() {
         title: "", description: "", modality: "online",
         starts_at: "", duration_min: 90,
         meeting_url: "", branch_id: "", classroom_id: "", capacity: 12,
+        is_open_event: false,
       });
       load();
     } catch (e: any) { setMsg("✗ " + e.message); }
   };
 
-  const cancel = async (id: string) => {
-    if (!confirm("¿Cancelar esta clase?")) return;
-    try { await adminApi.cancelSession(id); load(); }
-    catch (e: any) { alert(e.message); }
+  const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
+
+  const doCancel = async (id: string) => {
+    try {
+      await adminApi.cancelSession(id);
+      showToast("success", "Clase cancelada");
+      load();
+    } catch (e: any) {
+      showToast("error", e.message);
+    }
   };
 
   const formValid = form.teacher_id && form.course_id && form.level_id && form.title && form.starts_at &&
@@ -148,7 +157,7 @@ export default function AdminSessionsPage() {
                     </p>
                   </div>
                   {s.status !== "cancelled" && (
-                    <Button variant="danger" size="sm" onClick={() => cancel(s.id)}>Cancelar</Button>
+                    <Button variant="danger" size="sm" onClick={() => setConfirmCancelId(s.id)}>Cancelar</Button>
                   )}
                 </div>
               ))}
@@ -219,14 +228,42 @@ export default function AdminSessionsPage() {
 
           <Input label="Capacidad" type="number" value={form.capacity} onChange={(e: any) => setForm({ ...form, capacity: Number(e.target.value) })} />
 
+          <label className="flex items-start gap-3 p-4 rounded-lg border-2 border-slate-200 hover:border-brand-300 cursor-pointer transition">
+            <input
+              type="checkbox"
+              checked={form.is_open_event}
+              onChange={(e) => setForm({ ...form, is_open_event: e.target.checked })}
+              className="mt-0.5 w-5 h-5 accent-brand-600"
+            />
+            <div>
+              <p className="font-bold text-sm">🎫 Evento abierto a cualquier estudiante</p>
+              <p className="text-xs text-slate-500 mt-1">
+                Si marcás esta opción, cualquier estudiante podrá registrarse al evento (no solo los inscritos al nivel). Ideal para talleres, clubs de conversación y refuerzos.
+              </p>
+            </div>
+          </label>
+
           <div className="pt-3 border-t border-slate-100">
-            <p className="text-xs text-slate-500 mb-3">Los estudiantes del nivel recibirán notificación automática.</p>
+            <p className="text-xs text-slate-500 mb-3">
+            {form.is_open_event ?
+              "🎫 Cualquier estudiante podrá registrarse a este evento desde 'Eventos disponibles'." :
+              "Los estudiantes del nivel recibirán notificación automática."}
+          </p>
             <Button onClick={create} disabled={!formValid} className="w-full" size="lg">
               Programar clase
             </Button>
           </div>
         </div>
       </Modal>
+
+      <ConfirmModal
+        open={!!confirmCancelId}
+        onClose={() => setConfirmCancelId(null)}
+        onConfirm={() => confirmCancelId && doCancel(confirmCancelId)}
+        title="¿Cancelar esta clase?"
+        message="Los estudiantes ya no podrán verla en su calendario. Esta acción se puede revertir manualmente desde la base de datos."
+        confirmLabel="Sí, cancelar"
+      />
     </>
   );
 }

@@ -1,18 +1,28 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { adminApi, safeObj } from "@/lib/api";
-import { LoadingScreen, ErrorBox, PageHeader, Card, CardBody, StatCard } from "@/components/ui";
+import { adminApi, adminInsights, safeObj, safeArray } from "@/lib/api";
+import { LoadingScreen, ErrorBox, PageHeader, Card, CardBody, StatCard, Badge, Button } from "@/components/ui";
 
 export default function AdminDashboard() {
   const [data, setData] = useState<any>(null);
   const [finance, setFinance] = useState<any>(null);
+  const [atRisk, setAtRisk] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
   useEffect(() => {
-    Promise.all([adminApi.dashboard(), adminApi.financeSummary()])
-      .then(([d, f]) => { setData(d); setFinance(f); setLoading(false); })
+    Promise.all([
+      adminApi.dashboard(),
+      adminApi.financeSummary(),
+      adminInsights.atRiskStudents().catch(() => []),
+    ])
+      .then(([d, f, a]) => {
+        setData(d);
+        setFinance(f);
+        setAtRisk(safeArray(a));
+        setLoading(false);
+      })
       .catch(e => { setErr(e.message); setLoading(false); });
   }, []);
 
@@ -32,6 +42,40 @@ export default function AdminDashboard() {
         <StatCard label="Cursos activos" value={stats.total_courses} icon="📚" color="info" />
         <StatCard label="Clases semana" value={stats.scheduled_classes} icon="📅" color="warning" />
       </div>
+
+      {/* Widget estudiantes en riesgo */}
+      {atRisk.length > 0 && (
+        <Card className="mb-6 border-amber-200 bg-amber-50">
+          <CardBody>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-bold text-amber-900 flex items-center gap-2">
+                ⚠️ Estudiantes en riesgo
+                <Badge variant="warning">{atRisk.length}</Badge>
+              </h3>
+              <Link href="/dashboard/admin/users" className="text-xs font-semibold text-amber-700 hover:text-amber-900">
+                Ver detalle →
+              </Link>
+            </div>
+            <p className="text-sm text-amber-800 mb-3">
+              Estos estudiantes tienen 3 o más ausencias en sus últimas 10 clases. Considerá contactarlos.
+            </p>
+            <div className="space-y-2">
+              {atRisk.slice(0, 5).map((s: any) => (
+                <div key={s.student_id} className="p-3 bg-white rounded-lg flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-sm">
+                    {(s.full_name || "?").split(" ").map((w: string) => w[0]).join("").slice(0, 2)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm">{s.full_name}</p>
+                    <p className="text-xs text-slate-500">{s.email}</p>
+                  </div>
+                  <Badge variant="danger">{s.absent_count} faltas / {s.total_recorded}</Badge>
+                </div>
+              ))}
+            </div>
+          </CardBody>
+        </Card>
+      )}
 
       <div className="grid lg:grid-cols-2 gap-5 mb-6">
         <Card>
@@ -79,13 +123,12 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      {/* Quick links */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
           { href: "/dashboard/admin/users", icon: "👥", label: "Usuarios" },
-          { href: "/dashboard/admin/courses", icon: "📚", label: "Cursos" },
-          { href: "/dashboard/admin/sessions", icon: "📅", label: "Clases" },
-          { href: "/dashboard/admin/settings", icon: "⚙️", label: "Configuración" },
+          { href: "/dashboard/admin/sessions", icon: "🗓", label: "Programar clase" },
+          { href: "/dashboard/admin/enrollments", icon: "📋", label: "Inscribir alumno" },
+          { href: "/dashboard/admin/certificates", icon: "🎓", label: "Emitir certificado" },
         ].map(l => (
           <Link key={l.href} href={l.href}>
             <Card className="hover:shadow-md transition cursor-pointer">

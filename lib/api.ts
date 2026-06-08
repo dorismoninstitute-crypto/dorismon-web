@@ -186,6 +186,22 @@ export const adminHelpers = {
     api(`/admin/levels-by-course/${courseId}`, { auth: true }),
 };
 
+
+// Eventos abiertos
+export const events = {
+  list: () => api("/events/", { auth: true }),
+  register: (sessionId: string) =>
+    api(`/events/${sessionId}/register`, { method: "POST", auth: true }),
+  cancel: (sessionId: string) =>
+    api(`/events/${sessionId}/cancel`, { method: "POST", auth: true }),
+  mine: () => api("/events/my-events", { auth: true }),
+};
+
+// Admin: at-risk students
+export const adminInsights = {
+  atRiskStudents: () => api("/admin/at-risk-students", { auth: true }),
+};
+
 export function safeArray<T>(v: any): T[] { return Array.isArray(v) ? v : []; }
 export function safeObj<T>(v: any, fb: T): T {
   return v && typeof v === "object" && !Array.isArray(v) ? v : fb;

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { ToastContainer } from "@/components/ui";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -12,6 +13,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es">
       <body className="bg-slate-50 text-slate-900 antialiased">
         <ErrorBoundary>{children}</ErrorBoundary>
+        <ToastContainer />
       </body>
     </html>
   );

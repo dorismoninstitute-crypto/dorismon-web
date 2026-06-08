@@ -4,9 +4,9 @@ import clsx from "clsx";
 
 // Button
 export function Button({
-  children, variant = "primary", size = "md", className, ...props
+  children, variant = "primary", size = "md", className, loading, disabled, ...props
 }: any) {
-  const base = "inline-flex items-center justify-center font-semibold transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg";
+  const base = "inline-flex items-center justify-center gap-2 font-semibold transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg";
   const variants: any = {
     primary: "bg-brand-600 hover:bg-brand-700 text-white shadow-sm",
     accent: "bg-accent-500 hover:bg-accent-600 text-white shadow-sm",
@@ -21,7 +21,8 @@ export function Button({
     lg: "px-6 py-3 text-base",
   };
   return (
-    <button className={clsx(base, variants[variant], sizes[size], className)} {...props}>
+    <button className={clsx(base, variants[variant], sizes[size], className)} disabled={disabled || loading} {...props}>
+      {loading && <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
       {children}
     </button>
   );
@@ -245,6 +246,69 @@ export function Tabs({ tabs, active, onChange }: any) {
           </button>
         ))}
       </nav>
+    </div>
+  );
+}
+
+
+// ConfirmModal — reemplaza el confirm() del navegador
+export function ConfirmModal({ open, onClose, onConfirm, title, message, confirmLabel = "Confirmar", confirmVariant = "danger" }: any) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-fade-in" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md animate-slide-up" onClick={e => e.stopPropagation()}>
+        <div className="p-6">
+          <h3 className="text-lg font-bold tracking-tight mb-2">{title}</h3>
+          <p className="text-sm text-slate-600 leading-relaxed">{message}</p>
+        </div>
+        <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2 rounded-b-2xl">
+          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button variant={confirmVariant} onClick={() => { onConfirm(); onClose(); }}>{confirmLabel}</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Toast — mensajes flotantes que aparecen y desaparecen
+type ToastMsg = { id: number; type: "success" | "error" | "info"; text: string };
+const toastListeners: any[] = [];
+let toastCounter = 0;
+
+export function showToast(type: "success" | "error" | "info", text: string) {
+  const t = { id: ++toastCounter, type, text };
+  toastListeners.forEach(fn => fn(t));
+}
+
+import { useEffect as _useEffect } from "react";
+
+export function ToastContainer() {
+  const [toasts, setToasts] = React.useState<ToastMsg[]>([]);
+  _useEffect(() => {
+    const handler = (t: ToastMsg) => {
+      setToasts(prev => [...prev, t]);
+      setTimeout(() => setToasts(prev => prev.filter(p => p.id !== t.id)), 3500);
+    };
+    toastListeners.push(handler);
+    return () => { const i = toastListeners.indexOf(handler); if (i > -1) toastListeners.splice(i, 1); };
+  }, []);
+  if (toasts.length === 0) return null;
+  return (
+    <div className="fixed top-4 right-4 z-[100] space-y-2 max-w-sm">
+      {toasts.map(t => {
+        const colors: any = {
+          success: "bg-emerald-600 text-white",
+          error: "bg-red-600 text-white",
+          info: "bg-brand-600 text-white",
+        };
+        const icons: any = { success: "✓", error: "✕", info: "ℹ" };
+        return (
+          <div key={t.id} className={clsx("px-4 py-3 rounded-lg shadow-lg animate-slide-up flex items-center gap-3", colors[t.type])}>
+            <span className="text-xl font-bold">{icons[t.type]}</span>
+            <span className="text-sm font-semibold">{t.text}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }
