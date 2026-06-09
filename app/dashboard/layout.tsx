@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { auth, safeObj } from "@/lib/api";
+import { auth, safeObj, progress, getLevelTheme } from "@/lib/api";
 import { LoadingScreen } from "@/components/ui";
 import clsx from "clsx";
 
@@ -47,22 +47,38 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<any>(null);
+  const [studentLevel, setStudentLevel] = useState<string>("B1");
   const [loaded, setLoaded] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!auth.isLoggedIn()) { router.push("/login"); return; }
     auth.me()
-      .then((u) => { setUser(u); setLoaded(true); })
+      .then((u) => {
+        setUser(u);
+        setLoaded(true);
+        // Si es estudiante, obtener su nivel para colorear el sidebar
+        if (u?.role === "student") {
+          progress.myCourse().then((p: any) => {
+            if (p?.level_code) setStudentLevel(p.level_code);
+          }).catch(() => {});
+        }
+      })
       .catch(() => { auth.logout(); router.push("/login"); });
   }, [router]);
 
   if (!loaded) return <LoadingScreen message="Cargando..." />;
   const u = safeObj(user, {}) as any;
   const role = u.role || "student";
-
   const items = role === "super_admin" ? adminItems : role === "teacher" ? teacherItems : studentItems;
   const sectionLabel = role === "super_admin" ? "Administración" : role === "teacher" ? "Profesor" : "Estudiante";
+
+  // Tema del sidebar: para estudiante usa colores por nivel, para admin/profe usa brand
+  const theme = role === "student" ? getLevelTheme(studentLevel) : null;
+  const logoColorClass = theme ? theme.bg : "bg-brand-600";
+  const activeBgClass = theme ? theme.bgSoft : "bg-brand-50";
+  const activeTextClass = theme ? theme.text : "text-brand-700";
+  const activeBorderClass = theme ? theme.border : "border-brand-600";
 
   return (
     <div className="min-h-screen flex bg-slate-50">
@@ -75,10 +91,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
         <div className="px-5 py-5 border-b border-slate-100 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-brand-600 flex items-center justify-center text-white font-black text-lg">D</div>
+          <div className={clsx("w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-lg", logoColorClass)}>D</div>
           <div>
             <p className="font-bold tracking-tight text-slate-900">Dorismon</p>
-            <p className="text-xs text-slate-500 capitalize">{role.replace("_", " ")}</p>
+            <p className="text-xs text-slate-500 capitalize">
+              {role === "student" ? `Nivel ${studentLevel}` : role.replace("_", " ")}
+            </p>
           </div>
         </div>
 
@@ -99,7 +117,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 className={clsx(
                   "flex items-center gap-3 px-5 py-2.5 text-sm transition-all border-l-2",
                   active
-                    ? "bg-brand-50 text-brand-700 border-brand-600 font-semibold"
+                    ? clsx(activeBgClass, activeTextClass, activeBorderClass, "font-semibold")
                     : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 border-transparent"
                 )}
               >
@@ -112,7 +130,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <div className="p-4 border-t border-slate-100">
           <div className="flex items-center gap-3 mb-3 px-2">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center text-white font-bold text-sm">
+            <div className={clsx("w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm", logoColorClass)}>
               {(u.full_name || "?").split(" ").map((w: string) => w[0]).join("").slice(0, 2)}
             </div>
             <div className="flex-1 min-w-0">
@@ -137,7 +155,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </svg>
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded bg-brand-600 flex items-center justify-center text-white font-black text-sm">D</div>
+            <div className={clsx("w-7 h-7 rounded bg-brand-600 flex items-center justify-center text-white font-black text-sm")}>D</div>
             <span className="font-bold">Dorismon</span>
           </div>
           <div />

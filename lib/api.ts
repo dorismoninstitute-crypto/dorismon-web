@@ -202,7 +202,69 @@ export const adminInsights = {
   atRiskStudents: () => api("/admin/at-risk-students", { auth: true }),
 };
 
-export function safeArray<T>(v: any): T[] { return Array.isArray(v) ? v : []; }
+
+// V1.3 — Progreso del estudiante
+export const progress = {
+  myCourse: () => api("/progress/my-course", { auth: true }),
+  recompute: () => api("/progress/recompute", { method: "POST", auth: true }),
+};
+
+// V1.3 — Edición universal (admin)
+export const adminEdit = {
+  updateLevel: (id: number, body: any) => api(`/admin/levels/${id}`, { method: "PATCH", body, auth: true }),
+  updateModule: (id: number, body: any) => api(`/admin/modules/${id}`, { method: "PATCH", body, auth: true }),
+  deleteModule: (id: number) => api(`/admin/modules/${id}`, { method: "DELETE", auth: true }),
+  updateLesson: (id: number, body: any) => api(`/admin/lessons/${id}`, { method: "PATCH", body, auth: true }),
+  updateSession: (id: string, body: any) => api(`/admin/sessions/${id}`, { method: "PATCH", body, auth: true }),
+  updateEnrollment: (id: string, body: any) => api(`/admin/enrollments/${id}`, { method: "PATCH", body, auth: true }),
+  deleteEnrollment: (id: string) => api(`/admin/enrollments/${id}`, { method: "DELETE", auth: true }),
+  updateBranch: (id: number, body: any) => api(`/admin/branches/${id}`, { method: "PATCH", body, auth: true }),
+  updateClassroom: (id: number, body: any) => api(`/admin/classrooms/${id}`, { method: "PATCH", body, auth: true }),
+  updateCourse: (id: number, body: any) => api(`/admin/courses/${id}`, { method: "PATCH", body, auth: true }),
+  deactivateCourse: (id: number) => api(`/admin/courses/${id}`, { method: "DELETE", auth: true }),
+  updateUser: (id: string, body: any) => api(`/admin/users/${id}`, { method: "PATCH", body, auth: true }),
+};
+
+// V1.3 — Planes con features
+export const adminPlans = {
+  list: () => api("/admin/plans", { auth: true }),
+  create: (body: any) => api("/admin/plans", { method: "POST", body, auth: true }),
+  update: (id: number, body: any) => api(`/admin/plans/${id}`, { method: "PATCH", body, auth: true }),
+  remove: (id: number) => api(`/admin/plans/${id}`, { method: "DELETE", auth: true }),
+  features: (planId: number) => api(`/admin/plans/${planId}/features`, { auth: true }),
+  addFeature: (planId: number, body: any) => api(`/admin/plans/${planId}/features`, { method: "POST", body, auth: true }),
+  updateFeature: (id: number, body: any) => api(`/admin/plan-features/${id}`, { method: "PATCH", body, auth: true }),
+  removeFeature: (id: number) => api(`/admin/plan-features/${id}`, { method: "DELETE", auth: true }),
+};
+
+// V1.3 — Pausa de estudiantes
+export const adminPause = {
+  pause: (studentId: string, reason: string) => api(`/admin/students/${studentId}/pause`, { method: "POST", body: { reason }, auth: true }),
+  resume: (studentId: string) => api(`/admin/students/${studentId}/resume`, { method: "POST", auth: true }),
+  paused: () => api("/admin/paused-students", { auth: true }),
+};
+
+// V1.3 — Notas del profe
+export const teacherNotes = {
+  save: (sessionId: string, notes: string) => api(`/teacher/sessions/${sessionId}/notes`, { method: "POST", body: { notes }, auth: true }),
+};
+
+// V1.3 — Helper colores por nivel CEFR
+export const levelColors: Record<string, { bg: string; border: string; text: string; bgSoft: string; accent: string }> = {
+  A1: { bg: "bg-pink-500", border: "border-pink-500", text: "text-pink-700", bgSoft: "bg-pink-50", accent: "bg-pink-100" },
+  A2: { bg: "bg-amber-500", border: "border-amber-500", text: "text-amber-700", bgSoft: "bg-amber-50", accent: "bg-amber-100" },
+  B1: { bg: "bg-violet-500", border: "border-violet-500", text: "text-violet-700", bgSoft: "bg-violet-50", accent: "bg-violet-100" },
+  B2: { bg: "bg-teal-500", border: "border-teal-500", text: "text-teal-700", bgSoft: "bg-teal-50", accent: "bg-teal-100" },
+  C1: { bg: "bg-blue-600", border: "border-blue-600", text: "text-blue-700", bgSoft: "bg-blue-50", accent: "bg-blue-100" },
+  C2: { bg: "bg-stone-700", border: "border-stone-700", text: "text-stone-700", bgSoft: "bg-stone-50", accent: "bg-stone-100" },
+};
+
+export function getLevelTheme(code: string | null | undefined) {
+  return levelColors[code || ""] || levelColors["B1"];
+}
+
+
+export function safeArray<T = any>(v: any): T[] { return Array.isArray(v) ? v : []; }
 export function safeObj<T>(v: any, fb: T): T {
   return v && typeof v === "object" && !Array.isArray(v) ? v : fb;
 }

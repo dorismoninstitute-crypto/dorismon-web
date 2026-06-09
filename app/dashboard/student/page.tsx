@@ -2,26 +2,38 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { studentApi, placement, safeArray, safeObj } from "@/lib/api";
-import { LoadingScreen, ErrorBox, EmptyState, StatCard, Card, CardBody, Badge, Button, PageHeader } from "@/components/ui";
+import { studentApi, placement, progress, events, safeArray, safeObj, getLevelTheme } from "@/lib/api";
+import { LoadingScreen, ErrorBox, EmptyState, Card, CardBody, Badge, Button, showToast } from "@/components/ui";
 
 export default function StudentDashboard() {
   const router = useRouter();
   const [data, setData] = useState<any>(null);
+  const [progressData, setProgressData] = useState<any>(null);
+  const [openEvents, setOpenEvents] = useState<any[]>([]);
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Verificar placement antes de cargar el dashboard
     placement.status()
       .then((s: any) => {
         if (!s.completed) {
           router.replace("/placement");
           return Promise.reject("redirect");
         }
-        return studentApi.dashboard();
+        return Promise.all([
+          studentApi.dashboard(),
+          progress.myCourse().catch(() => null),
+          events.list().catch(() => []),
+        ]);
       })
-      .then(d => { if (d) { setData(d); setLoading(false); } })
+      .then(([d, p, ev]: any) => {
+        if (d) {
+          setData(d);
+          setProgressData(p);
+          setOpenEvents(safeArray(ev).slice(0, 3));
+          setLoading(false);
+        }
+      })
       .catch(e => {
         if (e === "redirect") return;
         setErr(typeof e === "string" ? e : e.message);
@@ -31,56 +43,232 @@ export default function StudentDashboard() {
 
   if (loading) return <LoadingScreen />;
   if (err) return <ErrorBox message={err} />;
+
   const d = safeObj(data, {}) as any;
   const u = safeObj(d.user, {}) as any;
   const stats = safeObj(d.stats, {}) as any;
   const next_classes = safeArray(d.next_classes);
   const enrollments = safeArray(d.enrollments);
+  const firstName = (u.full_name || "Estudiante").split(" ")[0];
+
+  // Color del nivel
+  const levelCode = progressData?.level_code || enrollments[0]?.level_code || "B1";
+  const theme = getLevelTheme(levelCode);
 
   return (
-    <>
-      <PageHeader
-        title={`Hola, ${u.full_name?.split(" ")[0] || "Estudiante"} 👋`}
-        subtitle="Tu progreso académico de un vistazo"
-      />
-
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-        <StatCard label="Cursos" value={stats.enrolled_courses} icon="📚" color="brand" />
-        <StatCard label="Próximas clases" value={stats.next_classes} icon="📅" color="info" />
-        <StatCard label="Tareas" value={stats.pending_assignments} icon="📝" color="warning" />
-        <StatCard label="Quizzes" value={stats.pending_quizzes} icon="✓" color="purple" />
-        <StatCard label="Asistencia" value={`${stats.attendance_rate || 0}%`} icon="✅" color="success" />
-        <StatCard label="Certificados" value={stats.certificates} icon="🎓" color="accent" />
+    <div className={`-m-4 md:-m-8 p-4 md:p-8 min-h-screen ${theme.bgSoft}`}>
+      {/* Hero con nivel del estudiante */}
+      <div className={`${theme.bg} text-white rounded-3xl p-6 md:p-8 mb-6 shadow-xl relative overflow-hidden`}>
+        <div className="absolute -top-12 -right-12 w-48 h-48 bg-white/10 rounded-full"></div>
+        <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-white/10 rounded-full"></div>
+        <div className="relative">
+          <p className="text-xs font-bold uppercase tracking-widest opacity-90 mb-1">Bienvenido de vuelta</p>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">¡Hola, {firstName}! 👋</h1>
+          {progressData?.enrolled ? (
+            <p className="text-white/90 text-sm md:text-base">
+              Estás en <strong>{progressData.course_name}</strong> · Nivel {levelCode} · {progressData.completed_modules}/{progressData.total_modules} módulos completados
+            </p>
+          ) : (
+            <p className="text-white/90 text-sm">Tu nivel asignado es <strong>{levelCode}</strong>. Esperando inscripción a un curso.</p>
+          )}
+        </div>
       </div>
 
+      {/* Stats grandes coloridos */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <Card className={`border-2 ${theme.border} hover:shadow-md transition`}>
+          <CardBody className="text-center py-4">
+            <div className="text-3xl mb-1">📅</div>
+            <p className={`text-xs font-bold uppercase tracking-wider ${theme.text}`}>Próx. clases</p>
+            <p className="text-3xl font-extrabold mt-1">{stats.next_classes ?? 0}</p>
+          </CardBody>
+        </Card>
+        <Card className="border-2 border-amber-200 hover:shadow-md transition">
+          <CardBody className="text-center py-4">
+            <div className="text-3xl mb-1">📝</div>
+            <p className="text-xs font-bold uppercase tracking-wider text-amber-700">Tareas</p>
+            <p className="text-3xl font-extrabold mt-1">{stats.pending_assignments ?? 0}</p>
+          </CardBody>
+        </Card>
+        <Card className="border-2 border-violet-200 hover:shadow-md transition">
+          <CardBody className="text-center py-4">
+            <div className="text-3xl mb-1">✓</div>
+            <p className="text-xs font-bold uppercase tracking-wider text-violet-700">Quizzes</p>
+            <p className="text-3xl font-extrabold mt-1">{stats.pending_quizzes ?? 0}</p>
+          </CardBody>
+        </Card>
+        <Card className="border-2 border-emerald-200 hover:shadow-md transition">
+          <CardBody className="text-center py-4">
+            <div className="text-3xl mb-1">🎯</div>
+            <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">Asistencia</p>
+            <p className="text-3xl font-extrabold mt-1">{stats.attendance_rate ?? 0}%</p>
+          </CardBody>
+        </Card>
+      </div>
+
+      {/* BANNER de eventos abiertos */}
+      {openEvents.length > 0 && (
+        <Card className={`mb-6 ${theme.accent} border-2 ${theme.border}`}>
+          <CardBody>
+            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+              <h3 className={`font-extrabold ${theme.text} flex items-center gap-2`}>
+                🎫 Eventos disponibles
+              </h3>
+              <Link href="/dashboard/student/events" className={`text-xs font-bold ${theme.text} hover:underline`}>
+                Ver todos →
+              </Link>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {openEvents.map((e: any) => (
+                <div key={e.id} className="bg-white p-3 rounded-xl border border-slate-200">
+                  <p className="font-bold text-sm mb-1 line-clamp-2">{e.title}</p>
+                  <p className="text-xs text-slate-500 mb-2">
+                    {e.starts_at_utc && new Date(e.starts_at_utc).toLocaleString("es", { weekday: "short", day: "numeric", month: "short", hour: "2-digit" })}
+                  </p>
+                  <p className="text-xs text-slate-600 mb-2">
+                    👨‍🏫 {e.teacher_name}
+                  </p>
+                  {e.i_am_registered ? (
+                    <Badge variant="success">✓ Anotado</Badge>
+                  ) : e.is_full ? (
+                    <Badge variant="danger">Lleno</Badge>
+                  ) : (
+                    <p className="text-xs font-semibold text-slate-700">{e.spots_left} cupos disponibles</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardBody>
+        </Card>
+      )}
+
+      {/* RUTA DEL CURSO */}
+      {progressData?.enrolled && progressData.modules?.length > 0 && (
+        <Card className="mb-6">
+          <CardBody>
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+              <h3 className="font-extrabold text-lg flex items-center gap-2">
+                🗺 Tu ruta en {levelCode}
+              </h3>
+              <Badge variant="brand">{progressData.progress_pct}% completado</Badge>
+            </div>
+
+            {/* Barra global de progreso */}
+            <div className="h-3 bg-slate-100 rounded-full overflow-hidden mb-4">
+              <div
+                className={`h-full ${theme.bg} transition-all`}
+                style={{ width: `${progressData.progress_pct}%` }}
+              />
+            </div>
+
+            {/* Módulos como camino */}
+            <div className="flex flex-wrap gap-2 mb-2">
+              {progressData.modules.map((m: any, i: number) => {
+                const completed = m.status === "completed";
+                const inProgress = m.status === "in_progress";
+                const locked = m.status === "locked";
+                return (
+                  <div key={m.id} className="flex items-center gap-2">
+                    <div
+                      title={m.name}
+                      className={`w-12 h-12 rounded-2xl flex items-center justify-center font-extrabold text-sm transition-all
+                        ${completed ? `${theme.bg} text-white shadow-md scale-100` : ""}
+                        ${inProgress ? `${theme.accent} ${theme.text} ring-4 ring-offset-2 ${theme.border} scale-110 animate-pulse` : ""}
+                        ${locked ? "bg-slate-100 text-slate-400" : ""}`}
+                    >
+                      {completed ? "✓" : inProgress ? "📍" : locked ? "🔒" : i + 1}
+                    </div>
+                    {i < progressData.modules.length - 1 && (
+                      <div className={`w-2 h-1 ${completed ? theme.bg : "bg-slate-200"} rounded-full`} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Detalle del módulo actual */}
+            {(() => {
+              const current = progressData.modules.find((m: any) => m.status === "in_progress");
+              if (current) {
+                return (
+                  <div className={`mt-4 p-4 ${theme.accent} rounded-xl`}>
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Estás aquí</p>
+                    <p className="font-bold">{current.name}</p>
+                    {current.description && <p className="text-sm text-slate-600 mt-1">{current.description}</p>}
+                  </div>
+                );
+              }
+              return null;
+            })()}
+          </CardBody>
+        </Card>
+      )}
+
       <div className="grid lg:grid-cols-2 gap-5">
+        {/* Última clase con notas del profe */}
+        {progressData?.last_class?.teacher_notes && (
+          <Card className="border-2 border-emerald-200 bg-emerald-50 lg:col-span-2">
+            <CardBody>
+              <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-2">📝 Nota del profesor de tu última clase</p>
+              <p className="font-bold mb-1">{progressData.last_class.title}</p>
+              <p className="text-sm text-slate-700 leading-relaxed">{progressData.last_class.teacher_notes}</p>
+            </CardBody>
+          </Card>
+        )}
+
+        {/* Próxima clase como tarjeta destacada */}
+        {progressData?.next_session && (
+          <Card className={`border-2 ${theme.border} lg:col-span-2`}>
+            <CardBody>
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className={`w-16 h-16 ${theme.bg} text-white rounded-2xl flex items-center justify-center text-3xl`}>
+                  ⏰
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-xs font-bold uppercase tracking-wider ${theme.text} mb-1`}>Próxima clase</p>
+                  <h3 className="font-extrabold text-lg">{progressData.next_session.title}</h3>
+                  <p className="text-sm text-slate-600">
+                    {progressData.next_session.starts_at_utc && new Date(progressData.next_session.starts_at_utc).toLocaleString("es", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
+                    {" · "}{progressData.next_session.teacher_name}
+                  </p>
+                </div>
+                {progressData.next_session.meeting_url && (
+                  <a href={progressData.next_session.meeting_url} target="_blank" rel="noopener noreferrer">
+                    <Button>Entrar a clase →</Button>
+                  </a>
+                )}
+              </div>
+              {progressData.next_session.teacher_notes && (
+                <div className="mt-4 p-3 bg-slate-50 rounded-lg">
+                  <p className="text-xs font-bold text-slate-500 mb-1">📌 NOTA DEL PROFESOR:</p>
+                  <p className="text-sm">{progressData.next_session.teacher_notes}</p>
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        )}
+
+        {/* Próximas clases (lista) */}
         <Card>
           <CardBody>
-            <h3 className="font-bold mb-4 flex items-center justify-between">
+            <h3 className="font-extrabold mb-4 flex items-center justify-between">
               <span>📅 Próximas clases</span>
-              <Link href="/dashboard/student/calendar" className="text-xs font-semibold text-brand-600 hover:text-brand-700">Ver todas →</Link>
+              <Link href="/dashboard/student/calendar" className={`text-xs font-bold ${theme.text} hover:underline`}>Ver todas →</Link>
             </h3>
             {next_classes.length === 0 ? (
-              <EmptyState icon="📅" title="Sin clases programadas" description="Cuando tu profesor agende una clase, aparecerá aquí." />
+              <EmptyState icon="📅" title="Sin clases programadas" description="Tu profesor pronto agendará clases." />
             ) : (
               <div className="space-y-2">
-                {next_classes.map((c: any) => (
-                  <div key={c.id} className="p-3 bg-slate-50 rounded-lg flex items-center gap-3">
-                    <div className="flex-1">
-                      <p className="font-semibold text-sm">{c.title}</p>
+                {next_classes.slice(0, 4).map((c: any) => (
+                  <div key={c.id} className="p-3 bg-slate-50 rounded-xl flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm">{c.title}</p>
                       <p className="text-xs text-slate-500">
-                        {c.starts_at_utc && new Date(c.starts_at_utc).toLocaleString("es", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                        {c.starts_at_utc && new Date(c.starts_at_utc).toLocaleString("es", { weekday: "short", day: "numeric", month: "short", hour: "2-digit" })}
                         {" · "}{c.teacher_name}
                       </p>
                     </div>
-                    <Badge variant={c.modality === "online" ? "brand" : c.modality === "presencial" ? "accent" : "info"}>
-                      {c.modality}
-                    </Badge>
-                    {c.meeting_url && (
-                      <a href={c.meeting_url} target="_blank" rel="noopener noreferrer">
-                        <Button size="sm">Entrar</Button>
-                      </a>
-                    )}
+                    <Badge variant={c.modality === "online" ? "brand" : c.modality === "presencial" ? "accent" : "info"}>{c.modality}</Badge>
                   </div>
                 ))}
               </div>
@@ -88,28 +276,25 @@ export default function StudentDashboard() {
           </CardBody>
         </Card>
 
+        {/* Mis cursos */}
         <Card>
           <CardBody>
-            <h3 className="font-bold mb-4 flex items-center justify-between">
+            <h3 className="font-extrabold mb-4 flex items-center justify-between">
               <span>📚 Mis cursos</span>
-              <Link href="/dashboard/student/courses" className="text-xs font-semibold text-brand-600 hover:text-brand-700">Ver todos →</Link>
+              <Link href="/dashboard/student/courses" className={`text-xs font-bold ${theme.text} hover:underline`}>Ver todos →</Link>
             </h3>
             {enrollments.length === 0 ? (
               <EmptyState
                 icon="📚"
-                title="Esperando asignación de curso"
-                description="Ya hiciste tu test de nivel. Un coordinador académico te asignará a un curso y profesor en breve."
+                title="Esperando asignación"
+                description="Ya hiciste tu test. Un coordinador te asignará curso y profe pronto."
               />
             ) : (
               <div className="space-y-2">
                 {enrollments.map((e: any) => (
-                  <div key={e.id} className="p-3 rounded-lg border border-slate-100 flex items-center gap-3"
-                       style={{ borderLeftColor: e.color, borderLeftWidth: 4 }}>
-                    <div className="flex-1">
-                      <p className="font-semibold text-sm">{e.course_name}</p>
-                      <p className="text-xs text-slate-500">Nivel {e.level_code} — {e.level_name}</p>
-                    </div>
-                    <Badge variant="brand">{e.level_code}</Badge>
+                  <div key={e.id} className={`p-3 rounded-xl border-2 ${theme.border} ${theme.bgSoft}`}>
+                    <p className="font-bold text-sm">{e.course_name}</p>
+                    <p className="text-xs text-slate-600 mt-1">Nivel {e.level_code} — {e.level_name}</p>
                   </div>
                 ))}
               </div>
@@ -117,11 +302,12 @@ export default function StudentDashboard() {
           </CardBody>
         </Card>
 
+        {/* Tarea próxima */}
         {d.next_assignment && (
-          <Card className="lg:col-span-2 border-amber-200 bg-amber-50">
-            <CardBody className="flex items-center gap-4">
+          <Card className="border-2 border-amber-300 bg-amber-50 lg:col-span-2">
+            <CardBody className="flex items-center gap-4 flex-wrap">
               <div className="text-3xl">⏰</div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <p className="text-xs font-bold text-amber-700 uppercase tracking-wider mb-1">Próxima tarea</p>
                 <p className="font-bold text-slate-900">{d.next_assignment.title}</p>
                 {d.next_assignment.due_at && (
@@ -137,6 +323,6 @@ export default function StudentDashboard() {
           </Card>
         )}
       </div>
-    </>
+    </div>
   );
 }

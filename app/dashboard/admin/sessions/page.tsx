@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { adminApi, adminHelpers, safeArray, safeObj } from "@/lib/api";
+import { adminApi, adminEdit, adminHelpers, safeArray, safeObj } from "@/lib/api";
 import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Input, Textarea, Select, Modal, SuccessBox, ConfirmModal, showToast } from "@/components/ui";
 
 export default function AdminSessionsPage() {
@@ -10,6 +10,31 @@ export default function AdminSessionsPage() {
   const [page, setPage] = useState(1);
   const [show, setShow] = useState(false);
   const [msg, setMsg] = useState("");
+  const [editing, setEditing] = useState<any>(null);
+  const [editForm, setEditForm] = useState({ title: "", description: "", meeting_url: "", teacher_notes: "" });
+  const [isEditPast, setIsEditPast] = useState(false);
+
+  const openEdit = (s: any) => {
+    setEditing(s);
+    const sStart = new Date(s.starts_at_utc);
+    setIsEditPast(sStart < new Date());
+    setEditForm({
+      title: s.title || "",
+      description: s.description || "",
+      meeting_url: s.meeting_url || "",
+      teacher_notes: s.teacher_notes || "",
+    });
+  };
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    try {
+      await adminEdit.updateSession(editing.id, editForm);
+      showToast("success", "Clase actualizada");
+      setEditing(null);
+      load();
+    } catch (e: any) { showToast("error", e.message); }
+  };
 
   // Form
   const [teachers, setTeachers] = useState<any[]>([]);
@@ -148,6 +173,7 @@ export default function AdminSessionsPage() {
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <Badge variant={s.modality === "online" ? "brand" : s.modality === "presencial" ? "accent" : "info"}>{s.modality}</Badge>
                       <Badge>{s.level_code}</Badge>
+                      {s.is_open_event && <Badge variant="warning">🎫 Evento</Badge>}
                       {s.status === "cancelled" && <Badge variant="danger">Cancelada</Badge>}
                     </div>
                     <p className="font-semibold">{s.title}</p>
@@ -156,6 +182,7 @@ export default function AdminSessionsPage() {
                       {" · "}{s.teacher_name}{" · "}{s.course_name}
                     </p>
                   </div>
+                  <Button variant="outline" size="sm" onClick={() => openEdit(s)}>Editar</Button>
                   {s.status !== "cancelled" && (
                     <Button variant="danger" size="sm" onClick={() => setConfirmCancelId(s.id)}>Cancelar</Button>
                   )}
@@ -253,6 +280,23 @@ export default function AdminSessionsPage() {
               Programar clase
             </Button>
           </div>
+        </div>
+      </Modal>
+
+      <Modal open={!!editing} onClose={() => setEditing(null)} title={`Editar: ${editing?.title || ""}`}>
+        <div className="space-y-3">
+          {isEditPast && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+              ⚠️ Esta clase ya pasó. Solo podés editar el título, descripción y notas.
+            </div>
+          )}
+          <Input label="Título" value={editForm.title} onChange={(e: any) => setEditForm({ ...editForm, title: e.target.value })} />
+          <Textarea label="Descripción" value={editForm.description} onChange={(e: any) => setEditForm({ ...editForm, description: e.target.value })} />
+          {!isEditPast && (
+            <Input label="URL meeting" value={editForm.meeting_url} onChange={(e: any) => setEditForm({ ...editForm, meeting_url: e.target.value })} />
+          )}
+          <Textarea label="Notas del profesor (post-clase)" value={editForm.teacher_notes} onChange={(e: any) => setEditForm({ ...editForm, teacher_notes: e.target.value })} placeholder="Repasen el verbo X. Próxima clase traer..." />
+          <Button onClick={saveEdit} className="w-full" size="lg">Guardar cambios</Button>
         </div>
       </Modal>
 
