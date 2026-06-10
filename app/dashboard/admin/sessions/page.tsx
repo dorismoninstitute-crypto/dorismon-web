@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { adminApi, adminEdit, adminHelpers, safeArray, safeObj } from "@/lib/api";
+import { adminApi, adminEdit, adminHelpers, adminContent, safeArray, safeObj } from "@/lib/api";
 import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Input, Textarea, Select, Modal, SuccessBox, ConfirmModal, showToast, MeetingUrlGuide, MeetingUrlInput } from "@/components/ui";
 
 export default function AdminSessionsPage() {
@@ -44,13 +44,14 @@ export default function AdminSessionsPage() {
   const [classrooms, setClassrooms] = useState<any[]>([]);
 
   const [form, setForm] = useState({
-    teacher_id: "", course_id: "", level_id: "",
+    teacher_id: "", course_id: "", level_id: "", module_id: "",
     title: "", description: "", modality: "online",
     starts_at: "", duration_min: 90,
     meeting_url: "", branch_id: "", classroom_id: "",
     capacity: 12,
     is_open_event: false,
   });
+  const [modules, setModules] = useState<any[]>([]);
 
   const load = () => {
     setLoading(true);
@@ -74,7 +75,8 @@ export default function AdminSessionsPage() {
 
   // Cargar niveles cuando cambia el curso
   const onCourseChange = async (course_id: string) => {
-    setForm({ ...form, course_id, level_id: "" });
+    setForm({ ...form, course_id, level_id: "", module_id: "" });
+    setModules([]);
     if (course_id) {
       try {
         const lvls = await adminHelpers.levelsByCourse(parseInt(course_id));
@@ -82,6 +84,21 @@ export default function AdminSessionsPage() {
       } catch {}
     } else {
       setLevels([]);
+    }
+  };
+
+  // V1.5: Cargar módulos al elegir nivel
+  const onLevelChange = async (level_id: string) => {
+    setForm({ ...form, level_id, module_id: "" });
+    if (level_id) {
+      try {
+        const mods = await adminContent.modules(parseInt(level_id));
+        setModules(safeArray(mods));
+      } catch {
+        setModules([]);
+      }
+    } else {
+      setModules([]);
     }
   };
 
@@ -115,6 +132,8 @@ export default function AdminSessionsPage() {
         capacity: form.capacity,
         is_open_event: form.is_open_event,
       };
+      // V1.5: vincular a módulo si fue seleccionado
+      if (form.module_id) body.module_id = parseInt(form.module_id);
       if (form.modality === "online" || form.modality === "hibrida") {
         body.meeting_url = form.meeting_url;
       }
@@ -126,12 +145,13 @@ export default function AdminSessionsPage() {
       setMsg("✓ Clase programada con éxito");
       setShow(false);
       setForm({
-        teacher_id: "", course_id: "", level_id: "",
+        teacher_id: "", course_id: "", level_id: "", module_id: "",
         title: "", description: "", modality: "online",
         starts_at: "", duration_min: 90,
         meeting_url: "", branch_id: "", classroom_id: "", capacity: 12,
         is_open_event: false,
       });
+      setModules([]);
       load();
     } catch (e: any) { setMsg("✗ " + e.message); }
   };
@@ -212,10 +232,21 @@ export default function AdminSessionsPage() {
             </Select>
           </div>
 
-          <Select label="Nivel *" value={form.level_id} onChange={(e: any) => setForm({ ...form, level_id: e.target.value })} disabled={!levels.length}>
+          <Select label="Nivel *" value={form.level_id} onChange={(e: any) => onLevelChange(e.target.value)} disabled={!levels.length}>
             <option value="">{levels.length ? "Seleccionar..." : "Seleccioná un curso primero"}</option>
             {levels.map(l => <option key={l.id} value={l.id}>{l.code} — {l.name}</option>)}
           </Select>
+
+          {/* V1.5: Vincular clase a módulo */}
+          <Select label="Módulo (opcional)" value={form.module_id} onChange={(e: any) => setForm({ ...form, module_id: e.target.value })} disabled={!modules.length}>
+            <option value="">{modules.length ? "Sin módulo específico" : "Seleccioná un nivel primero"}</option>
+            {modules.map((m: any) => <option key={m.id} value={m.id}>M{m.order_index || "?"}. {m.name}</option>)}
+          </Select>
+          {form.module_id && (
+            <p className="text-xs text-emerald-700 -mt-1">
+              ✓ Vinculá esta clase a un módulo para que el progreso del estudiante avance automáticamente al tomar asistencia.
+            </p>
+          )}
 
           <Input label="Título de la clase *" value={form.title} onChange={(e: any) => setForm({ ...form, title: e.target.value })} placeholder="ej: Present perfect" />
           <Textarea label="Descripción" value={form.description} onChange={(e: any) => setForm({ ...form, description: e.target.value })} placeholder="Qué se va a enseñar" />

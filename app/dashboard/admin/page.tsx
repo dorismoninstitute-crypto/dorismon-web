@@ -36,6 +36,54 @@ export default function AdminDashboard() {
     <>
       <PageHeader title="Panel administrativo" subtitle="Resumen ejecutivo de Dorismon" />
 
+      {/* V1.5.1: Banner asignación de profesores */}
+      {(stats.unassigned_students > 0 || stats.teachers_without_students > 0) && (
+        <Card className="mb-4 border-blue-200 bg-blue-50">
+          <CardBody>
+            <div className="flex items-start gap-3">
+              <div className="text-2xl flex-shrink-0">🔄</div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-blue-900 mb-1">Asignación de profesores</h3>
+                <p className="text-sm text-blue-800 mb-3">
+                  {stats.unassigned_students > 0 && (
+                    <span>
+                      <strong>{stats.unassigned_students}</strong> {stats.unassigned_students === 1 ? "estudiante" : "estudiantes"} sin profesor asignado.
+                    </span>
+                  )}
+                  {stats.unassigned_students > 0 && stats.teachers_without_students > 0 && " · "}
+                  {stats.teachers_without_students > 0 && (
+                    <span>
+                      <strong>{stats.teachers_without_students}</strong> {stats.teachers_without_students === 1 ? "profesor" : "profesores"} sin estudiantes.
+                    </span>
+                  )}
+                </p>
+                <div className="flex gap-2 flex-wrap">
+                  {stats.unassigned_students > 0 && (
+                    <Button size="sm" onClick={async () => {
+                      const adminAssign = (await import("@/lib/api")).adminAssign;
+                      const { showToast } = await import("@/components/ui");
+                      try {
+                        const r: any = await adminAssign.autoAssign();
+                        showToast("success", `${r.assigned} estudiantes auto-asignados. ${r.skipped} sin profe disponible.`);
+                        setTimeout(() => location.reload(), 1500);
+                      } catch (e: any) { showToast("error", e.message); }
+                    }}>
+                      🪄 Auto-asignar profesores
+                    </Button>
+                  )}
+                  <Link href="/dashboard/admin/enrollments">
+                    <Button size="sm" variant="outline">Asignar manualmente</Button>
+                  </Link>
+                  <Link href="/dashboard/admin/users?role=teacher">
+                    <Button size="sm" variant="outline">Configurar niveles de profes</Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      )}
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <StatCard label="Estudiantes" value={stats.total_students} icon="🎓" color="brand" />
         <StatCard label="Profesores" value={stats.total_teachers} icon="👨‍🏫" color="success" />

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { adminApi, adminEdit, adminPause, safeArray, safeObj, getLevelTheme } from "@/lib/api";
+import { adminApi, adminEdit, adminPause, adminTeacherLevels, safeArray, safeObj, getLevelTheme } from "@/lib/api";
 import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Input, Select, Modal, ConfirmModal, showToast } from "@/components/ui";
 
 export default function AdminUsersPage() {
@@ -14,6 +14,8 @@ export default function AdminUsersPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [pausing, setPausing] = useState<any>(null);
+  const [levelsEditing, setLevelsEditing] = useState<any>(null);
+  const [teacherLevels, setTeacherLevels] = useState<string[]>([]);
   const [confirmResume, setConfirmResume] = useState<any>(null);
 
   const [form, setForm] = useState({ email: "", password: "", full_name: "", phone: "", role: "student" });
@@ -73,6 +75,31 @@ export default function AdminUsersPage() {
       showToast("success", "Estudiante reactivado");
       setConfirmResume(null);
       load();
+    } catch (e: any) { showToast("error", e.message); }
+  };
+
+  // V1.5.1
+  const openLevels = async (u: any) => {
+    setLevelsEditing(u);
+    try {
+      const r: any = await adminTeacherLevels.get(u.id);
+      setTeacherLevels(r.levels || []);
+    } catch { setTeacherLevels([]); }
+  };
+
+  const toggleLevel = (code: string) => {
+    setTeacherLevels(teacherLevels.includes(code)
+      ? teacherLevels.filter(l => l !== code)
+      : [...teacherLevels, code]
+    );
+  };
+
+  const saveLevels = async () => {
+    if (!levelsEditing) return;
+    try {
+      await adminTeacherLevels.set(levelsEditing.id, teacherLevels);
+      showToast("success", `Niveles guardados para ${levelsEditing.full_name}`);
+      setLevelsEditing(null);
     } catch (e: any) { showToast("error", e.message); }
   };
 
@@ -136,6 +163,9 @@ export default function AdminUsersPage() {
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => openEdit(u)}>Editar</Button>
+                    {u.role === "teacher" && (
+                      <Button size="sm" variant="outline" onClick={() => openLevels(u)}>🎯 Niveles</Button>
+                    )}
                     {u.role === "student" && (
                       u.is_paused ? (
                         <Button size="sm" variant="primary" onClick={() => setConfirmResume(u)}>Reactivar</Button>
@@ -206,6 +236,39 @@ export default function AdminUsersPage() {
         confirmLabel="Sí, reactivar"
         confirmVariant="primary"
       />
+
+      {/* V1.5.1: Modal Niveles del profe */}
+      <Modal open={!!levelsEditing} onClose={() => setLevelsEditing(null)} title={`Niveles que enseña ${levelsEditing?.full_name || ""}`}>
+        <div className="space-y-3">
+          <p className="text-sm text-slate-600">
+            Marcá los niveles CEFR que este profesor puede dar. El sistema usará esta información para auto-asignar estudiantes nuevos.
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {["A1", "A2", "B1", "B2", "C1", "C2"].map(code => {
+              const isChecked = teacherLevels.includes(code);
+              const t = getLevelTheme(code);
+              return (
+                <button
+                  key={code}
+                  onClick={() => toggleLevel(code)}
+                  className={`p-3 rounded-xl border-2 font-extrabold text-lg transition ${
+                    isChecked
+                      ? `${t.bg} text-white ${t.border} shadow-md`
+                      : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
+                  }`}
+                >
+                  {code}
+                  {isChecked && <span className="block text-xs font-normal mt-1">✓ Marcado</span>}
+                </button>
+              );
+            })}
+          </div>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
+            💡 Si no marcás ningún nivel, el sistema considerará que el profe puede enseñar cualquier nivel.
+          </div>
+          <Button onClick={saveLevels} className="w-full" size="lg">Guardar niveles</Button>
+        </div>
+      </Modal>
     </>
   );
 }

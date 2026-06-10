@@ -285,6 +285,25 @@ export const adminPayments = {
   create: (body: any) => api("/admin/payments", { method: "POST", body, auth: true }),
 };
 
+
+
+// V1.5.1 — Niveles del profe + auto-asignación
+export const adminTeacherLevels = {
+  get: (teacherId: string) => api(`/admin/teachers/${teacherId}/levels`, { auth: true }),
+  set: (teacherId: string, levels: string[]) => api(`/admin/teachers/${teacherId}/levels`, { method: "PATCH", body: { levels }, auth: true }),
+  byLevel: (levelCode: string) => api(`/admin/teachers-by-level/${levelCode}`, { auth: true }),
+};
+export const adminAssign = {
+  unassignedStudents: () => api("/admin/unassigned-students", { auth: true }),
+  autoAssign: () => api("/admin/auto-assign-teachers", { method: "POST", auth: true }),
+};
+
+// V1.5 — Mis estudiantes (profe)
+export const teacherStudents = {
+  mine: () => api("/teacher/my-students", { auth: true }),
+  byLevel: () => api("/teacher/my-students-by-level", { auth: true }),
+};
+
 // V1.4 — Validador de URL meeting
 export const meetingValidator = {
   validate: (url: string) => api("/admin/validate-meeting-url", { method: "POST", body: { url }, auth: true }),

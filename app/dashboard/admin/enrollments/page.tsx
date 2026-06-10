@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { adminApi, adminEdit, adminHelpers, adminPlans, safeArray } from "@/lib/api";
+import { adminApi, adminEdit, adminHelpers, adminPlans, adminTeacherLevels, adminAssign, safeArray } from "@/lib/api";
 import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Select, Modal, ConfirmModal, showToast } from "@/components/ui";
 
 export default function AdminEnrollmentsPage() {
@@ -16,6 +16,8 @@ export default function AdminEnrollmentsPage() {
   const [courses, setCourses] = useState<any[]>([]);
   const [levels, setLevels] = useState<any[]>([]);
   const [plans, setPlans] = useState<any[]>([]);
+  const [suggestedTeachers, setSuggestedTeachers] = useState<any[]>([]);
+  const [filter, setFilter] = useState<"all" | "noteacher" | "active">("all");
 
   const [form, setForm] = useState({
     student_id: "", course_id: "", level_id: "", teacher_id: "", plan_id: "",
@@ -61,10 +63,24 @@ export default function AdminEnrollmentsPage() {
   };
 
   const onCourseChange = async (course_id: string) => {
-    setForm({ ...form, course_id, level_id: "" });
+    setForm({ ...form, course_id, level_id: "", teacher_id: "" });
+    setSuggestedTeachers([]);
     if (course_id) {
       try { setLevels(safeArray(await adminHelpers.levelsByCourse(parseInt(course_id)))); } catch {}
     } else { setLevels([]); }
+  };
+
+  // V1.5.1: Cargar profes sugeridos cuando cambia el nivel
+  const onLevelChange = async (level_id: string) => {
+    setForm({ ...form, level_id, teacher_id: "" });
+    setSuggestedTeachers([]);
+    if (!level_id) return;
+    const lvl = levels.find((l: any) => String(l.id) === String(level_id));
+    if (!lvl) return;
+    try {
+      const r: any[] = safeArray(await adminTeacherLevels.byLevel((lvl as any).code));
+      setSuggestedTeachers(r);
+    } catch {}
   };
 
   const create = async () => {
@@ -117,11 +133,42 @@ export default function AdminEnrollmentsPage() {
         action={<Button onClick={openCreate}>+ Inscribir estudiante</Button>}
       />
 
-      {items.length === 0 ? <EmptyState icon="📋" title="Sin inscripciones" /> : (
+      {/* V1.5.1: Filtros + acción auto-asignar */}
+      <Card className="mb-4">
+        <CardBody className="flex gap-2 items-center flex-wrap">
+          <Button size="sm" variant={filter === "all" ? "primary" : "outline"} onClick={() => setFilter("all")}>
+            Todas
+          </Button>
+          <Button size="sm" variant={filter === "noteacher" ? "primary" : "outline"} onClick={() => setFilter("noteacher")}>
+            🔍 Sin profesor ({items.filter((e: any) => !e.teacher_id && e.is_active).length})
+          </Button>
+          <Button size="sm" variant={filter === "active" ? "primary" : "outline"} onClick={() => setFilter("active")}>
+            ✅ Activas
+          </Button>
+          <div className="flex-1" />
+          <Button size="sm" variant="outline" onClick={async () => {
+            try {
+              const r: any = await adminAssign.autoAssign();
+              showToast("success", `${r.assigned} estudiantes auto-asignados. ${r.skipped} sin profe disponible.`);
+              load();
+            } catch (e: any) { showToast("error", e.message); }
+          }}>
+            🪄 Auto-asignar todos
+          </Button>
+        </CardBody>
+      </Card>
+
+      {(() => {
+        const filtered = items.filter((e: any) => {
+          if (filter === "noteacher") return !e.teacher_id && e.is_active;
+          if (filter === "active") return e.is_active;
+          return true;
+        });
+        return filtered.length === 0 ? <EmptyState icon="📋" title="Sin inscripciones" /> : (
         <Card>
           <CardBody className="p-0">
             <div className="divide-y divide-slate-100">
-              {items.map((e: any) => (
+              {filtered.map((e: any) => (
                 <div key={e.id} className="p-4 flex items-center gap-3 flex-wrap">
                   <div className="flex-1 min-w-0">
                     <p className="font-bold">{e.student_name}</p>
@@ -140,7 +187,8 @@ export default function AdminEnrollmentsPage() {
             </div>
           </CardBody>
         </Card>
-      )}
+        );
+      })()}
 
       {/* Crear */}
       <Modal open={show} onClose={() => setShow(false)} title="Inscribir estudiante" size="lg">
@@ -153,14 +201,40 @@ export default function AdminEnrollmentsPage() {
             <option value="">Seleccionar...</option>
             {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </Select>
-          <Select label="Nivel *" value={form.level_id} onChange={(e: any) => setForm({ ...form, level_id: e.target.value })} disabled={!levels.length}>
+          <Select label="Nivel *" value={form.level_id} onChange={(e: any) => onLevelChange(e.target.value)} disabled={!levels.length}>
             <option value="">{levels.length ? "Seleccionar..." : "Curso primero"}</option>
             {levels.map(l => <option key={l.id} value={l.id}>{l.code} — {l.name}</option>)}
           </Select>
-          <Select label="Profesor (opcional)" value={form.teacher_id} onChange={(e: any) => setForm({ ...form, teacher_id: e.target.value })}>
-            <option value="">Sin asignar</option>
-            {teachers.map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
-          </Select>
+
+          {/* V1.5.1: Profesor con sugerencias por nivel */}
+          {form.level_id && suggestedTeachers.length > 0 ? (
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">
+                Profesor (sugerido por nivel)
+              </label>
+              <select
+                value={form.teacher_id}
+                onChange={(e: any) => setForm({ ...form, teacher_id: e.target.value })}
+                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-brand-500"
+              >
+                <option value="">🪄 Auto-asignar (al menos cargado)</option>
+                {suggestedTeachers.map(t => (
+                  <option key={t.teacher_id} value={t.teacher_id}>
+                    {t.full_name} — {t.student_count_this_level} en este nivel ({t.total_students} total)
+                    {t.teaches_explicit ? " ✓" : ""}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-slate-500 mt-1">
+                💡 Si dejás "Auto-asignar", el sistema elegirá el profe con menos carga.
+              </p>
+            </div>
+          ) : (
+            <Select label="Profesor (opcional)" value={form.teacher_id} onChange={(e: any) => setForm({ ...form, teacher_id: e.target.value })}>
+              <option value="">Sin asignar / Auto-asignar al guardar</option>
+              {teachers.map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
+            </Select>
+          )}
           <Select label="Plan (opcional)" value={form.plan_id} onChange={(e: any) => setForm({ ...form, plan_id: e.target.value })}>
             <option value="">Sin plan asignado</option>
             {plans.map(p => <option key={p.id} value={p.id}>{p.name} - ${parseFloat(p.price).toFixed(2)}/mes</option>)}

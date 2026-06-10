@@ -22,6 +22,7 @@ const studentItems = [
 ];
 const teacherItems = [
   { href: "/dashboard/teacher", label: "Inicio", icon: "🏠" },
+  { href: "/dashboard/teacher/students", label: "Mis estudiantes", icon: "👥" },
   { href: "/dashboard/teacher/sessions", label: "Mis clases", icon: "🗓" },
   { href: "/dashboard/teacher/assignments", label: "Tareas", icon: "📝" },
   { href: "/dashboard/teacher/quizzes", label: "Quizzes", icon: "✓" },

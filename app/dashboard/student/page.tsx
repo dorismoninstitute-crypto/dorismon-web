@@ -57,24 +57,37 @@ export default function StudentDashboard() {
 
   return (
     <div className={`-m-3 md:-m-8 p-3 md:p-8 min-h-screen ${theme.bgSoft}`}>
-      {/* V1.4.1: Hero rediseñado — drop-shadow para legibilidad + responsive móvil */}
-      <div className={`${theme.bg} rounded-2xl md:rounded-3xl p-5 md:p-8 mb-5 shadow-xl relative overflow-hidden`}>
-        <div className="absolute -top-12 -right-12 w-40 h-40 md:w-48 md:h-48 bg-white/15 rounded-full"></div>
-        <div className="absolute -bottom-8 -left-8 w-28 h-28 md:w-32 md:h-32 bg-white/15 rounded-full"></div>
+      {/* V1.5: Hero rediseñado — fondo OSCURO uniforme + badge del nivel en color */}
+      <div className="bg-slate-900 rounded-2xl md:rounded-3xl p-5 md:p-8 mb-5 shadow-xl relative overflow-hidden">
+        <div className="absolute -top-12 -right-12 w-40 h-40 md:w-48 md:h-48 bg-white/5 rounded-full"></div>
+        <div className="absolute -bottom-8 -left-8 w-28 h-28 md:w-32 md:h-32 bg-white/5 rounded-full"></div>
         <div className="relative">
-          <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-white mb-1" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.4)" }}>
+          <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">
             Bienvenido de vuelta
           </p>
-          <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight mb-2 text-white" style={{ textShadow: "0 2px 4px rgba(0,0,0,0.4)" }}>
-            ¡Hola, {firstName}! 👋
-          </h1>
+          <div className="flex items-center gap-3 flex-wrap mb-2">
+            <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight text-white">
+              ¡Hola, {firstName}! 👋
+            </h1>
+            {levelCode && (
+              <span className={`inline-flex items-center px-3 py-1.5 rounded-xl ${theme.bg} text-white font-extrabold text-sm md:text-base shadow-lg`}>
+                {levelCode}
+              </span>
+            )}
+          </div>
           {progressData?.enrolled ? (
-            <p className="text-white text-xs md:text-base font-semibold" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.4)" }}>
-              Estás en <strong>{progressData.course_name}</strong> · Nivel {levelCode} · {progressData.completed_modules}/{progressData.total_modules} módulos completados
+            <p className="text-slate-300 text-xs md:text-base">
+              Estás en <strong className="text-white">{progressData.course_name}</strong> · {progressData.completed_modules}/{progressData.total_modules} módulos completados
             </p>
           ) : (
-            <p className="text-white text-xs md:text-base font-semibold" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.4)" }}>
-              Tu nivel asignado es <strong>{levelCode}</strong>. Esperando inscripción a un curso.
+            <p className="text-slate-300 text-xs md:text-base">
+              Esperando inscripción a un curso.
+            </p>
+          )}
+          {/* V1.5: profe titular */}
+          {enrollments.length > 0 && enrollments[0]?.teacher_name && (
+            <p className="text-slate-400 text-xs md:text-sm mt-2">
+              👨‍🏫 Profesor: <strong className="text-slate-200">{enrollments[0].teacher_name}</strong>
             </p>
           )}
         </div>
