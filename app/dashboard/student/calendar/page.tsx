@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { studentApi, safeArray } from "@/lib/api";
-import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button } from "@/components/ui";
+import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, CalendarButton, JoinClassButton } from "@/components/ui";
 
 export default function CalendarPage() {
   const [events, setEvents] = useState<any[]>([]);
@@ -52,10 +52,11 @@ export default function CalendarPage() {
                           {e.starts_at && new Date(e.starts_at).toLocaleString("es", { hour: "2-digit", minute: "2-digit" })}
                         </p>
                       </div>
-                      {e.meeting_url && (
-                        <a href={e.meeting_url} target="_blank" rel="noopener noreferrer">
-                          <Button size="sm">Entrar</Button>
-                        </a>
+                      {e.type === "class" && (
+                        <div className="flex flex-col gap-2">
+                          {e.meeting_url && <JoinClassButton session={{ id: e.id, meeting_url: e.meeting_url }} />}
+                          {e.id && <CalendarButton sessionId={e.id} />}
+                        </div>
                       )}
                     </CardBody>
                   </Card>

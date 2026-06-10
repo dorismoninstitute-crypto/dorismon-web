@@ -56,9 +56,10 @@ export default function PlacementTestPage() {
     setSubmitting(true);
     try {
       const body = {
-        answers: Object.keys(answers).map(qid => ({
-          question_id: parseInt(qid),
-          selected_option: answers[parseInt(qid)],
+        answers: questions.map(q => ({
+          question_id: q.id,
+          selected_option: answers[q.id] || "",
+          option_map: q._option_map || null, // V1.4: mapeo de letras mezcladas
         })),
       };
       const r = await placement.submit(body);
@@ -114,21 +115,22 @@ export default function PlacementTestPage() {
   // RESULTADO
   if (step === "result" && result) {
     const levelColors: any = {
-      A1: "from-emerald-500 to-emerald-700",
-      A2: "from-teal-500 to-teal-700",
-      B1: "from-brand-500 to-brand-700",
-      B2: "from-purple-500 to-purple-700",
-      C1: "from-orange-500 to-orange-700",
+      A1: "from-pink-500 to-pink-700",
+      A2: "from-amber-500 to-amber-700",
+      B1: "from-violet-500 to-violet-700",
+      B2: "from-teal-500 to-teal-700",
+      C1: "from-blue-700 to-blue-900",
     };
     const code = result.suggested_level_code;
+    const breakdown = result.skill_breakdown || {};
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50">
         <Card className="max-w-2xl w-full overflow-hidden">
-          <div className={`bg-gradient-to-br ${levelColors[code] || "from-brand-500 to-brand-700"} text-white p-10 text-center`}>
+          <div className={`bg-gradient-to-br ${levelColors[code] || "from-violet-500 to-violet-700"} text-white p-10 text-center`}>
             <div className="text-6xl mb-2">🎉</div>
-            <p className="text-sm font-bold uppercase tracking-widest opacity-80 mb-2">Tu nivel asignado</p>
+            <p className="text-sm font-bold uppercase tracking-widest text-white mb-2">Tu nivel asignado</p>
             <h1 className="text-6xl font-bold tracking-tighter mb-2">{code}</h1>
-            <p className="text-xl font-semibold opacity-90">{result.suggested_level_name}</p>
+            <p className="text-xl font-semibold text-white">{result.suggested_level_name}</p>
           </div>
           <CardBody className="py-8">
             <div className="grid grid-cols-2 gap-4 mb-6 text-center">
@@ -142,28 +144,44 @@ export default function PlacementTestPage() {
               </div>
             </div>
 
+            {/* V1.4: Honestidad sobre destrezas evaluadas */}
             <div className="mb-6">
-              <h3 className="font-bold mb-3 text-sm uppercase text-slate-500 tracking-wider">Desempeño por nivel</h3>
+              <h3 className="font-bold mb-3 text-sm uppercase text-slate-500 tracking-wider">Destrezas evaluadas</h3>
               <div className="space-y-2">
-                {Object.entries(result.level_breakdown || {}).map(([lvl, d]: any) => (
-                  <div key={lvl} className="flex items-center gap-3">
-                    <span className="w-10 font-bold text-sm">{lvl}</span>
+                {[
+                  { key: "grammar", label: "Grammar", value: breakdown.grammar },
+                  { key: "reading", label: "Reading Comprehension", value: breakdown.reading },
+                  { key: "use_of_english", label: "Use of English", value: breakdown.use_of_english },
+                ].map(d => (
+                  <div key={d.key} className="flex items-center gap-3">
+                    <span className="text-sm w-40 font-semibold">{d.label}</span>
                     <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-brand-600"
-                        style={{ width: `${(d.correct / (d.total || 1)) * 100}%` }}
+                        className="h-full bg-brand-600 transition-all"
+                        style={{ width: `${d.value || 0}%` }}
                       />
                     </div>
-                    <span className="text-xs text-slate-500 w-12 text-right">{d.correct}/{d.total}</span>
+                    <span className="text-xs text-slate-600 w-12 text-right font-bold">
+                      {d.value !== null && d.value !== undefined ? `${Math.round(d.value)}%` : "—"}
+                    </span>
                   </div>
                 ))}
               </div>
             </div>
 
-            <p className="text-sm text-slate-600 mb-6 leading-relaxed">
-              Tu nivel sugerido es <strong>{code} — {result.suggested_level_name}</strong>.
-              Un coordinador académico te asignará un profesor y comenzarás tu plan de estudio personalizado.
-            </p>
+            {/* V1.4: Aviso sobre Listening/Speaking/Writing */}
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+              <p className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-2">📝 Próximo paso: entrevista con coordinador</p>
+              <p className="text-sm text-amber-900 leading-relaxed">
+                Las destrezas de <strong>Listening</strong> (comprensión auditiva),
+                <strong> Speaking</strong> (expresión oral) y <strong>Writing</strong> (producción escrita)
+                se evaluarán en una breve entrevista con un coordinador, quien también confirmará tu nivel
+                final y te asignará a un grupo.
+              </p>
+              <p className="text-xs text-amber-700 mt-2">
+                Te contactaremos en las próximas 24-48 horas.
+              </p>
+            </div>
 
             <Button onClick={() => router.push("/dashboard/student")} size="lg" className="w-full">
               Ir a mi dashboard →

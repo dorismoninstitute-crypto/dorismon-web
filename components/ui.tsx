@@ -312,3 +312,116 @@ export function ToastContainer() {
     </div>
   );
 }
+
+
+// V1.4 — Botón "Agregar al calendario" con dropdown Google Calendar + .ics
+export function CalendarButton({ sessionId }: { sessionId: string }) {
+  const [open, setOpen] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
+
+  const addToGoogle = async () => {
+    setLoading(true);
+    try {
+      const { calendarApi } = await import("@/lib/api");
+      const r: any = await calendarApi.googleLink(sessionId);
+      if (r.url) window.open(r.url, "_blank");
+    } catch (e: any) {
+      showToast("error", e.message);
+    } finally {
+      setLoading(false);
+      setOpen(false);
+    }
+  };
+
+  const downloadIcs = async () => {
+    setLoading(true);
+    try {
+      // Para descargar .ics, necesitamos enviar el token de auth → fetch + blob
+      const base = (typeof window !== "undefined") ? localStorage.getItem("api_base") || (process.env.NEXT_PUBLIC_API_URL || "") : "";
+      const token = localStorage.getItem("access_token");
+      const url = `${base}/calendar/session/${sessionId}.ics`;
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error("No se pudo descargar el calendario");
+      const blob = await res.blob();
+      const downloadUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = `dorismon-clase-${sessionId.slice(0, 8)}.ics`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(downloadUrl);
+    } catch (e: any) {
+      showToast("error", e.message);
+    } finally {
+      setLoading(false);
+      setOpen(false);
+    }
+  };
+
+  return (
+    <div className="relative inline-block">
+      <button
+        onClick={() => setOpen(!open)}
+        disabled={loading}
+        className="px-3 py-1.5 text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition"
+      >
+        📅 Agregar al calendario {open ? "▲" : "▼"}
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 mt-1 w-56 bg-white border border-slate-200 rounded-lg shadow-lg z-40 overflow-hidden">
+            <button onClick={addToGoogle} className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 flex items-center gap-2">
+              <span>🟦</span> Google Calendar
+            </button>
+            <button onClick={downloadIcs} className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 flex items-center gap-2">
+              <span>📄</span> Apple / Outlook (.ics)
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+
+// V1.4 — Pantalla intermedia "Entrar a la clase"
+export function JoinClassButton({ session }: { session: any }) {
+  const [joining, setJoining] = React.useState(false);
+
+  const join = () => {
+    if (!session.meeting_url) {
+      showToast("error", "Esta clase no tiene link de meeting configurado");
+      return;
+    }
+    setJoining(true);
+    // Pequeña pausa para que se vea el toast informativo
+    showToast("info", "Abriendo la clase. Si Meet pide permiso, esperá a que el profesor te apruebe.");
+    setTimeout(() => {
+      window.open(session.meeting_url, "_blank", "noopener,noreferrer");
+      setJoining(false);
+    }, 800);
+  };
+
+  return (
+    <Button onClick={join} loading={joining}>
+      🎥 Entrar a la clase →
+    </Button>
+  );
+}
+
+
+// V1.4 — Banner-guía para crear links Meet/Zoom correctamente
+export function MeetingUrlGuide() {
+  return (
+    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs">
+      <p className="font-bold text-blue-900 mb-1">📌 Cómo crear el link correcto:</p>
+      <ul className="text-blue-800 space-y-1">
+        <li><strong>Google Meet:</strong> creá el evento desde Google Calendar y agregá videollamada (no uses meet.google.com directo, esos links piden permiso).</li>
+        <li><strong>Zoom:</strong> programá la reunión desde la app y copiá el link de invitación.</li>
+        <li><strong>Teams:</strong> creá la reunión desde Microsoft Teams y copiá el link.</li>
+      </ul>
+    </div>
+  );
+}

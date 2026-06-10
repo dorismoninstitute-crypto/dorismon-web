@@ -14,6 +14,7 @@ const studentItems = [
   { href: "/dashboard/student/quizzes", label: "Quizzes", icon: "✓" },
   { href: "/dashboard/student/events", label: "Eventos", icon: "🎫" },
   { href: "/dashboard/student/library", label: "Biblioteca", icon: "📖" },
+  { href: "/dashboard/student/my-placement", label: "Mi nivel", icon: "🎯" },
   { href: "/dashboard/student/transcript", label: "Expediente", icon: "📊" },
   { href: "/dashboard/student/certificates", label: "Certificados", icon: "🎓" },
   { href: "/dashboard/student/notifications", label: "Notificaciones", icon: "🔔" },
@@ -30,7 +31,9 @@ const teacherItems = [
 const adminItems = [
   { href: "/dashboard/admin", label: "Dashboard", icon: "📊" },
   { href: "/dashboard/admin/users", label: "Usuarios", icon: "👥" },
+  { href: "/dashboard/admin/placement-results", label: "Placement", icon: "🎯" },
   { href: "/dashboard/admin/courses", label: "Cursos", icon: "📚" },
+  { href: "/dashboard/admin/content", label: "Contenido", icon: "📖" },
   { href: "/dashboard/admin/sessions", label: "Clases", icon: "🗓" },
   { href: "/dashboard/admin/events", label: "Eventos", icon: "🎫" },
   { href: "/dashboard/admin/enrollments", label: "Inscripciones", icon: "📋" },

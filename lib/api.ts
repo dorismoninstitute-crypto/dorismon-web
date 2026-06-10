@@ -249,19 +249,56 @@ export const teacherNotes = {
   save: (sessionId: string, notes: string) => api(`/teacher/sessions/${sessionId}/notes`, { method: "POST", body: { notes }, auth: true }),
 };
 
-// V1.3 — Helper colores por nivel CEFR
-export const levelColors: Record<string, { bg: string; border: string; text: string; bgSoft: string; accent: string }> = {
-  A1: { bg: "bg-pink-500", border: "border-pink-500", text: "text-pink-700", bgSoft: "bg-pink-50", accent: "bg-pink-100" },
-  A2: { bg: "bg-amber-500", border: "border-amber-500", text: "text-amber-700", bgSoft: "bg-amber-50", accent: "bg-amber-100" },
-  B1: { bg: "bg-violet-500", border: "border-violet-500", text: "text-violet-700", bgSoft: "bg-violet-50", accent: "bg-violet-100" },
-  B2: { bg: "bg-teal-500", border: "border-teal-500", text: "text-teal-700", bgSoft: "bg-teal-50", accent: "bg-teal-100" },
-  C1: { bg: "bg-blue-600", border: "border-blue-600", text: "text-blue-700", bgSoft: "bg-blue-50", accent: "bg-blue-100" },
-  C2: { bg: "bg-stone-700", border: "border-stone-700", text: "text-stone-700", bgSoft: "bg-stone-50", accent: "bg-stone-100" },
+// V1.3 — Helper colores por nivel CEFR (V1.4: heroText para contraste correcto en C1/C2)
+export const levelColors: Record<string, { bg: string; border: string; text: string; bgSoft: string; accent: string; heroText: string; heroSubtext: string }> = {
+  A1: { bg: "bg-pink-500", border: "border-pink-500", text: "text-pink-700", bgSoft: "bg-pink-50", accent: "bg-pink-100", heroText: "text-white", heroSubtext: "text-white/90" },
+  A2: { bg: "bg-amber-500", border: "border-amber-500", text: "text-amber-700", bgSoft: "bg-amber-50", accent: "bg-amber-100", heroText: "text-white", heroSubtext: "text-white/90" },
+  B1: { bg: "bg-violet-500", border: "border-violet-500", text: "text-violet-700", bgSoft: "bg-violet-50", accent: "bg-violet-100", heroText: "text-white", heroSubtext: "text-white/90" },
+  B2: { bg: "bg-teal-500", border: "border-teal-500", text: "text-teal-700", bgSoft: "bg-teal-50", accent: "bg-teal-100", heroText: "text-white", heroSubtext: "text-white/90" },
+  // V1.4: C1 y C2 son fondos OSCUROS — usar blanco puro (no /90 que se ve tenue)
+  C1: { bg: "bg-blue-700", border: "border-blue-700", text: "text-blue-700", bgSoft: "bg-blue-50", accent: "bg-blue-100", heroText: "text-white", heroSubtext: "text-white" },
+  C2: { bg: "bg-stone-800", border: "border-stone-800", text: "text-stone-700", bgSoft: "bg-stone-50", accent: "bg-stone-100", heroText: "text-white", heroSubtext: "text-white" },
 };
 
 export function getLevelTheme(code: string | null | undefined) {
   return levelColors[code || ""] || levelColors["B1"];
 }
+
+
+
+// V1.4 — Placement results admin
+export const adminPlacement = {
+  list: (status?: string) => api(`/admin/placement-results${status ? "?status=" + status : ""}`, { auth: true }),
+  detail: (testId: string) => api(`/admin/placement-results/${testId}`, { auth: true }),
+};
+
+// V1.4 — Módulos y lecciones (admin)
+export const adminContent = {
+  modules: (levelId: number) => api(`/admin/levels/${levelId}/modules`, { auth: true }),
+  createModule: (body: any) => api(`/admin/modules`, { method: "POST", body, auth: true }),
+  lessons: (moduleId: number) => api(`/admin/modules/${moduleId}/lessons`, { auth: true }),
+  createLesson: (body: any) => api(`/admin/lessons`, { method: "POST", body, auth: true }),
+};
+
+// V1.4 — Pagos manuales
+export const adminPayments = {
+  list: () => api("/admin/payments", { auth: true }),
+  create: (body: any) => api("/admin/payments", { method: "POST", body, auth: true }),
+};
+
+// V1.4 — Validador de URL meeting
+export const meetingValidator = {
+  validate: (url: string) => api("/admin/validate-meeting-url", { method: "POST", body: { url }, auth: true }),
+};
+
+// V1.4 — Calendar
+export const calendarApi = {
+  googleLink: (sessionId: string) => api(`/calendar/session/${sessionId}/google-link`, { auth: true }),
+  icsUrl: (sessionId: string) => {
+    const base = (typeof window !== "undefined" ? (window as any).__API_BASE__ : "") || process.env.NEXT_PUBLIC_API_URL || "";
+    return `${base}/calendar/session/${sessionId}.ics`;
+  },
+};
 
 
 export function safeArray<T = any>(v: any): T[] { return Array.isArray(v) ? v : []; }

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { adminApi, adminEdit, adminPause, safeArray, safeObj } from "@/lib/api";
+import { adminApi, adminEdit, adminPause, safeArray, safeObj, getLevelTheme } from "@/lib/api";
 import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Input, Select, Modal, ConfirmModal, showToast } from "@/components/ui";
 
 export default function AdminUsersPage() {
@@ -117,6 +117,18 @@ export default function AdminUsersPage() {
                       <Badge variant={u.role === "super_admin" ? "danger" : u.role === "teacher" ? "brand" : "success"}>
                         {u.role === "super_admin" ? "Admin" : u.role === "teacher" ? "Profe" : "Estudiante"}
                       </Badge>
+                      {/* V1.4: badge de nivel CEFR para estudiantes */}
+                      {u.role === "student" && u.level_code && (() => {
+                        const t = getLevelTheme(u.level_code);
+                        return (
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold ${t.bg} ${t.heroText}`}>
+                            {u.level_code}
+                          </span>
+                        );
+                      })()}
+                      {u.role === "student" && !u.placement_done && (
+                        <Badge variant="warning">⏳ Sin test</Badge>
+                      )}
                       {u.is_paused && <Badge variant="warning">⏸ Pausado</Badge>}
                       {!u.is_active && <Badge variant="danger">Inactivo</Badge>}
                     </div>

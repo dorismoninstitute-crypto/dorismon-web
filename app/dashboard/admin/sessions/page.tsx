@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { adminApi, adminEdit, adminHelpers, safeArray, safeObj } from "@/lib/api";
-import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Input, Textarea, Select, Modal, SuccessBox, ConfirmModal, showToast } from "@/components/ui";
+import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Input, Textarea, Select, Modal, SuccessBox, ConfirmModal, showToast, MeetingUrlGuide } from "@/components/ui";
 
 export default function AdminSessionsPage() {
   const [items, setItems] = useState<any[]>([]);
@@ -232,12 +232,15 @@ export default function AdminSessionsPage() {
           </div>
 
           {(form.modality === "online" || form.modality === "hibrida") && (
-            <Input
-              label={`URL de Zoom/Meet/Teams ${form.modality === "online" ? "*" : "(híbrida *)"}`}
-              value={form.meeting_url}
-              onChange={(e: any) => setForm({ ...form, meeting_url: e.target.value })}
-              placeholder="https://meet.google.com/..."
-            />
+            <div className="space-y-2">
+              <Input
+                label={`URL de Zoom/Meet/Teams ${form.modality === "online" ? "*" : "(híbrida *)"}`}
+                value={form.meeting_url}
+                onChange={(e: any) => setForm({ ...form, meeting_url: e.target.value })}
+                placeholder="https://meet.google.com/..."
+              />
+              <MeetingUrlGuide />
+            </div>
           )}
 
           {(form.modality === "presencial" || form.modality === "hibrida") && (

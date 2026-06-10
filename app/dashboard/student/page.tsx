@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { studentApi, placement, progress, events, safeArray, safeObj, getLevelTheme } from "@/lib/api";
-import { LoadingScreen, ErrorBox, EmptyState, Card, CardBody, Badge, Button, showToast } from "@/components/ui";
+import { LoadingScreen, ErrorBox, EmptyState, Card, CardBody, Badge, Button, showToast, CalendarButton, JoinClassButton } from "@/components/ui";
 
 export default function StudentDashboard() {
   const router = useRouter();
@@ -58,21 +58,43 @@ export default function StudentDashboard() {
   return (
     <div className={`-m-4 md:-m-8 p-4 md:p-8 min-h-screen ${theme.bgSoft}`}>
       {/* Hero con nivel del estudiante */}
-      <div className={`${theme.bg} text-white rounded-3xl p-6 md:p-8 mb-6 shadow-xl relative overflow-hidden`}>
+      <div className={`${theme.bg} ${theme.heroText} rounded-3xl p-6 md:p-8 mb-6 shadow-xl relative overflow-hidden`}>
         <div className="absolute -top-12 -right-12 w-48 h-48 bg-white/10 rounded-full"></div>
         <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-white/10 rounded-full"></div>
         <div className="relative">
-          <p className="text-xs font-bold uppercase tracking-widest opacity-90 mb-1">Bienvenido de vuelta</p>
+          <p className={`text-xs font-bold uppercase tracking-widest ${theme.heroSubtext} mb-1`}>Bienvenido de vuelta</p>
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">¡Hola, {firstName}! 👋</h1>
           {progressData?.enrolled ? (
-            <p className="text-white/90 text-sm md:text-base">
+            <p className={`${theme.heroSubtext} text-sm md:text-base`}>
               Estás en <strong>{progressData.course_name}</strong> · Nivel {levelCode} · {progressData.completed_modules}/{progressData.total_modules} módulos completados
             </p>
           ) : (
-            <p className="text-white/90 text-sm">Tu nivel asignado es <strong>{levelCode}</strong>. Esperando inscripción a un curso.</p>
+            <p className={`${theme.heroSubtext} text-sm`}>Tu nivel asignado es <strong>{levelCode}</strong>. Esperando inscripción a un curso.</p>
           )}
         </div>
       </div>
+
+      {/* V1.4: Banner "esperando coordinador" si no tiene inscripción activa */}
+      {!progressData?.enrolled && (
+        <Card className="mb-6 border-2 border-amber-300 bg-amber-50">
+          <CardBody>
+            <div className="flex items-start gap-3">
+              <div className="text-3xl flex-shrink-0">⏳</div>
+              <div className="flex-1">
+                <h3 className="font-extrabold text-amber-900 text-lg mb-1">Esperando asignación de coordinador</h3>
+                <p className="text-sm text-amber-800 leading-relaxed">
+                  Ya completaste tu test de nivel ({levelCode}). En las próximas 24-48 horas un coordinador
+                  te contactará para confirmar tu nivel mediante una breve entrevista (evaluación de Listening,
+                  Speaking y Writing) y asignarte a un grupo con tu profesor.
+                </p>
+                <p className="text-xs text-amber-700 mt-2">
+                  Mientras tanto, podés explorar los <Link href="/dashboard/student/events" className="font-bold underline">eventos abiertos</Link> y la <Link href="/dashboard/student/library" className="font-bold underline">biblioteca</Link>.
+                </p>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      )}
 
       {/* Stats grandes coloridos */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
@@ -233,10 +255,11 @@ export default function StudentDashboard() {
                   </p>
                 </div>
                 {progressData.next_session.meeting_url && (
-                  <a href={progressData.next_session.meeting_url} target="_blank" rel="noopener noreferrer">
-                    <Button>Entrar a clase →</Button>
-                  </a>
+                  <JoinClassButton session={progressData.next_session} />
                 )}
+              </div>
+              <div className="flex gap-2 mt-3 flex-wrap">
+                <CalendarButton sessionId={progressData.next_session.id} />
               </div>
               {progressData.next_session.teacher_notes && (
                 <div className="mt-4 p-3 bg-slate-50 rounded-lg">
