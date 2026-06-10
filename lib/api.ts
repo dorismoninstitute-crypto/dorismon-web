@@ -249,13 +249,12 @@ export const teacherNotes = {
   save: (sessionId: string, notes: string) => api(`/teacher/sessions/${sessionId}/notes`, { method: "POST", body: { notes }, auth: true }),
 };
 
-// V1.3 — Helper colores por nivel CEFR (V1.4: heroText para contraste correcto en C1/C2)
+// V1.3 — Helper colores por nivel CEFR (V1.4.1: fondos más saturados + drop-shadow para legibilidad)
 export const levelColors: Record<string, { bg: string; border: string; text: string; bgSoft: string; accent: string; heroText: string; heroSubtext: string }> = {
-  A1: { bg: "bg-pink-500", border: "border-pink-500", text: "text-pink-700", bgSoft: "bg-pink-50", accent: "bg-pink-100", heroText: "text-white", heroSubtext: "text-white/90" },
-  A2: { bg: "bg-amber-500", border: "border-amber-500", text: "text-amber-700", bgSoft: "bg-amber-50", accent: "bg-amber-100", heroText: "text-white", heroSubtext: "text-white/90" },
-  B1: { bg: "bg-violet-500", border: "border-violet-500", text: "text-violet-700", bgSoft: "bg-violet-50", accent: "bg-violet-100", heroText: "text-white", heroSubtext: "text-white/90" },
-  B2: { bg: "bg-teal-500", border: "border-teal-500", text: "text-teal-700", bgSoft: "bg-teal-50", accent: "bg-teal-100", heroText: "text-white", heroSubtext: "text-white/90" },
-  // V1.4: C1 y C2 son fondos OSCUROS — usar blanco puro (no /90 que se ve tenue)
+  A1: { bg: "bg-pink-600", border: "border-pink-600", text: "text-pink-700", bgSoft: "bg-pink-50", accent: "bg-pink-100", heroText: "text-white", heroSubtext: "text-white" },
+  A2: { bg: "bg-amber-600", border: "border-amber-600", text: "text-amber-700", bgSoft: "bg-amber-50", accent: "bg-amber-100", heroText: "text-white", heroSubtext: "text-white" },
+  B1: { bg: "bg-violet-600", border: "border-violet-600", text: "text-violet-700", bgSoft: "bg-violet-50", accent: "bg-violet-100", heroText: "text-white", heroSubtext: "text-white" },
+  B2: { bg: "bg-teal-600", border: "border-teal-600", text: "text-teal-700", bgSoft: "bg-teal-50", accent: "bg-teal-100", heroText: "text-white", heroSubtext: "text-white" },
   C1: { bg: "bg-blue-700", border: "border-blue-700", text: "text-blue-700", bgSoft: "bg-blue-50", accent: "bg-blue-100", heroText: "text-white", heroSubtext: "text-white" },
   C2: { bg: "bg-stone-800", border: "border-stone-800", text: "text-stone-700", bgSoft: "bg-stone-50", accent: "bg-stone-100", heroText: "text-white", heroSubtext: "text-white" },
 };

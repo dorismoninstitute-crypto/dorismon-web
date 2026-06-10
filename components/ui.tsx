@@ -217,10 +217,10 @@ export function Modal({ open, onClose, title, children, size = "md" }: any) {
 // PageHeader
 export function PageHeader({ title, subtitle, action }: any) {
   return (
-    <div className="flex items-start justify-between gap-4 mb-6">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">{title}</h1>
-        {subtitle && <p className="text-sm text-slate-500 mt-1">{subtitle}</p>}
+    <div className="flex flex-col md:flex-row md:items-start justify-between gap-3 md:gap-4 mb-5 md:mb-6">
+      <div className="flex-1 min-w-0">
+        <h1 className="text-xl md:text-3xl font-bold tracking-tight text-slate-900">{title}</h1>
+        {subtitle && <p className="text-xs md:text-sm text-slate-500 mt-1">{subtitle}</p>}
       </div>
       {action && <div className="flex-shrink-0">{action}</div>}
     </div>
@@ -386,28 +386,84 @@ export function CalendarButton({ sessionId }: { sessionId: string }) {
 }
 
 
-// V1.4 — Pantalla intermedia "Entrar a la clase"
+// V1.4 — Pantalla intermedia "Entrar a la clase" — V1.4.1: detecta plataforma
 export function JoinClassButton({ session }: { session: any }) {
-  const [joining, setJoining] = React.useState(false);
+  const [showModal, setShowModal] = React.useState(false);
 
-  const join = () => {
-    if (!session.meeting_url) {
-      showToast("error", "Esta clase no tiene link de meeting configurado");
+  // Detectar plataforma desde el link
+  const url = session?.meeting_url || "";
+  let platform: "zoom" | "google_meet" | "teams" | "other" | "none" = "none";
+  let platformLabel = "";
+  let platformIcon = "🎥";
+  let platformInstructions = "";
+
+  if (!url) {
+    platform = "none";
+  } else if (/^https?:\/\/[a-z0-9-]+(\.[a-z0-9-]+)*\.zoom\.us\//i.test(url)) {
+    platform = "zoom";
+    platformLabel = "Zoom";
+    platformIcon = "💙";
+    platformInstructions = "Si Zoom pide instalar la app, podés continuar desde el navegador haciendo click en 'Únete desde tu navegador'.";
+  } else if (/^https?:\/\/meet\.google\.com\//i.test(url)) {
+    platform = "google_meet";
+    platformLabel = "Google Meet";
+    platformIcon = "🟢";
+    platformInstructions = "Si Meet pide permiso para unirse, esperá unos segundos a que el profesor te apruebe.";
+  } else if (/^https?:\/\/teams\.microsoft\.com\//i.test(url)) {
+    platform = "teams";
+    platformLabel = "Microsoft Teams";
+    platformIcon = "🟣";
+    platformInstructions = "Si Teams pide instalar la app, podés continuar desde el navegador.";
+  } else {
+    platform = "other";
+    platformLabel = "Reunión externa";
+    platformIcon = "🔗";
+    platformInstructions = "Verificá que el link sea correcto. Si no funciona, contactá a tu profesor.";
+  }
+
+  const open = () => {
+    if (!url || url === "false" || url === "null" || url.trim() === "") {
+      showToast("error", "Esta clase no tiene link de meeting configurado. Avisale a tu profesor.");
       return;
     }
-    setJoining(true);
-    // Pequeña pausa para que se vea el toast informativo
-    showToast("info", "Abriendo la clase. Si Meet pide permiso, esperá a que el profesor te apruebe.");
-    setTimeout(() => {
-      window.open(session.meeting_url, "_blank", "noopener,noreferrer");
-      setJoining(false);
-    }, 800);
+    setShowModal(true);
+  };
+
+  const proceed = () => {
+    window.open(url, "_blank", "noopener,noreferrer");
+    setShowModal(false);
   };
 
   return (
-    <Button onClick={join} loading={joining}>
-      🎥 Entrar a la clase →
-    </Button>
+    <>
+      <Button onClick={open} disabled={platform === "none"}>
+        {platform === "none" ? "Sin link aún" : `${platformIcon} Entrar a ${platformLabel} →`}
+      </Button>
+
+      {showModal && url && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setShowModal(false)}>
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="text-center mb-4">
+              <div className="text-5xl mb-2">{platformIcon}</div>
+              <h3 className="text-xl font-extrabold">Entrar a tu clase de {platformLabel}</h3>
+              {session.title && <p className="text-sm text-slate-600 mt-1">{session.title}</p>}
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 text-xs text-blue-900">
+              <p className="font-bold mb-1">📌 Antes de entrar:</p>
+              <p>{platformInstructions}</p>
+            </div>
+
+            <p className="text-xs text-slate-500 mb-4 break-all bg-slate-50 p-2 rounded font-mono">{url}</p>
+
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setShowModal(false)} className="flex-1">Cancelar</Button>
+              <Button onClick={proceed} className="flex-1">Entrar ahora →</Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -422,6 +478,90 @@ export function MeetingUrlGuide() {
         <li><strong>Zoom:</strong> programá la reunión desde la app y copiá el link de invitación.</li>
         <li><strong>Teams:</strong> creá la reunión desde Microsoft Teams y copiá el link.</li>
       </ul>
+    </div>
+  );
+}
+
+
+// V1.4.1 — Input de URL con validación en vivo (detecta plataforma)
+export function MeetingUrlInput({
+  value, onChange, label, required,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  label?: string;
+  required?: boolean;
+}) {
+  const [validation, setValidation] = React.useState<{ valid: boolean; type?: string; label?: string; warning?: string; reason?: string } | null>(null);
+
+  const detectLocally = (url: string) => {
+    if (!url || url.trim() === "") return null;
+    const u = url.trim();
+    if (/^https?:\/\/[a-z0-9-]+(\.[a-z0-9-]+)*\.zoom\.us\/(j|my|webinar|s)\//i.test(u)) {
+      return { valid: true, type: "zoom", label: "Zoom" };
+    }
+    if (/^https?:\/\/meet\.google\.com\//i.test(u)) {
+      return { valid: true, type: "google_meet", label: "Google Meet" };
+    }
+    if (/^https?:\/\/teams\.microsoft\.com\/l\/meetup-join\//i.test(u)) {
+      return { valid: true, type: "teams", label: "Microsoft Teams" };
+    }
+    if (/^https?:\/\/[^\s]+/i.test(u)) {
+      return {
+        valid: true, type: "other", label: "Link genérico",
+        warning: "El link no es de Zoom, Meet ni Teams. Verificá que sea correcto.",
+      };
+    }
+    return {
+      valid: false,
+      reason: "Link no válido. Debe empezar con https:// y ser de Zoom, Meet o Teams.",
+    };
+  };
+
+  React.useEffect(() => {
+    setValidation(detectLocally(value));
+  }, [value]);
+
+  const platformIcon = validation?.type === "zoom" ? "💙"
+    : validation?.type === "google_meet" ? "🟢"
+    : validation?.type === "teams" ? "🟣"
+    : validation?.type === "other" ? "🔗"
+    : "";
+
+  return (
+    <div>
+      <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">
+        {label || "URL de Zoom/Meet/Teams"} {required && "*"}
+      </label>
+      <input
+        type="url"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="https://us05web.zoom.us/j/... o https://meet.google.com/..."
+        className={`w-full px-3 py-2 text-sm border-2 rounded-lg focus:outline-none transition ${
+          !value ? "border-slate-200 focus:border-brand-500"
+          : validation?.valid && validation.type !== "other"
+            ? "border-emerald-500 focus:border-emerald-600 bg-emerald-50/30"
+            : validation?.type === "other"
+              ? "border-amber-400 focus:border-amber-500 bg-amber-50/30"
+              : "border-red-400 focus:border-red-500 bg-red-50/30"
+        }`}
+      />
+      {value && validation && (
+        <div className="mt-1.5 text-xs">
+          {validation.valid && validation.type !== "other" && (
+            <p className="text-emerald-700 font-semibold">
+              {platformIcon} Detectado: <strong>{validation.label}</strong> ✓
+            </p>
+          )}
+          {validation.type === "other" && validation.warning && (
+            <p className="text-amber-700 font-semibold">⚠️ {validation.warning}</p>
+          )}
+          {!validation.valid && (
+            <p className="text-red-700 font-semibold">❌ {validation.reason}</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

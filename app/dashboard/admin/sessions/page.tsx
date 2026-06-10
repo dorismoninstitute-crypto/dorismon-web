@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { adminApi, adminEdit, adminHelpers, safeArray, safeObj } from "@/lib/api";
-import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Input, Textarea, Select, Modal, SuccessBox, ConfirmModal, showToast, MeetingUrlGuide } from "@/components/ui";
+import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Input, Textarea, Select, Modal, SuccessBox, ConfirmModal, showToast, MeetingUrlGuide, MeetingUrlInput } from "@/components/ui";
 
 export default function AdminSessionsPage() {
   const [items, setItems] = useState<any[]>([]);
@@ -233,11 +233,11 @@ export default function AdminSessionsPage() {
 
           {(form.modality === "online" || form.modality === "hibrida") && (
             <div className="space-y-2">
-              <Input
+              <MeetingUrlInput
                 label={`URL de Zoom/Meet/Teams ${form.modality === "online" ? "*" : "(híbrida *)"}`}
                 value={form.meeting_url}
-                onChange={(e: any) => setForm({ ...form, meeting_url: e.target.value })}
-                placeholder="https://meet.google.com/..."
+                onChange={(v: string) => setForm({ ...form, meeting_url: v })}
+                required={form.modality === "online"}
               />
               <MeetingUrlGuide />
             </div>
@@ -296,7 +296,7 @@ export default function AdminSessionsPage() {
           <Input label="Título" value={editForm.title} onChange={(e: any) => setEditForm({ ...editForm, title: e.target.value })} />
           <Textarea label="Descripción" value={editForm.description} onChange={(e: any) => setEditForm({ ...editForm, description: e.target.value })} />
           {!isEditPast && (
-            <Input label="URL meeting" value={editForm.meeting_url} onChange={(e: any) => setEditForm({ ...editForm, meeting_url: e.target.value })} />
+            <MeetingUrlInput label="URL meeting" value={editForm.meeting_url} onChange={(v: string) => setEditForm({ ...editForm, meeting_url: v })} />
           )}
           <Textarea label="Notas del profesor (post-clase)" value={editForm.teacher_notes} onChange={(e: any) => setEditForm({ ...editForm, teacher_notes: e.target.value })} placeholder="Repasen el verbo X. Próxima clase traer..." />
           <Button onClick={saveEdit} className="w-full" size="lg">Guardar cambios</Button>

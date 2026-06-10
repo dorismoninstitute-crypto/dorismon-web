@@ -56,20 +56,26 @@ export default function StudentDashboard() {
   const theme = getLevelTheme(levelCode);
 
   return (
-    <div className={`-m-4 md:-m-8 p-4 md:p-8 min-h-screen ${theme.bgSoft}`}>
-      {/* Hero con nivel del estudiante */}
-      <div className={`${theme.bg} ${theme.heroText} rounded-3xl p-6 md:p-8 mb-6 shadow-xl relative overflow-hidden`}>
-        <div className="absolute -top-12 -right-12 w-48 h-48 bg-white/10 rounded-full"></div>
-        <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-white/10 rounded-full"></div>
+    <div className={`-m-3 md:-m-8 p-3 md:p-8 min-h-screen ${theme.bgSoft}`}>
+      {/* V1.4.1: Hero rediseñado — drop-shadow para legibilidad + responsive móvil */}
+      <div className={`${theme.bg} rounded-2xl md:rounded-3xl p-5 md:p-8 mb-5 shadow-xl relative overflow-hidden`}>
+        <div className="absolute -top-12 -right-12 w-40 h-40 md:w-48 md:h-48 bg-white/15 rounded-full"></div>
+        <div className="absolute -bottom-8 -left-8 w-28 h-28 md:w-32 md:h-32 bg-white/15 rounded-full"></div>
         <div className="relative">
-          <p className={`text-xs font-bold uppercase tracking-widest ${theme.heroSubtext} mb-1`}>Bienvenido de vuelta</p>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">¡Hola, {firstName}! 👋</h1>
+          <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-white mb-1" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.4)" }}>
+            Bienvenido de vuelta
+          </p>
+          <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight mb-2 text-white" style={{ textShadow: "0 2px 4px rgba(0,0,0,0.4)" }}>
+            ¡Hola, {firstName}! 👋
+          </h1>
           {progressData?.enrolled ? (
-            <p className={`${theme.heroSubtext} text-sm md:text-base`}>
+            <p className="text-white text-xs md:text-base font-semibold" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.4)" }}>
               Estás en <strong>{progressData.course_name}</strong> · Nivel {levelCode} · {progressData.completed_modules}/{progressData.total_modules} módulos completados
             </p>
           ) : (
-            <p className={`${theme.heroSubtext} text-sm`}>Tu nivel asignado es <strong>{levelCode}</strong>. Esperando inscripción a un curso.</p>
+            <p className="text-white text-xs md:text-base font-semibold" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.4)" }}>
+              Tu nivel asignado es <strong>{levelCode}</strong>. Esperando inscripción a un curso.
+            </p>
           )}
         </div>
       </div>
@@ -96,34 +102,34 @@ export default function StudentDashboard() {
         </Card>
       )}
 
-      {/* Stats grandes coloridos */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      {/* Stats grandes coloridos — V1.4.1 más compactos en móvil */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 mb-5">
         <Card className={`border-2 ${theme.border} hover:shadow-md transition`}>
-          <CardBody className="text-center py-4">
-            <div className="text-3xl mb-1">📅</div>
-            <p className={`text-xs font-bold uppercase tracking-wider ${theme.text}`}>Próx. clases</p>
-            <p className="text-3xl font-extrabold mt-1">{stats.next_classes ?? 0}</p>
+          <CardBody className="text-center py-3 md:py-4">
+            <div className="text-2xl md:text-3xl mb-1">📅</div>
+            <p className={`text-[10px] md:text-xs font-bold uppercase tracking-wider ${theme.text}`}>Próx. clases</p>
+            <p className="text-2xl md:text-3xl font-extrabold mt-1">{stats.next_classes ?? 0}</p>
           </CardBody>
         </Card>
         <Card className="border-2 border-amber-200 hover:shadow-md transition">
-          <CardBody className="text-center py-4">
-            <div className="text-3xl mb-1">📝</div>
-            <p className="text-xs font-bold uppercase tracking-wider text-amber-700">Tareas</p>
-            <p className="text-3xl font-extrabold mt-1">{stats.pending_assignments ?? 0}</p>
+          <CardBody className="text-center py-3 md:py-4">
+            <div className="text-2xl md:text-3xl mb-1">📝</div>
+            <p className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-amber-700">Tareas</p>
+            <p className="text-2xl md:text-3xl font-extrabold mt-1">{stats.pending_assignments ?? 0}</p>
           </CardBody>
         </Card>
         <Card className="border-2 border-violet-200 hover:shadow-md transition">
-          <CardBody className="text-center py-4">
-            <div className="text-3xl mb-1">✓</div>
-            <p className="text-xs font-bold uppercase tracking-wider text-violet-700">Quizzes</p>
-            <p className="text-3xl font-extrabold mt-1">{stats.pending_quizzes ?? 0}</p>
+          <CardBody className="text-center py-3 md:py-4">
+            <div className="text-2xl md:text-3xl mb-1">✓</div>
+            <p className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-violet-700">Quizzes</p>
+            <p className="text-2xl md:text-3xl font-extrabold mt-1">{stats.pending_quizzes ?? 0}</p>
           </CardBody>
         </Card>
         <Card className="border-2 border-emerald-200 hover:shadow-md transition">
-          <CardBody className="text-center py-4">
-            <div className="text-3xl mb-1">🎯</div>
-            <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">Asistencia</p>
-            <p className="text-3xl font-extrabold mt-1">{stats.attendance_rate ?? 0}%</p>
+          <CardBody className="text-center py-3 md:py-4">
+            <div className="text-2xl md:text-3xl mb-1">🎯</div>
+            <p className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-emerald-700">Asistencia</p>
+            <p className="text-2xl md:text-3xl font-extrabold mt-1">{stats.attendance_rate ?? 0}%</p>
           </CardBody>
         </Card>
       </div>
