@@ -4,6 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { studentApi, placement, progress, events, safeArray, safeObj, getLevelTheme } from "@/lib/api";
 import { LoadingScreen, ErrorBox, EmptyState, Card, CardBody, Badge, Button, showToast, CalendarButton, JoinClassButton } from "@/components/ui";
+import {
+  Calendar, FileText, CheckCircle2, Target, Trophy, TrendingUp,
+  Sparkles, GraduationCap, Clock, BookOpen, Award, ChevronRight,
+  Lock, Play, Flame, Ticket, ArrowRight,
+} from "lucide-react";
 
 export default function StudentDashboard() {
   const router = useRouter();
@@ -56,39 +61,55 @@ export default function StudentDashboard() {
   const theme = getLevelTheme(levelCode);
 
   return (
-    <div className={`-m-3 md:-m-8 p-3 md:p-8 min-h-screen ${theme.bgSoft}`}>
-      {/* V1.5: Hero rediseñado — fondo OSCURO uniforme + badge del nivel en color */}
-      <div className="bg-slate-900 rounded-2xl md:rounded-3xl p-5 md:p-8 mb-5 shadow-xl relative overflow-hidden">
-        <div className="absolute -top-12 -right-12 w-40 h-40 md:w-48 md:h-48 bg-white/5 rounded-full"></div>
-        <div className="absolute -bottom-8 -left-8 w-28 h-28 md:w-32 md:h-32 bg-white/5 rounded-full"></div>
+    <div className="-m-3 md:-m-8 p-3 md:p-8 min-h-screen bg-slate-50">
+      {/* V1.6.2: Hero premium con gradient slate + accent turquesa */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl md:rounded-3xl p-5 md:p-8 mb-6 shadow-lifted">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-accent-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4" />
         <div className="relative">
-          <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">
-            Bienvenido de vuelta
-          </p>
-          <div className="flex items-center gap-3 flex-wrap mb-2">
-            <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight text-white">
-              ¡Hola, {firstName}! 👋
-            </h1>
+          <div className="flex items-start justify-between gap-4 flex-wrap mb-3">
+            <div>
+              <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">
+                Bienvenido de vuelta
+              </p>
+              <h1 className="text-2xl md:text-4xl font-black tracking-tight text-white mb-1">
+                ¡Hola, {firstName}! <span className="inline-block">👋</span>
+              </h1>
+              {progressData?.enrolled ? (
+                <p className="text-slate-300 text-xs md:text-sm">
+                  <strong className="text-white">{progressData.course_name}</strong> · {progressData.completed_modules}/{progressData.total_modules} módulos completados
+                </p>
+              ) : (
+                <p className="text-slate-300 text-xs md:text-sm">
+                  Esperando inscripción a un curso.
+                </p>
+              )}
+            </div>
             {levelCode && (
-              <span className={`inline-flex items-center px-3 py-1.5 rounded-xl ${theme.bg} text-white font-extrabold text-sm md:text-base shadow-lg`}>
-                {levelCode}
-              </span>
+              <div className={`flex flex-col items-center px-5 py-3 rounded-2xl ${theme.bg} text-white shadow-card`}>
+                <p className="text-[10px] font-bold uppercase tracking-widest opacity-90">Nivel</p>
+                <p className="text-3xl md:text-4xl font-black">{levelCode}</p>
+              </div>
             )}
           </div>
-          {progressData?.enrolled ? (
-            <p className="text-slate-300 text-xs md:text-base">
-              Estás en <strong className="text-white">{progressData.course_name}</strong> · {progressData.completed_modules}/{progressData.total_modules} módulos completados
-            </p>
-          ) : (
-            <p className="text-slate-300 text-xs md:text-base">
-              Esperando inscripción a un curso.
-            </p>
-          )}
-          {/* V1.5: profe titular */}
+
+          {/* Profe + última actividad */}
           {enrollments.length > 0 && enrollments[0]?.teacher_name && (
-            <p className="text-slate-400 text-xs md:text-sm mt-2">
-              👨‍🏫 Profesor: <strong className="text-slate-200">{enrollments[0].teacher_name}</strong>
-            </p>
+            <div className="flex items-center gap-3 mt-4 pt-4 border-t border-white/10">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                {enrollments[0].teacher_name.split(" ").map((w: string) => w[0]).join("").slice(0, 2)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-slate-400">Tu profesor</p>
+                <p className="font-bold text-white text-sm truncate">{enrollments[0].teacher_name}</p>
+              </div>
+              {progressData?.progress_pct !== undefined && (
+                <div className="text-right">
+                  <p className="text-xs text-slate-400">Tu progreso</p>
+                  <p className="font-black text-accent-300 text-lg">{progressData.progress_pct}%</p>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -115,134 +136,184 @@ export default function StudentDashboard() {
         </Card>
       )}
 
-      {/* Stats grandes coloridos — V1.4.1 más compactos en móvil */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 mb-5">
-        <Card className={`border-2 ${theme.border} hover:shadow-md transition`}>
-          <CardBody className="text-center py-3 md:py-4">
-            <div className="text-2xl md:text-3xl mb-1">📅</div>
-            <p className={`text-[10px] md:text-xs font-bold uppercase tracking-wider ${theme.text}`}>Próx. clases</p>
-            <p className="text-2xl md:text-3xl font-extrabold mt-1">{stats.next_classes ?? 0}</p>
-          </CardBody>
-        </Card>
-        <Card className="border-2 border-amber-200 hover:shadow-md transition">
-          <CardBody className="text-center py-3 md:py-4">
-            <div className="text-2xl md:text-3xl mb-1">📝</div>
-            <p className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-amber-700">Tareas</p>
-            <p className="text-2xl md:text-3xl font-extrabold mt-1">{stats.pending_assignments ?? 0}</p>
-          </CardBody>
-        </Card>
-        <Card className="border-2 border-violet-200 hover:shadow-md transition">
-          <CardBody className="text-center py-3 md:py-4">
-            <div className="text-2xl md:text-3xl mb-1">✓</div>
-            <p className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-violet-700">Quizzes</p>
-            <p className="text-2xl md:text-3xl font-extrabold mt-1">{stats.pending_quizzes ?? 0}</p>
-          </CardBody>
-        </Card>
-        <Card className="border-2 border-emerald-200 hover:shadow-md transition">
-          <CardBody className="text-center py-3 md:py-4">
-            <div className="text-2xl md:text-3xl mb-1">🎯</div>
-            <p className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-emerald-700">Asistencia</p>
-            <p className="text-2xl md:text-3xl font-extrabold mt-1">{stats.attendance_rate ?? 0}%</p>
-          </CardBody>
-        </Card>
+      {/* V1.6.2: Stats premium con iconos Lucide */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-soft hover:shadow-card transition p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className={`w-10 h-10 rounded-xl ${theme.bgSoft} ${theme.text} flex items-center justify-center`}>
+              <Target size={20} />
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Nivel</span>
+          </div>
+          <p className={`text-3xl font-black ${theme.text}`}>{levelCode}</p>
+          <p className="text-xs text-slate-500 mt-1">{progressData?.level_name || "Tu nivel"}</p>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-soft hover:shadow-card transition p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center">
+              <TrendingUp size={20} />
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Progreso</span>
+          </div>
+          <p className="text-3xl font-black text-slate-900">{progressData?.progress_pct ?? 0}<span className="text-xl">%</span></p>
+          <p className="text-xs text-slate-500 mt-1">general</p>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-soft hover:shadow-card transition p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-10 h-10 rounded-xl bg-accent-50 text-accent-600 flex items-center justify-center">
+              <Calendar size={20} />
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Clases</span>
+          </div>
+          <p className="text-3xl font-black text-slate-900">{stats.next_classes ?? 0}</p>
+          <p className="text-xs text-slate-500 mt-1">próximas</p>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-soft hover:shadow-card transition p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <Trophy size={20} />
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Asistencia</span>
+          </div>
+          <p className="text-3xl font-black text-slate-900">{stats.attendance_rate ?? 0}<span className="text-xl">%</span></p>
+          <p className="text-xs text-slate-500 mt-1">promedio</p>
+        </div>
       </div>
 
-      {/* BANNER de eventos abiertos */}
+      {/* V1.6.2: Banner eventos premium */}
       {openEvents.length > 0 && (
-        <Card className={`mb-6 ${theme.accent} border-2 ${theme.border}`}>
-          <CardBody>
-            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-              <h3 className={`font-extrabold ${theme.text} flex items-center gap-2`}>
-                🎫 Eventos disponibles
-              </h3>
-              <Link href="/dashboard/student/events" className={`text-xs font-bold ${theme.text} hover:underline`}>
-                Ver todos →
-              </Link>
-            </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {openEvents.map((e: any) => (
-                <div key={e.id} className="bg-white p-3 rounded-xl border border-slate-200">
-                  <p className="font-bold text-sm mb-1 line-clamp-2">{e.title}</p>
-                  <p className="text-xs text-slate-500 mb-2">
-                    {e.starts_at_utc && new Date(e.starts_at_utc).toLocaleString("es", { weekday: "short", day: "numeric", month: "short", hour: "2-digit" })}
-                  </p>
-                  <p className="text-xs text-slate-600 mb-2">
-                    👨‍🏫 {e.teacher_name}
-                  </p>
-                  {e.i_am_registered ? (
-                    <Badge variant="success">✓ Anotado</Badge>
-                  ) : e.is_full ? (
-                    <Badge variant="danger">Lleno</Badge>
-                  ) : (
-                    <p className="text-xs font-semibold text-slate-700">{e.spots_left} cupos disponibles</p>
-                  )}
+        <div className="mb-6 bg-gradient-to-br from-accent-50 via-white to-brand-50 rounded-2xl border border-accent-200 p-5">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <h3 className="font-extrabold text-slate-900 flex items-center gap-2">
+              <div className="w-9 h-9 rounded-xl bg-accent-500 text-white flex items-center justify-center">
+                <Ticket size={18} />
+              </div>
+              Eventos disponibles
+            </h3>
+            <Link href="/dashboard/student/events" className="text-xs font-bold text-accent-700 hover:text-accent-800 inline-flex items-center gap-1">
+              Ver todos <ArrowRight size={12} />
+            </Link>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {openEvents.map((e: any) => (
+              <Link
+                key={e.id}
+                href="/dashboard/student/events"
+                className="bg-white p-4 rounded-xl border border-slate-100 hover:shadow-card hover:border-accent-200 transition"
+              >
+                <p className="font-bold text-sm mb-1 line-clamp-2 text-slate-900">{e.title}</p>
+                <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-2">
+                  <Clock size={12} />
+                  {e.starts_at_utc && new Date(e.starts_at_utc).toLocaleString("es", { weekday: "short", day: "numeric", month: "short", hour: "2-digit" })}
                 </div>
-              ))}
-            </div>
-          </CardBody>
-        </Card>
+                <p className="text-xs text-slate-600 mb-2 truncate">👨‍🏫 {e.teacher_name}</p>
+                {e.i_am_registered ? (
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded">
+                    <CheckCircle2 size={11} /> Anotado
+                  </span>
+                ) : e.is_full ? (
+                  <span className="inline-flex text-xs font-bold text-red-700 bg-red-50 px-2 py-1 rounded">
+                    Lleno
+                  </span>
+                ) : (
+                  <span className="text-xs font-semibold text-slate-700">
+                    <strong>{e.spots_left}</strong> cupos disponibles
+                  </span>
+                )}
+              </Link>
+            ))}
+          </div>
+        </div>
       )}
 
-      {/* RUTA DEL CURSO */}
+      {/* V1.6.2: Ruta del curso premium estilo Duolingo profesional */}
       {progressData?.enrolled && progressData.modules?.length > 0 && (
-        <Card className="mb-6">
-          <CardBody>
-            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-              <h3 className="font-extrabold text-lg flex items-center gap-2">
-                🗺 Tu ruta en {levelCode}
-              </h3>
-              <Badge variant="brand">{progressData.progress_pct}% completado</Badge>
+        <div className="mb-6 bg-white rounded-2xl border border-slate-100 shadow-soft p-5 md:p-6">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-xl ${theme.bg} text-white flex items-center justify-center shadow-card`}>
+                <BookOpen size={20} />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-lg text-slate-900">Tu ruta en {levelCode}</h3>
+                <p className="text-xs text-slate-500">{progressData.course_name}</p>
+              </div>
             </div>
-
-            {/* Barra global de progreso */}
-            <div className="h-3 bg-slate-100 rounded-full overflow-hidden mb-4">
-              <div
-                className={`h-full ${theme.bg} transition-all`}
-                style={{ width: `${progressData.progress_pct}%` }}
-              />
+            <div className="text-right">
+              <p className="text-2xl font-black text-slate-900">{progressData.progress_pct}<span className="text-base">%</span></p>
+              <p className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Completado</p>
             </div>
+          </div>
 
-            {/* Módulos como camino */}
-            <div className="flex flex-wrap gap-2 mb-2">
-              {progressData.modules.map((m: any, i: number) => {
-                const completed = m.status === "completed";
-                const inProgress = m.status === "in_progress";
-                const locked = m.status === "locked";
-                return (
-                  <div key={m.id} className="flex items-center gap-2">
-                    <div
-                      title={m.name}
-                      className={`w-12 h-12 rounded-2xl flex items-center justify-center font-extrabold text-sm transition-all
-                        ${completed ? `${theme.bg} text-white shadow-md scale-100` : ""}
-                        ${inProgress ? `${theme.accent} ${theme.text} ring-4 ring-offset-2 ${theme.border} scale-110 animate-pulse` : ""}
-                        ${locked ? "bg-slate-100 text-slate-400" : ""}`}
-                    >
-                      {completed ? "✓" : inProgress ? "📍" : locked ? "🔒" : i + 1}
-                    </div>
-                    {i < progressData.modules.length - 1 && (
-                      <div className={`w-2 h-1 ${completed ? theme.bg : "bg-slate-200"} rounded-full`} />
+          {/* Barra global */}
+          <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden mb-5">
+            <div
+              className={`h-full bg-gradient-to-r ${theme.bg.replace("bg-", "from-")} to-${theme.bg.replace("bg-", "").replace("-600", "-400")} transition-all duration-700`}
+              style={{ width: `${progressData.progress_pct}%` }}
+            />
+          </div>
+
+          {/* Módulos como camino */}
+          <div className="flex flex-wrap gap-3 mb-4">
+            {progressData.modules.map((m: any, i: number) => {
+              const completed = m.status === "completed";
+              const inProgress = m.status === "in_progress";
+              const locked = m.status === "locked";
+              return (
+                <div key={m.id} className="flex items-center gap-2 group">
+                  <div
+                    title={m.name}
+                    className={`relative w-14 h-14 rounded-2xl flex items-center justify-center font-extrabold transition-all
+                      ${completed ? `${theme.bg} text-white shadow-card` : ""}
+                      ${inProgress ? `bg-gradient-to-br from-brand-500 to-accent-500 text-white ring-4 ring-brand-100 scale-105 shadow-lifted` : ""}
+                      ${locked ? "bg-slate-100 text-slate-400" : ""}`}
+                  >
+                    {completed ? (
+                      <CheckCircle2 size={22} />
+                    ) : inProgress ? (
+                      <Play size={20} fill="currentColor" />
+                    ) : locked ? (
+                      <Lock size={18} />
+                    ) : (
+                      <span className="text-base">{i + 1}</span>
+                    )}
+                    {inProgress && (
+                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-accent-500 rounded-full ring-2 ring-white animate-pulse-soft" />
                     )}
                   </div>
-                );
-              })}
-            </div>
+                  {i < progressData.modules.length - 1 && (
+                    <div className={`w-3 h-1 ${completed ? theme.bg : "bg-slate-200"} rounded-full`} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
 
-            {/* Detalle del módulo actual */}
-            {(() => {
-              const current = progressData.modules.find((m: any) => m.status === "in_progress");
-              if (current) {
-                return (
-                  <div className={`mt-4 p-4 ${theme.accent} rounded-xl`}>
-                    <p className="text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Estás aquí</p>
-                    <p className="font-bold">{current.name}</p>
-                    {current.description && <p className="text-sm text-slate-600 mt-1">{current.description}</p>}
+          {/* Detalle del módulo actual */}
+          {(() => {
+            const current = progressData.modules.find((m: any) => m.status === "in_progress");
+            if (current) {
+              return (
+                <div className="mt-4 p-4 bg-gradient-to-br from-brand-50 to-accent-50 rounded-xl border border-brand-100">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center flex-shrink-0">
+                      <Sparkles size={18} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-brand-700 mb-1">Estás aquí</p>
+                      <p className="font-bold text-slate-900">{current.name}</p>
+                      {current.description && <p className="text-sm text-slate-600 mt-1">{current.description}</p>}
+                    </div>
                   </div>
-                );
-              }
-              return null;
-            })()}
-          </CardBody>
-        </Card>
+                </div>
+              );
+            }
+            return null;
+          })()}
+        </div>
       )}
 
       <div className="grid lg:grid-cols-2 gap-5">
@@ -257,37 +328,41 @@ export default function StudentDashboard() {
           </Card>
         )}
 
-        {/* Próxima clase como tarjeta destacada */}
+        {/* V1.6.2: Próxima clase como hero gigante destacado */}
         {progressData?.next_session && (
-          <Card className={`border-2 ${theme.border} lg:col-span-2`}>
-            <CardBody>
-              <div className="flex items-center gap-4 flex-wrap">
-                <div className={`w-16 h-16 ${theme.bg} text-white rounded-2xl flex items-center justify-center text-3xl`}>
-                  ⏰
+          <div className="lg:col-span-2 bg-gradient-to-br from-brand-600 via-brand-700 to-brand-800 rounded-2xl p-5 md:p-7 text-white shadow-lifted relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-accent-500/20 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
+            <div className="relative">
+              <div className="flex items-center gap-4 flex-wrap mb-4">
+                <div className="w-14 h-14 bg-white/15 backdrop-blur-sm rounded-2xl flex items-center justify-center flex-shrink-0">
+                  <Clock size={24} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={`text-xs font-bold uppercase tracking-wider ${theme.text} mb-1`}>Próxima clase</p>
-                  <h3 className="font-extrabold text-lg">{progressData.next_session.title}</h3>
-                  <p className="text-sm text-slate-600">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-accent-200 mb-1">Tu próxima clase</p>
+                  <h3 className="font-black text-xl md:text-2xl mb-1">{progressData.next_session.title}</h3>
+                  <p className="text-sm text-brand-100">
+                    <Calendar size={14} className="inline mr-1.5 -mt-0.5" />
                     {progressData.next_session.starts_at_utc && new Date(progressData.next_session.starts_at_utc).toLocaleString("es", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
-                    {" · "}{progressData.next_session.teacher_name}
+                  </p>
+                  <p className="text-xs text-brand-200 mt-1">
+                    👨‍🏫 {progressData.next_session.teacher_name}
                   </p>
                 </div>
+              </div>
+              <div className="flex gap-2 flex-wrap mt-4">
                 {progressData.next_session.meeting_url && (
                   <JoinClassButton session={progressData.next_session} />
                 )}
-              </div>
-              <div className="flex gap-2 mt-3 flex-wrap">
                 <CalendarButton sessionId={progressData.next_session.id} />
               </div>
               {progressData.next_session.teacher_notes && (
-                <div className="mt-4 p-3 bg-slate-50 rounded-lg">
-                  <p className="text-xs font-bold text-slate-500 mb-1">📌 NOTA DEL PROFESOR:</p>
-                  <p className="text-sm">{progressData.next_session.teacher_notes}</p>
+                <div className="mt-4 p-3 bg-white/10 backdrop-blur-sm rounded-lg border border-white/10">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-accent-200 mb-1">📌 Nota del profesor</p>
+                  <p className="text-sm text-white/90">{progressData.next_session.teacher_notes}</p>
                 </div>
               )}
-            </CardBody>
-          </Card>
+            </div>
+          </div>
         )}
 
         {/* Próximas clases (lista) */}
