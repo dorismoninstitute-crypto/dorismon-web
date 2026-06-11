@@ -5,46 +5,53 @@ import { usePathname, useRouter } from "next/navigation";
 import { auth, safeObj, progress, getLevelTheme } from "@/lib/api";
 import { LoadingScreen } from "@/components/ui";
 import clsx from "clsx";
+import {
+  Home, BookOpen, Calendar, FileText, CheckCircle2, Ticket, Library,
+  Target, BarChart3, GraduationCap, Bell, Settings, LogOut, Menu,
+  Users, Briefcase, MapPin, CreditCard, DollarSign, FileSearch, Wrench,
+  ClipboardList, FolderKanban, FileEdit, BookMarked, Layers,
+} from "lucide-react";
 
+// Iconos como componentes Lucide
 const studentItems = [
-  { href: "/dashboard/student", label: "Inicio", icon: "🏠" },
-  { href: "/dashboard/student/courses", label: "Mis cursos", icon: "📚" },
-  { href: "/dashboard/student/calendar", label: "Calendario", icon: "📅" },
-  { href: "/dashboard/student/assignments", label: "Tareas", icon: "📝" },
-  { href: "/dashboard/student/quizzes", label: "Quizzes", icon: "✓" },
-  { href: "/dashboard/student/events", label: "Eventos", icon: "🎫" },
-  { href: "/dashboard/student/library", label: "Biblioteca", icon: "📖" },
-  { href: "/dashboard/student/my-placement", label: "Mi nivel", icon: "🎯" },
-  { href: "/dashboard/student/transcript", label: "Expediente", icon: "📊" },
-  { href: "/dashboard/student/certificates", label: "Certificados", icon: "🎓" },
-  { href: "/dashboard/student/notifications", label: "Notificaciones", icon: "🔔" },
-  { href: "/dashboard/account", label: "Mi cuenta", icon: "⚙️" },
+  { href: "/dashboard/student", label: "Inicio", Icon: Home },
+  { href: "/dashboard/student/courses", label: "Mis cursos", Icon: BookOpen },
+  { href: "/dashboard/student/calendar", label: "Calendario", Icon: Calendar },
+  { href: "/dashboard/student/assignments", label: "Tareas", Icon: FileText },
+  { href: "/dashboard/student/quizzes", label: "Quizzes", Icon: CheckCircle2 },
+  { href: "/dashboard/student/events", label: "Eventos", Icon: Ticket },
+  { href: "/dashboard/student/library", label: "Biblioteca", Icon: Library },
+  { href: "/dashboard/student/my-placement", label: "Mi nivel", Icon: Target },
+  { href: "/dashboard/student/transcript", label: "Expediente", Icon: BarChart3 },
+  { href: "/dashboard/student/certificates", label: "Certificados", Icon: GraduationCap },
+  { href: "/dashboard/student/notifications", label: "Notificaciones", Icon: Bell },
+  { href: "/dashboard/account", label: "Mi cuenta", Icon: Settings },
 ];
 const teacherItems = [
-  { href: "/dashboard/teacher", label: "Inicio", icon: "🏠" },
-  { href: "/dashboard/teacher/students", label: "Mis estudiantes", icon: "👥" },
-  { href: "/dashboard/teacher/sessions", label: "Mis clases", icon: "🗓" },
-  { href: "/dashboard/teacher/assignments", label: "Tareas", icon: "📝" },
-  { href: "/dashboard/teacher/quizzes", label: "Quizzes", icon: "✓" },
-  { href: "/dashboard/teacher/materials", label: "Materiales", icon: "📖" },
-  { href: "/dashboard/account", label: "Mi cuenta", icon: "⚙️" },
+  { href: "/dashboard/teacher", label: "Inicio", Icon: Home },
+  { href: "/dashboard/teacher/students", label: "Mis estudiantes", Icon: Users },
+  { href: "/dashboard/teacher/sessions", label: "Mis clases", Icon: Calendar },
+  { href: "/dashboard/teacher/assignments", label: "Tareas", Icon: FileText },
+  { href: "/dashboard/teacher/quizzes", label: "Quizzes", Icon: CheckCircle2 },
+  { href: "/dashboard/teacher/materials", label: "Materiales", Icon: BookMarked },
+  { href: "/dashboard/account", label: "Mi cuenta", Icon: Settings },
 ];
 const adminItems = [
-  { href: "/dashboard/admin", label: "Dashboard", icon: "📊" },
-  { href: "/dashboard/admin/users", label: "Usuarios", icon: "👥" },
-  { href: "/dashboard/admin/placement-results", label: "Placement", icon: "🎯" },
-  { href: "/dashboard/admin/courses", label: "Cursos", icon: "📚" },
-  { href: "/dashboard/admin/content", label: "Contenido", icon: "📖" },
-  { href: "/dashboard/admin/sessions", label: "Clases", icon: "🗓" },
-  { href: "/dashboard/admin/events", label: "Eventos", icon: "🎫" },
-  { href: "/dashboard/admin/enrollments", label: "Inscripciones", icon: "📋" },
-  { href: "/dashboard/admin/branches", label: "Sedes y aulas", icon: "🏢" },
-  { href: "/dashboard/admin/plans", label: "Planes", icon: "💳" },
-  { href: "/dashboard/admin/payments", label: "Pagos", icon: "💰" },
-  { href: "/dashboard/admin/certificates", label: "Certificados", icon: "🎓" },
-  { href: "/dashboard/admin/audit", label: "Auditoría", icon: "📜" },
-  { href: "/dashboard/admin/settings", label: "Configuración", icon: "🛠" },
-  { href: "/dashboard/account", label: "Mi cuenta", icon: "⚙️" },
+  { href: "/dashboard/admin", label: "Dashboard", Icon: BarChart3 },
+  { href: "/dashboard/admin/users", label: "Usuarios", Icon: Users },
+  { href: "/dashboard/admin/placement-results", label: "Placement", Icon: Target },
+  { href: "/dashboard/admin/courses", label: "Cursos", Icon: BookOpen },
+  { href: "/dashboard/admin/content", label: "Contenido", Icon: Layers },
+  { href: "/dashboard/admin/sessions", label: "Clases", Icon: Calendar },
+  { href: "/dashboard/admin/events", label: "Eventos", Icon: Ticket },
+  { href: "/dashboard/admin/enrollments", label: "Inscripciones", Icon: ClipboardList },
+  { href: "/dashboard/admin/branches", label: "Sedes y aulas", Icon: MapPin },
+  { href: "/dashboard/admin/plans", label: "Planes", Icon: CreditCard },
+  { href: "/dashboard/admin/payments", label: "Pagos", Icon: DollarSign },
+  { href: "/dashboard/admin/certificates", label: "Certificados", Icon: GraduationCap },
+  { href: "/dashboard/admin/audit", label: "Auditoría", Icon: FileSearch },
+  { href: "/dashboard/admin/settings", label: "Configuración", Icon: Wrench },
+  { href: "/dashboard/account", label: "Mi cuenta", Icon: Settings },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -94,14 +101,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         "fixed lg:sticky top-0 left-0 z-40 w-64 h-screen bg-white border-r border-slate-200 flex flex-col transition-transform",
         sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
-        <div className="px-5 py-5 border-b border-slate-100 flex items-center gap-3">
-          <div className={clsx("w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-lg", logoColorClass)}>D</div>
-          <div>
-            <p className="font-bold tracking-tight text-slate-900">Dorismon</p>
-            <p className="text-xs text-slate-500 capitalize">
-              {role === "student" ? `Nivel ${studentLevel}` : role.replace("_", " ")}
-            </p>
+        <div className="px-5 py-5 border-b border-slate-100">
+          <div className="flex items-center gap-2.5">
+            <div className="relative flex-shrink-0">
+              <div className={clsx("w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-base shadow-md", logoColorClass)}>D</div>
+              <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-accent-500 rounded-full ring-2 ring-white" />
+            </div>
+            <div className="flex flex-col leading-none min-w-0">
+              <span className="text-base font-black tracking-tight text-slate-900">DORISMON</span>
+              <span className="text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-500 mt-0.5">
+                Language Institute
+              </span>
+            </div>
           </div>
+          <p className="text-xs text-slate-500 capitalize mt-3 pl-1">
+            {role === "student" ? `Nivel ${studentLevel}` : role === "super_admin" ? "Administrador" : "Profesor"}
+          </p>
         </div>
 
         <nav className="flex-1 overflow-y-auto py-3">
@@ -125,7 +140,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 border-transparent"
                 )}
               >
-                <span className="text-base">{n.icon}</span>
+                <n.Icon size={18} strokeWidth={2} className="flex-shrink-0" />
                 <span>{n.label}</span>
               </Link>
             );
@@ -144,8 +159,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           <button
             onClick={() => { auth.logout(); router.push("/"); }}
-            className="w-full text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 py-2 rounded-lg transition"
+            className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-slate-600 hover:text-red-600 hover:bg-red-50 py-2 rounded-lg transition"
           >
+            <LogOut size={16} />
             Cerrar sesión
           </button>
         </div>
@@ -153,14 +169,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       <div className="flex-1 min-w-0">
         <header className="lg:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-20">
-          <button onClick={() => setSidebarOpen(true)} className="text-slate-600 hover:text-slate-900">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
+          <button onClick={() => setSidebarOpen(true)} className="text-slate-600 hover:text-slate-900 p-1">
+            <Menu size={24} />
           </button>
           <div className="flex items-center gap-2">
-            <div className={clsx("w-7 h-7 rounded bg-brand-600 flex items-center justify-center text-white font-black text-sm")}>D</div>
-            <span className="font-bold">Dorismon</span>
+            <div className="relative">
+              <div className={clsx("w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white font-black text-sm shadow-md")}>D</div>
+              <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-accent-500 rounded-full ring-2 ring-white" />
+            </div>
+            <div className="flex flex-col leading-none">
+              <span className="text-sm font-black tracking-tight">DORISMON</span>
+              <span className="text-[8px] font-semibold uppercase tracking-[0.14em] text-slate-500 mt-0.5">Language Institute</span>
+            </div>
           </div>
           <div />
         </header>

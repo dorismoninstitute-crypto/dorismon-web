@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { auth } from "@/lib/api";
 import { Button, Input, ErrorBox } from "@/components/ui";
+import Logo from "@/components/Logo";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,7 +23,6 @@ export default function LoginPage() {
         localStorage.setItem("refresh_token", res.refresh_token);
       }
       const me = await auth.me();
-      // Redirigir según rol
       if (me.role === "super_admin") router.push("/dashboard/admin");
       else if (me.role === "teacher") router.push("/dashboard/teacher");
       else router.push("/dashboard/student");
@@ -33,16 +33,15 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-brand-50 to-accent-50">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-brand-50 via-white to-accent-50">
       <div className="w-full max-w-md">
-        <Link href="/" className="flex items-center gap-2 mb-8 justify-center">
-          <div className="w-10 h-10 rounded-lg bg-brand-600 flex items-center justify-center text-white font-black text-xl">D</div>
-          <span className="font-bold text-xl tracking-tight">Dorismon</span>
-        </Link>
+        <div className="flex justify-center mb-8">
+          <Logo size="lg" />
+        </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
-          <h1 className="text-2xl font-bold tracking-tight mb-2">Bienvenido</h1>
-          <p className="text-sm text-slate-500 mb-6">Iniciá sesión para continuar tus clases.</p>
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-card p-8">
+          <h1 className="text-2xl font-bold tracking-tight mb-1">Bienvenido de vuelta</h1>
+          <p className="text-sm text-slate-500 mb-6">Iniciá sesión para continuar tu aprendizaje.</p>
 
           {error && <div className="mb-4"><ErrorBox message={error} /></div>}
 
@@ -75,6 +74,10 @@ export default function LoginPage() {
             </Link>
           </p>
         </div>
+
+        <p className="text-center text-xs text-slate-400 mt-6">
+          © {new Date().getFullYear()} Dorismon Language Institute. Todos los derechos reservados.
+        </p>
       </div>
     </div>
   );

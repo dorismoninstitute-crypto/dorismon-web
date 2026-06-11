@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { auth } from "@/lib/api";
 import { Button, Input, ErrorBox } from "@/components/ui";
+import Logo from "@/components/Logo";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -31,14 +32,13 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-brand-50 to-accent-50">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-brand-50 via-white to-accent-50">
       <div className="w-full max-w-md">
-        <Link href="/" className="flex items-center gap-2 mb-8 justify-center">
-          <div className="w-10 h-10 rounded-lg bg-brand-600 flex items-center justify-center text-white font-black text-xl">D</div>
-          <span className="font-bold text-xl tracking-tight">Dorismon</span>
-        </Link>
+        <div className="flex justify-center mb-8">
+          <Logo size="lg" />
+        </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-card p-8">
           <h1 className="text-2xl font-bold tracking-tight mb-2">Crear cuenta</h1>
           <p className="text-sm text-slate-500 mb-6">Comenzá a aprender inglés hoy.</p>
 
