@@ -1,13 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { adminApi, adminInsights, safeObj, safeArray } from "@/lib/api";
+import { adminApi, adminInsights, adminCertCandidates, safeObj, safeArray } from "@/lib/api";
 import { LoadingScreen, ErrorBox, PageHeader, Card, CardBody, StatCard, Badge, Button } from "@/components/ui";
+import { Award, ArrowRight } from "lucide-react";
 
 export default function AdminDashboard() {
   const [data, setData] = useState<any>(null);
   const [finance, setFinance] = useState<any>(null);
   const [atRisk, setAtRisk] = useState<any[]>([]);
+  const [certCandidates, setCertCandidates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
@@ -16,11 +18,13 @@ export default function AdminDashboard() {
       adminApi.dashboard(),
       adminApi.financeSummary(),
       adminInsights.atRiskStudents().catch(() => []),
+      adminCertCandidates.list().catch(() => []),
     ])
-      .then(([d, f, a]) => {
+      .then(([d, f, a, c]) => {
         setData(d);
         setFinance(f);
         setAtRisk(safeArray(a));
+        setCertCandidates(safeArray(c));
         setLoading(false);
       })
       .catch(e => { setErr(e.message); setLoading(false); });
@@ -35,6 +39,33 @@ export default function AdminDashboard() {
   return (
     <>
       <PageHeader title="Panel administrativo" subtitle="Resumen ejecutivo de Dorismon" />
+
+      {/* V1.6.3: Banner candidatos a certificación */}
+      {certCandidates.length > 0 && (
+        <Card className="mb-4 border-emerald-200 bg-gradient-to-br from-emerald-50 to-accent-50">
+          <CardBody>
+            <div className="flex items-start gap-3">
+              <div className="w-11 h-11 bg-emerald-600 text-white rounded-xl flex items-center justify-center flex-shrink-0">
+                <Award size={22} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-emerald-900 mb-1">
+                  🎓 {certCandidates.length} {certCandidates.length === 1 ? "estudiante listo" : "estudiantes listos"} para certificar
+                </h3>
+                <p className="text-sm text-emerald-800 mb-3">
+                  Completaron todos los módulos y tienen buena asistencia. Emití sus certificados con 1 click.
+                </p>
+                <Link href="/dashboard/admin/certification-ready">
+                  <Button size="sm" variant="primary">
+                    Ver candidatos
+                    <ArrowRight size={14} className="inline ml-1" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      )}
 
       {/* V1.5.1: Banner asignación de profesores */}
       {(stats.unassigned_students > 0 || stats.teachers_without_students > 0) && (

@@ -4,10 +4,11 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { auth, safeObj, progress, getLevelTheme } from "@/lib/api";
 import { LoadingScreen } from "@/components/ui";
+import Avatar from "@/components/Avatar";
 import clsx from "clsx";
 import {
   Home, BookOpen, Calendar, FileText, CheckCircle2, Ticket, Library,
-  Target, BarChart3, GraduationCap, Bell, Settings, LogOut, Menu,
+  Target, BarChart3, GraduationCap, Bell, Settings, LogOut, Menu, Award,
   Users, Briefcase, MapPin, CreditCard, DollarSign, FileSearch, Wrench,
   ClipboardList, FolderKanban, FileEdit, BookMarked, Layers,
 } from "lucide-react";
@@ -49,6 +50,7 @@ const adminItems = [
   { href: "/dashboard/admin/plans", label: "Planes", Icon: CreditCard },
   { href: "/dashboard/admin/payments", label: "Pagos", Icon: DollarSign },
   { href: "/dashboard/admin/certificates", label: "Certificados", Icon: GraduationCap },
+  { href: "/dashboard/admin/certification-ready", label: "Listos certificar", Icon: Award },
   { href: "/dashboard/admin/audit", label: "Auditoría", Icon: FileSearch },
   { href: "/dashboard/admin/settings", label: "Configuración", Icon: Wrench },
   { href: "/dashboard/account", label: "Mi cuenta", Icon: Settings },
@@ -149,9 +151,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <div className="p-4 border-t border-slate-100">
           <div className="flex items-center gap-3 mb-3 px-2">
-            <div className={clsx("w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm", logoColorClass)}>
-              {(u.full_name || "?").split(" ").map((w: string) => w[0]).join("").slice(0, 2)}
-            </div>
+            <Avatar name={u.full_name} url={u.avatar_url} size="md" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold truncate">{u.full_name}</p>
               <p className="text-xs text-slate-500 truncate">{u.email}</p>

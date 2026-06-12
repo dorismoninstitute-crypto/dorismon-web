@@ -319,6 +319,23 @@ export const calendarApi = {
 };
 
 
+
+// V1.6.3 — Perfil y avatar
+export const profileApi = {
+  update: (body: { full_name?: string; phone?: string; avatar_url?: string; bio?: string }) =>
+    api("/auth/me", { method: "PATCH", body, auth: true }),
+  changePassword: (current_password: string, new_password: string) =>
+    api("/auth/change-password", { method: "POST", body: { current_password, new_password }, auth: true }),
+};
+
+// V1.6.3 — Candidatos a certificación
+export const adminCertCandidates = {
+  list: () => api("/admin/certification-candidates", { auth: true }),
+  issue: (enrollmentId: string, body?: { final_grade?: number; hours_completed?: number }) =>
+    api(`/admin/certification-candidates/${enrollmentId}/issue`, { method: "POST", body: body || {}, auth: true }),
+};
+
+
 export function safeArray<T = any>(v: any): T[] { return Array.isArray(v) ? v : []; }
 export function safeObj<T>(v: any, fb: T): T {
   return v && typeof v === "object" && !Array.isArray(v) ? v : fb;

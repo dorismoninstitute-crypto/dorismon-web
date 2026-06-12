@@ -120,27 +120,46 @@ export default function AdminPlacementResultsPage() {
             const theme = getLevelTheme(r.suggested_level_code);
             return (
               <Card key={r.test_id}>
-                <CardBody className="flex items-center gap-4 flex-wrap">
-                  <div className={`w-14 h-14 rounded-2xl ${theme.bg} ${theme.heroText} flex items-center justify-center font-extrabold text-xl flex-shrink-0`}>
-                    {r.suggested_level_code || "?"}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <p className="font-bold">{r.student_name}</p>
-                      {r.is_paused && <Badge variant="warning">⏸ Pausado</Badge>}
-                      {r.is_enrolled && <Badge variant="success">✓ Inscrito</Badge>}
+                <CardBody>
+                  <div className="flex items-start gap-3">
+                    {/* Badge nivel compacto */}
+                    <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl ${theme.bg} flex items-center justify-center font-black text-white text-lg md:text-xl flex-shrink-0 shadow-soft`}>
+                      {r.suggested_level_code || "?"}
                     </div>
-                    <p className="text-xs text-slate-500">{r.student_email} {r.phone && `· ${r.phone}`}</p>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Test: {r.completed_at && new Date(r.completed_at).toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" })}
-                      {r.grammar_score !== null && ` · Grammar ${Math.round(r.grammar_score)}%`}
-                      {r.reading_score !== null && ` · Reading ${Math.round(r.reading_score)}%`}
-                    </p>
+
+                    {/* Info estudiante — ocupa todo el espacio disponible */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <p className="font-bold text-slate-900 text-sm md:text-base truncate">{r.student_name}</p>
+                        {r.is_paused && <Badge variant="warning">⏸</Badge>}
+                        {r.is_enrolled && <Badge variant="success">✓ Inscrito</Badge>}
+                      </div>
+                      <p className="text-xs text-slate-500 truncate" title={r.student_email}>
+                        {r.student_email}
+                      </p>
+                      {r.phone && <p className="text-xs text-slate-500">📞 {r.phone}</p>}
+                      <p className="text-xs text-slate-500 mt-1">
+                        Test: {r.completed_at && new Date(r.completed_at).toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" })}
+                      </p>
+                      {(r.grammar_score !== null || r.reading_score !== null) && (
+                        <p className="text-xs text-slate-500">
+                          {r.grammar_score !== null && `Grammar ${Math.round(r.grammar_score)}%`}
+                          {r.grammar_score !== null && r.reading_score !== null && " · "}
+                          {r.reading_score !== null && `Reading ${Math.round(r.reading_score)}%`}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => openDetail(r.test_id)}>Ver detalle</Button>
+
+                  {/* Botones DEBAJO en mobile (no al lado del nombre) */}
+                  <div className="flex gap-2 mt-3 pt-3 border-t border-slate-100">
+                    <Button size="sm" variant="outline" onClick={() => openDetail(r.test_id)} className="flex-1 md:flex-none">
+                      Ver detalle
+                    </Button>
                     {!r.is_enrolled && (
-                      <Button size="sm" onClick={() => openEnroll(r)}>Inscribir</Button>
+                      <Button size="sm" onClick={() => openEnroll(r)} className="flex-1 md:flex-none">
+                        Inscribir
+                      </Button>
                     )}
                   </div>
                 </CardBody>
