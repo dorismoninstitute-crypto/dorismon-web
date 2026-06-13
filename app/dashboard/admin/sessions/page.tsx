@@ -73,35 +73,41 @@ export default function AdminSessionsPage() {
 
   const load = () => {
     setLoading(true);
-    Promise.all([
-      adminApi.sessions(page),
-      adminClassSeries.list().catch(() => []),
-    ])
-      .then(([d, s]) => {
+    setErr("");
+    // V1.7 fix: cargar sessions primero, series por separado (si falla series no rompe)
+    adminApi.sessions(page)
+      .then((d: any) => {
         setItems(safeArray(safeObj(d, {} as any).items));
-        setSeriesList(safeArray(s));
+        // Cargar series en segundo plano (puede fallar si backend no tiene V1.7 todavía)
+        adminClassSeries.list()
+          .then((s: any) => setSeriesList(safeArray(s)))
+          .catch(() => setSeriesList([]));  // silencioso si endpoint no existe aún
         setLoading(false);
       })
-      .catch(e => { setErr(e.message); setLoading(false); });
+      .catch((e: any) => { setErr(e.message); setLoading(false); });
   };
   useEffect(() => { load(); }, [page]);
 
   // V1.7: Abrir modal de serie recurrente
   const openSeries = async () => {
     try {
-      const [ts, cs] = await Promise.all([adminHelpers.teachers(), adminApi.courses()]);
+      const [ts, cs] = await Promise.all([
+        adminHelpers.teachers().catch(() => []),
+        adminApi.courses().catch(() => []),
+      ]);
       setTeachers(safeArray(ts));
       setCourses(safeArray(cs));
       setShowMenu(false);
       setShowSeries(true);
-    } catch (e: any) { showToast("error", e.message); }
+    } catch (e: any) { showToast("error", "Error al cargar: " + e.message); }
   };
 
   // V1.7: Abrir modal de clase privada
   const openPrivate = async () => {
     try {
       const [ts, cs, us] = await Promise.all([
-        adminHelpers.teachers(), adminApi.courses(),
+        adminHelpers.teachers().catch(() => []),
+        adminApi.courses().catch(() => []),
         adminApi.users({ page: 1, limit: 500, role: "student" }).catch(() => ({ items: [] })),
       ]);
       setTeachers(safeArray(ts));
@@ -109,7 +115,7 @@ export default function AdminSessionsPage() {
       setStudentsList(safeArray((us as any).items));
       setShowMenu(false);
       setShowPrivate(true);
-    } catch (e: any) { showToast("error", e.message); }
+    } catch (e: any) { showToast("error", "Error al cargar: " + e.message); }
   };
 
   // V1.7: Toggle día de la semana
@@ -219,14 +225,19 @@ export default function AdminSessionsPage() {
 
   const openModal = async () => {
     try {
+      // V1.7 fix: cada endpoint con catch separado para que si uno falla, abra igual
       const [ts, cs, bs] = await Promise.all([
-        adminHelpers.teachers(), adminApi.courses(), adminApi.branches(),
+        adminHelpers.teachers().catch(() => []),
+        adminApi.courses().catch(() => []),
+        adminApi.branches().catch(() => []),
       ]);
       setTeachers(safeArray(ts));
       setCourses(safeArray(cs));
       setBranches(safeArray(bs));
       setShow(true);
-    } catch (e: any) { setMsg("✗ " + e.message); }
+    } catch (e: any) {
+      showToast("error", "Error al cargar datos: " + e.message);
+    }
   };
 
   // Cargar niveles cuando cambia el curso
@@ -334,54 +345,61 @@ export default function AdminSessionsPage() {
       <PageHeader
         title="Clases programadas"
         action={
-          <div className="relative">
-            <Button onClick={() => setShowMenu(!showMenu)}>
-              <Plus size={14} className="inline mr-1" /> Nueva clase
-            </Button>
-            {showMenu && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-                <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-lifted border border-slate-100 p-2 z-50">
-                  <button
-                    onClick={() => { setShowMenu(false); openModal(); }}
-                    className="w-full text-left p-3 rounded-lg hover:bg-slate-50 flex items-start gap-3"
-                  >
-                    <div className="w-9 h-9 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center flex-shrink-0">📅</div>
-                    <div>
-                      <p className="font-bold text-sm">Clase grupal única</p>
-                      <p className="text-xs text-slate-500">1 sola clase para un grupo (lo común)</p>
-                    </div>
-                  </button>
-                  <button
-                    onClick={openSeries}
-                    className="w-full text-left p-3 rounded-lg hover:bg-slate-50 flex items-start gap-3"
-                  >
-                    <div className="w-9 h-9 rounded-lg bg-accent-50 text-accent-600 flex items-center justify-center flex-shrink-0">
-                      <Repeat size={18} />
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm">🔁 Programación recurrente</p>
-                      <p className="text-xs text-slate-500">Lun/Mié/Vie × 8 semanas (genera múltiples)</p>
-                    </div>
-                  </button>
-                  <button
-                    onClick={openPrivate}
-                    className="w-full text-left p-3 rounded-lg hover:bg-slate-50 flex items-start gap-3"
-                  >
-                    <div className="w-9 h-9 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center flex-shrink-0">
-                      <UserIcon size={18} />
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm">👤 Clase privada 1-a-1</p>
-                      <p className="text-xs text-slate-500">Asignada a un estudiante específico</p>
-                    </div>
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+          <Button onClick={() => setShowMenu(!showMenu)}>
+            <Plus size={14} className="inline mr-1" /> Nueva clase
+          </Button>
         }
       />
+
+      {/* V1.7: Menú de creación como modal centrado (mobile-friendly) */}
+      {showMenu && (
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4 bg-black/50" onClick={() => setShowMenu(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-md p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3 px-2">
+              <h3 className="font-extrabold text-lg">¿Qué tipo de clase querés crear?</h3>
+              <button onClick={() => setShowMenu(false)} className="text-slate-400 hover:text-slate-600 p-1">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="space-y-1">
+              <button
+                onClick={() => { setShowMenu(false); openModal(); }}
+                className="w-full text-left p-3 rounded-xl hover:bg-slate-50 border border-slate-100 flex items-start gap-3 transition"
+              >
+                <div className="w-10 h-10 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center flex-shrink-0 text-xl">📅</div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-sm">Clase grupal única</p>
+                  <p className="text-xs text-slate-500">1 sola clase para un grupo (lo común)</p>
+                </div>
+              </button>
+              <button
+                onClick={openSeries}
+                className="w-full text-left p-3 rounded-xl hover:bg-slate-50 border border-slate-100 flex items-start gap-3 transition"
+              >
+                <div className="w-10 h-10 rounded-lg bg-accent-50 text-accent-600 flex items-center justify-center flex-shrink-0">
+                  <Repeat size={18} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-sm">🔁 Programación recurrente</p>
+                  <p className="text-xs text-slate-500">Lun/Mié/Vie × 8 semanas (genera múltiples)</p>
+                </div>
+              </button>
+              <button
+                onClick={openPrivate}
+                className="w-full text-left p-3 rounded-xl hover:bg-slate-50 border border-slate-100 flex items-start gap-3 transition"
+              >
+                <div className="w-10 h-10 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center flex-shrink-0">
+                  <UserIcon size={18} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-sm">👤 Clase privada 1-a-1</p>
+                  <p className="text-xs text-slate-500">Asignada a un estudiante específico</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {msg.startsWith("✓") && <div className="mb-4"><SuccessBox message={msg} /></div>}
       {msg.startsWith("✗") && <div className="mb-4"><ErrorBox message={msg.slice(2)} /></div>}
 
