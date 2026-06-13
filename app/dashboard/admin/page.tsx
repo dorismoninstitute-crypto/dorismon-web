@@ -40,6 +40,29 @@ export default function AdminDashboard() {
     <>
       <PageHeader title="Panel administrativo" subtitle="Resumen ejecutivo de Dorismon" />
 
+      {/* V1.6.4: Banner para cargar plantilla si NO hay módulos */}
+      {stats.total_modules === 0 && (
+        <Card className="mb-4 border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50">
+          <CardBody>
+            <div className="flex items-start gap-3">
+              <div className="text-3xl flex-shrink-0">📚</div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-amber-900 mb-1">Tu sistema todavía no tiene módulos cargados</h3>
+                <p className="text-sm text-amber-800 mb-3">
+                  Para que el progreso de los estudiantes avance al tomar asistencia, las clases deben estar vinculadas a módulos.
+                  Podés cargar una <strong>plantilla pre-hecha</strong> con módulos típicos por nivel CEFR (A1, A2, B1, B2, C1, C2) y editarlos después.
+                </p>
+                <Link href="/dashboard/admin/content">
+                  <Button size="sm">
+                    📚 Ir a Contenido y cargar plantilla
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      )}
+
       {/* V1.6.3: Banner candidatos a certificación */}
       {certCandidates.length > 0 && (
         <Card className="mb-4 border-emerald-200 bg-gradient-to-br from-emerald-50 to-accent-50">

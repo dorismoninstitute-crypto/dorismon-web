@@ -275,6 +275,8 @@ export const adminPlacement = {
 export const adminContent = {
   modules: (levelId: number) => api(`/admin/levels/${levelId}/modules`, { auth: true }),
   createModule: (body: any) => api(`/admin/modules`, { method: "POST", body, auth: true }),
+  updateModule: (id: number, body: any) => api(`/admin/modules/${id}`, { method: "PATCH", body, auth: true }),
+  deleteModule: (id: number) => api(`/admin/modules/${id}`, { method: "DELETE", auth: true }),
   lessons: (moduleId: number) => api(`/admin/modules/${moduleId}/lessons`, { auth: true }),
   createLesson: (body: any) => api(`/admin/lessons`, { method: "POST", body, auth: true }),
 };
@@ -322,7 +324,7 @@ export const calendarApi = {
 
 // V1.6.3 — Perfil y avatar
 export const profileApi = {
-  update: (body: { full_name?: string; phone?: string; avatar_url?: string; bio?: string }) =>
+  update: (body: { full_name?: string; phone?: string; gender?: string; bio?: string }) =>
     api("/auth/me", { method: "PATCH", body, auth: true }),
   changePassword: (current_password: string, new_password: string) =>
     api("/auth/change-password", { method: "POST", body: { current_password, new_password }, auth: true }),
@@ -333,6 +335,19 @@ export const adminCertCandidates = {
   list: () => api("/admin/certification-candidates", { auth: true }),
   issue: (enrollmentId: string, body?: { final_grade?: number; hours_completed?: number }) =>
     api(`/admin/certification-candidates/${enrollmentId}/issue`, { method: "POST", body: body || {}, auth: true }),
+};
+
+
+
+// V1.6.4 — Plantilla de módulos
+export const adminModuleTemplates = {
+  load: () => api("/admin/load-module-templates", { method: "POST", auth: true }),
+};
+
+// V1.6.4 — Lesson DELETE
+export const adminLessons = {
+  delete: (lessonId: number) => api(`/admin/lessons/${lessonId}`, { method: "DELETE", auth: true }),
+  update: (lessonId: number, body: any) => api(`/admin/lessons/${lessonId}`, { method: "PATCH", body, auth: true }),
 };
 
 

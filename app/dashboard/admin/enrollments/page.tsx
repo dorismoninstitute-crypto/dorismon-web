@@ -18,6 +18,7 @@ export default function AdminEnrollmentsPage() {
   const [plans, setPlans] = useState<any[]>([]);
   const [suggestedTeachers, setSuggestedTeachers] = useState<any[]>([]);
   const [filter, setFilter] = useState<"all" | "noteacher" | "active">("all");
+  const [search, setSearch] = useState("");
 
   const [form, setForm] = useState({
     student_id: "", course_id: "", level_id: "", teacher_id: "", plan_id: "",
@@ -158,13 +159,33 @@ export default function AdminEnrollmentsPage() {
         </CardBody>
       </Card>
 
+      {/* V1.6.4: Buscador */}
+      <Card className="mb-4">
+        <CardBody>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="🔍 Buscar por estudiante, curso o profesor..."
+            className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-brand-500"
+          />
+        </CardBody>
+      </Card>
+
       {(() => {
         const filtered = items.filter((e: any) => {
-          if (filter === "noteacher") return !e.teacher_id && e.is_active;
-          if (filter === "active") return e.is_active;
+          // Filtros por tipo
+          if (filter === "noteacher" && (e.teacher_id || !e.is_active)) return false;
+          if (filter === "active" && !e.is_active) return false;
+          // V1.6.4: Búsqueda
+          if (search.trim()) {
+            const q = search.toLowerCase().trim();
+            const hay = `${e.student_name || ""} ${e.course_name || ""} ${e.teacher_name || ""} ${e.level_code || ""}`.toLowerCase();
+            if (!hay.includes(q)) return false;
+          }
           return true;
         });
-        return filtered.length === 0 ? <EmptyState icon="📋" title="Sin inscripciones" /> : (
+        return filtered.length === 0 ? <EmptyState icon="📋" title={search ? "Sin resultados para tu búsqueda" : "Sin inscripciones"} /> : (
         <Card>
           <CardBody className="p-0">
             <div className="divide-y divide-slate-100">

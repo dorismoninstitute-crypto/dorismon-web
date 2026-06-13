@@ -5,6 +5,17 @@ module.exports = {
     "./components/**/*.{js,ts,jsx,tsx}",
   ],
   darkMode: 'class',
+  // V1.6.4: Safelist para clases dinámicas (badges CEFR, avatares por género)
+  safelist: [
+    // CEFR level colors (bg, border, text, soft variants)
+    { pattern: /^(bg|border|text|ring)-(pink|amber|violet|teal|blue|stone|slate|brand|accent|emerald|rose|red)-(50|100|200|300|400|500|600|700|800|900)$/ },
+    { pattern: /^(from|to|via)-(pink|rose|violet|fuchsia|amber|orange|teal|cyan|blue|slate|brand|accent)-(50|100|200|300|400|500|600|700|800)$/ },
+    // Gender gradients
+    'bg-gradient-to-br',
+    'from-pink-400', 'to-fuchsia-500', // female
+    'from-blue-500', 'to-teal-500',    // male
+    'from-slate-400', 'to-slate-600',  // other/null
+  ],
   theme: {
     extend: {
       colors: {
@@ -22,7 +33,6 @@ module.exports = {
         },
       },
       fontFamily: {
-        // V1.6.1: Inter como fuente principal
         sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
       },
       animation: {

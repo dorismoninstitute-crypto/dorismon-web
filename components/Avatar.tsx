@@ -3,20 +3,24 @@
 interface AvatarProps {
   name?: string | null;
   url?: string | null;
+  gender?: string | null;  // V1.6.4: 'male', 'female', 'other', null
   size?: "xs" | "sm" | "md" | "lg" | "xl";
-  variant?: "gradient" | "solid";
   ring?: boolean;
 }
 
 /**
- * V1.6.3 — Avatar reutilizable
- * Si tiene URL, muestra la imagen. Si no, muestra iniciales sobre gradient brand→accent.
+ * V1.6.4 — Avatar reutilizable con gradient por género
+ *
+ * - Si tiene URL → muestra imagen (V1.6.5: upload real)
+ * - Si gender='female' → gradient rosa → fucsia
+ * - Si gender='male' → gradient azul → turquesa
+ * - Si gender='other'/null → gradient slate neutro
  */
 export default function Avatar({
   name = "?",
   url,
+  gender,
   size = "md",
-  variant = "gradient",
   ring = false,
 }: AvatarProps) {
   const sizes = {
@@ -35,9 +39,13 @@ export default function Avatar({
     .slice(0, 2)
     .toUpperCase();
 
-  const bgClass = variant === "gradient"
-    ? "bg-gradient-to-br from-brand-500 to-accent-500"
-    : "bg-brand-600";
+  // V1.6.4: gradient por género
+  let gradientClass = "bg-gradient-to-br from-slate-400 to-slate-600";  // default neutro
+  if (gender === "female") {
+    gradientClass = "bg-gradient-to-br from-pink-400 to-fuchsia-500";
+  } else if (gender === "male") {
+    gradientClass = "bg-gradient-to-br from-blue-500 to-teal-500";
+  }
 
   const ringClass = ring ? "ring-2 ring-white shadow-card" : "";
 
@@ -49,7 +57,6 @@ export default function Avatar({
         alt={name || "Avatar"}
         className={`${sizes[size]} rounded-full object-cover ${ringClass}`}
         onError={(e) => {
-          // Si falla la imagen, ocultarla para mostrar fallback
           (e.currentTarget as HTMLImageElement).style.display = "none";
         }}
       />
@@ -58,7 +65,7 @@ export default function Avatar({
 
   return (
     <div
-      className={`${sizes[size]} ${bgClass} ${ringClass} rounded-full flex items-center justify-center font-bold text-white flex-shrink-0`}
+      className={`${sizes[size]} ${gradientClass} ${ringClass} rounded-full flex items-center justify-center font-bold text-white flex-shrink-0`}
     >
       {initials || "?"}
     </div>

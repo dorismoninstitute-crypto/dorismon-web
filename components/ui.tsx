@@ -434,10 +434,52 @@ export function JoinClassButton({ session }: { session: any }) {
     setShowModal(false);
   };
 
+  // V1.6.4: Lógica temporal inteligente
+  const now = new Date();
+  const startsAt = session?.starts_at_utc ? new Date(session.starts_at_utc) : null;
+  const endsAt = session?.ends_at_utc ? new Date(session.ends_at_utc) : null;
+
+  const minsUntilStart = startsAt ? Math.round((startsAt.getTime() - now.getTime()) / 60000) : null;
+  const minsUntilEnd = endsAt ? Math.round((endsAt.getTime() - now.getTime()) / 60000) : null;
+
+  // Estados temporales
+  const isUpcomingFar = minsUntilStart !== null && minsUntilStart > 15;
+  const isReadyToJoin = minsUntilStart !== null && minsUntilStart <= 15 && minsUntilStart > 0;
+  const isInProgress = startsAt && endsAt && now >= startsAt && now <= endsAt;
+  const isFinished = endsAt && now > endsAt;
+
+  // Render del botón según estado temporal
+  let btnLabel: string;
+  let btnDisabled = false;
+  let btnClassName = "";
+
+  if (platform === "none") {
+    btnLabel = "Sin link aún";
+    btnDisabled = true;
+  } else if (isFinished) {
+    btnLabel = "✓ Clase finalizada";
+    btnDisabled = true;
+    btnClassName = "opacity-50";
+  } else if (isInProgress) {
+    btnLabel = `🔴 EN CURSO — Entrar a ${platformLabel}`;
+    btnClassName = "bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 animate-pulse-soft";
+  } else if (isReadyToJoin) {
+    btnLabel = `${platformIcon} Entrar a ${platformLabel} (empieza en ${minsUntilStart} min)`;
+  } else if (isUpcomingFar) {
+    const hrs = Math.floor(minsUntilStart! / 60);
+    btnLabel = hrs >= 1
+      ? `⏰ Empieza en ${hrs}h ${minsUntilStart! % 60}min`
+      : `⏰ Empieza en ${minsUntilStart} min`;
+    btnDisabled = true;
+    btnClassName = "opacity-60";
+  } else {
+    btnLabel = `${platformIcon} Entrar a ${platformLabel} →`;
+  }
+
   return (
     <>
-      <Button onClick={open} disabled={platform === "none"}>
-        {platform === "none" ? "Sin link aún" : `${platformIcon} Entrar a ${platformLabel} →`}
+      <Button onClick={open} disabled={btnDisabled} className={btnClassName}>
+        {btnLabel}
       </Button>
 
       {showModal && url && (

@@ -8,6 +8,7 @@ export default function AdminPlacementResultsPage() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [filter, setFilter] = useState<"pending" | "enrolled" | "all">("pending");
+  const [search, setSearch] = useState("");
   const [detail, setDetail] = useState<any>(null);
   const [enrolling, setEnrolling] = useState<any>(null);
 
@@ -112,11 +113,34 @@ export default function AdminPlacementResultsPage() {
         </CardBody>
       </Card>
 
-      {items.length === 0 ? (
-        <EmptyState icon="🎯" title={filter === "pending" ? "Sin placements pendientes" : "Sin resultados"} description={filter === "pending" ? "Cuando un estudiante completa el test, aparece aquí." : ""} />
+      {/* V1.6.4: Buscador */}
+      <Card className="mb-4">
+        <CardBody>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="🔍 Buscar por nombre o email..."
+            className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-brand-500"
+          />
+        </CardBody>
+      </Card>
+
+      {(() => {
+        // V1.6.4: filtrar por search
+        const filtered = search.trim()
+          ? items.filter((r: any) => {
+              const q = search.toLowerCase().trim();
+              return (r.student_name || "").toLowerCase().includes(q)
+                  || (r.student_email || "").toLowerCase().includes(q)
+                  || (r.phone || "").toLowerCase().includes(q);
+            })
+          : items;
+        return filtered.length === 0 ? (
+        <EmptyState icon="🎯" title={search ? "Sin resultados para tu búsqueda" : (filter === "pending" ? "Sin placements pendientes" : "Sin resultados")} description={search ? "Probá con otro nombre o email." : (filter === "pending" ? "Cuando un estudiante completa el test, aparece aquí." : "")} />
       ) : (
         <div className="space-y-3">
-          {items.map((r: any) => {
+          {filtered.map((r: any) => {
             const theme = getLevelTheme(r.suggested_level_code);
             return (
               <Card key={r.test_id}>
@@ -167,7 +191,8 @@ export default function AdminPlacementResultsPage() {
             );
           })}
         </div>
-      )}
+      );
+      })()}
 
       {/* Modal Detalle */}
       <Modal open={!!detail} onClose={() => setDetail(null)} title={`Detalle: ${detail?.student_name || ""}`} size="lg">

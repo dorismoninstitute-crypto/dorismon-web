@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { auth, profileApi } from "@/lib/api";
 import { LoadingScreen, ErrorBox, PageHeader, Card, CardBody, Input, Button, showToast } from "@/components/ui";
 import Avatar from "@/components/Avatar";
-import { User, Phone, Mail, Camera, Lock, Save, Briefcase } from "lucide-react";
+import { User as UserIcon, Phone, Mail, Lock, Save, Briefcase } from "lucide-react";
 
 export default function AccountPage() {
   const [user, setUser] = useState<any>(null);
@@ -11,7 +11,7 @@ export default function AccountPage() {
   const [err, setErr] = useState("");
 
   // Form perfil
-  const [profileForm, setProfileForm] = useState({ full_name: "", phone: "", avatar_url: "", bio: "" });
+  const [profileForm, setProfileForm] = useState({ full_name: "", phone: "", gender: "", bio: "" });
   const [savingProfile, setSavingProfile] = useState(false);
 
   // Form contraseña
@@ -25,7 +25,7 @@ export default function AccountPage() {
         setProfileForm({
           full_name: u.full_name || "",
           phone: u.phone || "",
-          avatar_url: u.avatar_url || "",
+          gender: u.gender || "",
           bio: u.bio || "",
         });
         setLoading(false);
@@ -39,7 +39,7 @@ export default function AccountPage() {
       const r: any = await profileApi.update({
         full_name: profileForm.full_name,
         phone: profileForm.phone,
-        avatar_url: profileForm.avatar_url,
+        gender: profileForm.gender,
         bio: profileForm.bio,
       });
       setUser({ ...user, ...r.user });
@@ -88,12 +88,7 @@ export default function AccountPage() {
           <Card>
             <CardBody className="text-center py-8">
               <div className="flex justify-center mb-4">
-                <div className="relative">
-                  <Avatar name={user.full_name} url={profileForm.avatar_url} size="xl" ring />
-                  <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-brand-600 rounded-full ring-2 ring-white flex items-center justify-center cursor-pointer hover:bg-brand-700 transition">
-                    <Camera size={14} className="text-white" />
-                  </div>
-                </div>
+                <Avatar name={user.full_name} gender={profileForm.gender || user.gender} size="xl" ring />
               </div>
               <h2 className="text-xl font-extrabold text-slate-900">{user.full_name}</h2>
               <p className="text-sm text-slate-500 mb-3">{user.email}</p>
@@ -105,7 +100,7 @@ export default function AccountPage() {
 
           <Card className="mt-4">
             <CardBody>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Información de cuenta</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Información</p>
               <div className="space-y-3 text-sm">
                 <div className="flex items-center gap-2">
                   <Mail size={14} className="text-slate-400" />
@@ -124,6 +119,15 @@ export default function AccountPage() {
               </div>
             </CardBody>
           </Card>
+
+          {/* V1.6.4: Aviso de upload futuro */}
+          <Card className="mt-4 bg-brand-50 border-brand-100">
+            <CardBody>
+              <p className="text-xs text-brand-700">
+                💡 <strong>Próximamente:</strong> Vas a poder subir tu foto de perfil real desde acá. Mientras tanto, el avatar se genera con tus iniciales.
+              </p>
+            </CardBody>
+          </Card>
         </div>
 
         {/* Columna derecha: forms */}
@@ -133,11 +137,11 @@ export default function AccountPage() {
             <CardBody>
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-9 h-9 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center">
-                  <User size={18} />
+                  <UserIcon size={18} />
                 </div>
                 <div>
                   <h3 className="font-extrabold text-slate-900">Perfil</h3>
-                  <p className="text-xs text-slate-500">Tu información personal visible</p>
+                  <p className="text-xs text-slate-500">Tu información personal</p>
                 </div>
               </div>
 
@@ -154,19 +158,35 @@ export default function AccountPage() {
                   onChange={(e: any) => setProfileForm({ ...profileForm, phone: e.target.value })}
                   placeholder="Ej: 829-555-1234"
                 />
+
+                {/* V1.6.4: Selector de género */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">
-                    URL de foto de perfil
+                  <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
+                    Género (opcional)
                   </label>
-                  <input
-                    type="url"
-                    value={profileForm.avatar_url}
-                    onChange={(e) => setProfileForm({ ...profileForm, avatar_url: e.target.value })}
-                    placeholder="https://ejemplo.com/mi-foto.jpg"
-                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-brand-500"
-                  />
-                  <p className="text-xs text-slate-500 mt-1.5">
-                    💡 Subí tu foto a un servicio como <a href="https://imgur.com" target="_blank" rel="noopener" className="text-brand-600 hover:underline font-semibold">imgur.com</a> o <a href="https://cloudinary.com" target="_blank" rel="noopener" className="text-brand-600 hover:underline font-semibold">Cloudinary</a> y pegá el link aquí. Debe empezar con <code className="bg-slate-100 px-1 rounded">https://</code>.
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { value: "female", label: "Femenino", gradient: "from-pink-400 to-fuchsia-500" },
+                      { value: "male", label: "Masculino", gradient: "from-blue-500 to-teal-500" },
+                      { value: "", label: "Prefiero no decir", gradient: "from-slate-400 to-slate-600" },
+                    ].map((g) => (
+                      <button
+                        key={g.value || "none"}
+                        type="button"
+                        onClick={() => setProfileForm({ ...profileForm, gender: g.value })}
+                        className={`p-3 rounded-xl border-2 transition ${
+                          (profileForm.gender || "") === g.value
+                            ? "border-brand-500 bg-brand-50"
+                            : "border-slate-200 bg-white hover:border-slate-300"
+                        }`}
+                      >
+                        <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${g.gradient} mx-auto mb-2`} />
+                        <p className="text-xs font-semibold text-slate-700">{g.label}</p>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2">
+                    💡 Se usa para personalizar el color de tu avatar.
                   </p>
                 </div>
 
@@ -178,7 +198,7 @@ export default function AccountPage() {
                     <textarea
                       value={profileForm.bio}
                       onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
-                      placeholder="Profesor con 5 años de experiencia enseñando inglés..."
+                      placeholder="Profesor con experiencia enseñando inglés..."
                       rows={3}
                       className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-brand-500"
                     />

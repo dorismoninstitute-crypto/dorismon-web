@@ -151,7 +151,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <div className="p-4 border-t border-slate-100">
           <div className="flex items-center gap-3 mb-3 px-2">
-            <Avatar name={u.full_name} url={u.avatar_url} size="md" />
+            <Avatar name={u.full_name} gender={u.gender} size="md" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold truncate">{u.full_name}</p>
               <p className="text-xs text-slate-500 truncate">{u.email}</p>

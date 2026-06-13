@@ -8,7 +8,7 @@ import Logo from "@/components/Logo";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ email: "", password: "", full_name: "", phone: "" });
+  const [form, setForm] = useState({ email: "", password: "", full_name: "", phone: "", gender: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -54,6 +54,35 @@ export default function RegisterPage() {
             <Input label="Teléfono (opcional)" value={form.phone}
               onChange={(e: any) => setForm({ ...form, phone: e.target.value })}
               placeholder="+1 809..." />
+
+            {/* V1.6.4: Selector género opcional */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
+                Género (opcional)
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { value: "female", label: "Femenino", gradient: "from-pink-400 to-fuchsia-500" },
+                  { value: "male", label: "Masculino", gradient: "from-blue-500 to-teal-500" },
+                  { value: "", label: "No decir", gradient: "from-slate-400 to-slate-600" },
+                ].map((g) => (
+                  <button
+                    key={g.value || "none"}
+                    type="button"
+                    onClick={() => setForm({ ...form, gender: g.value })}
+                    className={`p-2 rounded-lg border-2 transition ${
+                      form.gender === g.value
+                        ? "border-brand-500 bg-brand-50"
+                        : "border-slate-200 bg-white hover:border-slate-300"
+                    }`}
+                  >
+                    <div className={`w-7 h-7 rounded-full bg-gradient-to-br ${g.gradient} mx-auto mb-1`} />
+                    <p className="text-[10px] font-semibold text-slate-700">{g.label}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <Input label="Contraseña" type="password" required minLength={8} value={form.password}
               onChange={(e: any) => setForm({ ...form, password: e.target.value })}
               placeholder="Mínimo 8 caracteres" />

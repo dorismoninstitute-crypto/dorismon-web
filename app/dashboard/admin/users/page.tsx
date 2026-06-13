@@ -35,6 +35,13 @@ export default function AdminUsersPage() {
   };
   useEffect(() => { load(); }, [page, role]);
 
+  // V1.6.4: Debounce search en vivo
+  useEffect(() => {
+    const t = setTimeout(() => { load(); }, 350);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q]);
+
   const create = async () => {
     try {
       await adminApi.createUser(form);

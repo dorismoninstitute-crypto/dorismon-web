@@ -82,7 +82,7 @@ export default function CertificationReadyPage() {
                 <Card key={c.enrollment_id}>
                   <CardBody>
                     <div className="flex items-start gap-3">
-                      <Avatar name={c.student_name} url={c.avatar_url} size="lg" ring />
+                      <Avatar name={c.student_name} gender={c.gender} size="lg" ring />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap mb-1">
                           <p className="font-bold text-slate-900">{c.student_name}</p>

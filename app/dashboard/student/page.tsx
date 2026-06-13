@@ -328,17 +328,28 @@ export default function StudentDashboard() {
           </Card>
         )}
 
-        {/* V1.6.2: Próxima clase como hero gigante destacado */}
-        {progressData?.next_session && (
-          <div className="lg:col-span-2 bg-gradient-to-br from-brand-600 via-brand-700 to-brand-800 rounded-2xl p-5 md:p-7 text-white shadow-lifted relative overflow-hidden">
+        {/* V1.6.2 + V1.6.4: Próxima clase como hero gigante destacado, con estado EN CURSO */}
+        {progressData?.next_session && (() => {
+          const now = new Date();
+          const startsAt = progressData.next_session.starts_at_utc ? new Date(progressData.next_session.starts_at_utc) : null;
+          const endsAt = progressData.next_session.ends_at_utc ? new Date(progressData.next_session.ends_at_utc) : null;
+          const isInProgress = startsAt && endsAt && now >= startsAt && now <= endsAt;
+          const heroBg = isInProgress
+            ? "bg-gradient-to-br from-red-600 via-red-700 to-red-800"
+            : "bg-gradient-to-br from-brand-600 via-brand-700 to-brand-800";
+          const labelColor = isInProgress ? "text-red-100" : "text-accent-200";
+          const labelText = isInProgress ? "🔴 EN CURSO AHORA" : "Tu próxima clase";
+
+          return (
+          <div className={`lg:col-span-2 ${heroBg} rounded-2xl p-5 md:p-7 text-white shadow-lifted relative overflow-hidden`}>
             <div className="absolute top-0 right-0 w-48 h-48 bg-accent-500/20 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
             <div className="relative">
               <div className="flex items-center gap-4 flex-wrap mb-4">
-                <div className="w-14 h-14 bg-white/15 backdrop-blur-sm rounded-2xl flex items-center justify-center flex-shrink-0">
+                <div className={`w-14 h-14 bg-white/15 backdrop-blur-sm rounded-2xl flex items-center justify-center flex-shrink-0 ${isInProgress ? "animate-pulse-soft" : ""}`}>
                   <Clock size={24} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-accent-200 mb-1">Tu próxima clase</p>
+                  <p className={`text-[10px] font-bold uppercase tracking-widest ${labelColor} mb-1`}>{labelText}</p>
                   <h3 className="font-black text-xl md:text-2xl mb-1">{progressData.next_session.title}</h3>
                   <p className="text-sm text-brand-100">
                     <Calendar size={14} className="inline mr-1.5 -mt-0.5" />
@@ -363,7 +374,8 @@ export default function StudentDashboard() {
               )}
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {/* Próximas clases (lista) */}
         <Card>
