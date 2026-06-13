@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { adminApi, adminEdit, adminHelpers, adminContent, safeArray, safeObj } from "@/lib/api";
+import { adminApi, adminEdit, adminHelpers, adminContent, adminClassSeries, adminPrivateClasses, safeArray, safeObj } from "@/lib/api";
+import { Repeat, User as UserIcon, Plus, X } from "lucide-react";
 import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Input, Textarea, Select, Modal, SuccessBox, ConfirmModal, showToast, MeetingUrlGuide, MeetingUrlInput } from "@/components/ui";
 
 export default function AdminSessionsPage() {
@@ -9,6 +10,23 @@ export default function AdminSessionsPage() {
   const [err, setErr] = useState("");
   const [page, setPage] = useState(1);
   const [show, setShow] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);  // V1.7: menú 3 opciones
+  const [showSeries, setShowSeries] = useState(false);  // V1.7
+  const [showPrivate, setShowPrivate] = useState(false);  // V1.7
+  const [seriesList, setSeriesList] = useState<any[]>([]);  // V1.7
+  const [studentsList, setStudentsList] = useState<any[]>([]);  // V1.7 para privadas
+  const [seriesForm, setSeriesForm] = useState<any>({
+    name: "", course_id: "", level_id: "", teacher_id: "",
+    days_of_week: [], start_time_hhmm: "19:00", duration_min: 90,
+    start_date: "", end_date: "", num_classes: "", end_type: "num_classes",
+    modality: "online", meeting_url: "", capacity: 15,
+  });
+  const [privateForm, setPrivateForm] = useState<any>({
+    student_id: "", teacher_id: "", course_id: "", level_id: "",
+    title: "", starts_at: "", duration_min: 60,
+    modality: "online", meeting_url: "", counts_for_progress: false,
+  });
+  const [confirmDeleteSeries, setConfirmDeleteSeries] = useState<any>(null);
   const [msg, setMsg] = useState("");
   const [editing, setEditing] = useState<any>(null);
   const [editForm, setEditForm] = useState({ title: "", description: "", meeting_url: "", teacher_notes: "" });
@@ -55,11 +73,149 @@ export default function AdminSessionsPage() {
 
   const load = () => {
     setLoading(true);
-    adminApi.sessions(page)
-      .then(d => { setItems(safeArray(safeObj(d, {} as any).items)); setLoading(false); })
+    Promise.all([
+      adminApi.sessions(page),
+      adminClassSeries.list().catch(() => []),
+    ])
+      .then(([d, s]) => {
+        setItems(safeArray(safeObj(d, {} as any).items));
+        setSeriesList(safeArray(s));
+        setLoading(false);
+      })
       .catch(e => { setErr(e.message); setLoading(false); });
   };
   useEffect(() => { load(); }, [page]);
+
+  // V1.7: Abrir modal de serie recurrente
+  const openSeries = async () => {
+    try {
+      const [ts, cs] = await Promise.all([adminHelpers.teachers(), adminApi.courses()]);
+      setTeachers(safeArray(ts));
+      setCourses(safeArray(cs));
+      setShowMenu(false);
+      setShowSeries(true);
+    } catch (e: any) { showToast("error", e.message); }
+  };
+
+  // V1.7: Abrir modal de clase privada
+  const openPrivate = async () => {
+    try {
+      const [ts, cs, us] = await Promise.all([
+        adminHelpers.teachers(), adminApi.courses(),
+        adminApi.users({ page: 1, limit: 500, role: "student" }).catch(() => ({ items: [] })),
+      ]);
+      setTeachers(safeArray(ts));
+      setCourses(safeArray(cs));
+      setStudentsList(safeArray((us as any).items));
+      setShowMenu(false);
+      setShowPrivate(true);
+    } catch (e: any) { showToast("error", e.message); }
+  };
+
+  // V1.7: Toggle día de la semana
+  const toggleDay = (day: string) => {
+    setSeriesForm((prev: any) => ({
+      ...prev,
+      days_of_week: prev.days_of_week.includes(day)
+        ? prev.days_of_week.filter((d: string) => d !== day)
+        : [...prev.days_of_week, day],
+    }));
+  };
+
+  // V1.7: Crear serie
+  const submitSeries = async () => {
+    if (!seriesForm.name || !seriesForm.course_id || !seriesForm.level_id || !seriesForm.teacher_id || seriesForm.days_of_week.length === 0 || !seriesForm.start_date) {
+      showToast("error", "Completá nombre, curso, nivel, profesor, días y fecha de inicio");
+      return;
+    }
+    if (seriesForm.end_type === "end_date" && !seriesForm.end_date) {
+      showToast("error", "Falta fecha de fin");
+      return;
+    }
+    if (seriesForm.end_type === "num_classes" && !seriesForm.num_classes) {
+      showToast("error", "Falta cantidad de clases");
+      return;
+    }
+    try {
+      const body: any = {
+        name: seriesForm.name,
+        course_id: parseInt(seriesForm.course_id),
+        level_id: parseInt(seriesForm.level_id),
+        teacher_id: seriesForm.teacher_id,
+        days_of_week: seriesForm.days_of_week.join(","),
+        start_time_hhmm: seriesForm.start_time_hhmm,
+        duration_min: parseInt(seriesForm.duration_min),
+        start_date: seriesForm.start_date,
+        modality: seriesForm.modality,
+        meeting_url: seriesForm.meeting_url || null,
+        capacity: parseInt(seriesForm.capacity),
+      };
+      if (seriesForm.end_type === "end_date") body.end_date = seriesForm.end_date;
+      else body.num_classes = parseInt(seriesForm.num_classes);
+
+      const r: any = await adminClassSeries.create(body);
+      showToast("success", `✅ Serie creada: ${r.classes_created} clases generadas`);
+      setShowSeries(false);
+      load();
+    } catch (e: any) { showToast("error", e.message); }
+  };
+
+  // V1.7: Crear clase privada
+  const submitPrivate = async () => {
+    if (!privateForm.student_id || !privateForm.teacher_id || !privateForm.course_id || !privateForm.level_id || !privateForm.title || !privateForm.starts_at) {
+      showToast("error", "Completá todos los campos requeridos");
+      return;
+    }
+    try {
+      const body = {
+        student_id: privateForm.student_id,
+        teacher_id: privateForm.teacher_id,
+        course_id: parseInt(privateForm.course_id),
+        level_id: parseInt(privateForm.level_id),
+        title: privateForm.title,
+        starts_at_utc: new Date(privateForm.starts_at).toISOString(),
+        duration_min: parseInt(privateForm.duration_min),
+        modality: privateForm.modality,
+        meeting_url: privateForm.meeting_url || null,
+        counts_for_progress: privateForm.counts_for_progress,
+      };
+      await adminPrivateClasses.create(body);
+      showToast("success", "✅ Clase privada creada");
+      setShowPrivate(false);
+      load();
+    } catch (e: any) { showToast("error", e.message); }
+  };
+
+  // V1.7: Eliminar serie
+  const doDeleteSeries = async () => {
+    if (!confirmDeleteSeries) return;
+    try {
+      const r: any = await adminClassSeries.delete(confirmDeleteSeries.id, true);
+      showToast("success", `Serie eliminada. ${r.deleted_classes} clases futuras canceladas.`);
+      setConfirmDeleteSeries(null);
+      load();
+    } catch (e: any) { showToast("error", e.message); }
+  };
+
+  // Cargar niveles al elegir curso (serie)
+  const onSeriesCourseChange = async (course_id: string) => {
+    setSeriesForm({ ...seriesForm, course_id, level_id: "" });
+    if (course_id) {
+      try {
+        const lvls = await adminHelpers.levelsByCourse(parseInt(course_id));
+        setLevels(safeArray(lvls));
+      } catch {}
+    }
+  };
+  const onPrivateCourseChange = async (course_id: string) => {
+    setPrivateForm({ ...privateForm, course_id, level_id: "" });
+    if (course_id) {
+      try {
+        const lvls = await adminHelpers.levelsByCourse(parseInt(course_id));
+        setLevels(safeArray(lvls));
+      } catch {}
+    }
+  };
 
   const openModal = async () => {
     try {
@@ -177,10 +333,90 @@ export default function AdminSessionsPage() {
     <>
       <PageHeader
         title="Clases programadas"
-        action={<Button onClick={openModal}>+ Nueva clase</Button>}
+        action={
+          <div className="relative">
+            <Button onClick={() => setShowMenu(!showMenu)}>
+              <Plus size={14} className="inline mr-1" /> Nueva clase
+            </Button>
+            {showMenu && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+                <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-lifted border border-slate-100 p-2 z-50">
+                  <button
+                    onClick={() => { setShowMenu(false); openModal(); }}
+                    className="w-full text-left p-3 rounded-lg hover:bg-slate-50 flex items-start gap-3"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center flex-shrink-0">📅</div>
+                    <div>
+                      <p className="font-bold text-sm">Clase grupal única</p>
+                      <p className="text-xs text-slate-500">1 sola clase para un grupo (lo común)</p>
+                    </div>
+                  </button>
+                  <button
+                    onClick={openSeries}
+                    className="w-full text-left p-3 rounded-lg hover:bg-slate-50 flex items-start gap-3"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-accent-50 text-accent-600 flex items-center justify-center flex-shrink-0">
+                      <Repeat size={18} />
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm">🔁 Programación recurrente</p>
+                      <p className="text-xs text-slate-500">Lun/Mié/Vie × 8 semanas (genera múltiples)</p>
+                    </div>
+                  </button>
+                  <button
+                    onClick={openPrivate}
+                    className="w-full text-left p-3 rounded-lg hover:bg-slate-50 flex items-start gap-3"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center flex-shrink-0">
+                      <UserIcon size={18} />
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm">👤 Clase privada 1-a-1</p>
+                      <p className="text-xs text-slate-500">Asignada a un estudiante específico</p>
+                    </div>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        }
       />
       {msg.startsWith("✓") && <div className="mb-4"><SuccessBox message={msg} /></div>}
       {msg.startsWith("✗") && <div className="mb-4"><ErrorBox message={msg.slice(2)} /></div>}
+
+      {/* V1.7: Series activas */}
+      {seriesList.filter((s: any) => s.is_active).length > 0 && (
+        <Card className="mb-4">
+          <CardBody>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                <Repeat size={14} />
+                Series recurrentes activas
+              </p>
+              <span className="text-xs text-slate-400">{seriesList.filter((s: any) => s.is_active).length} series</span>
+            </div>
+            <div className="space-y-2">
+              {seriesList.filter((s: any) => s.is_active).map((s: any) => (
+                <div key={s.id} className="flex items-center justify-between gap-3 p-3 bg-slate-50 rounded-lg">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-sm">{s.name}</p>
+                    <p className="text-xs text-slate-500">
+                      {s.level_code} · {s.teacher_name} · {s.days_of_week.replace(/,/g, ', ')} {s.start_time_hhmm}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      <strong>{s.total_classes}</strong> clases ({s.past_classes} pasadas, {s.future_classes} futuras)
+                    </p>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={() => setConfirmDeleteSeries(s)} className="text-red-600 border-red-200 hover:bg-red-50">
+                    <X size={12} className="inline mr-1" /> Cancelar serie
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardBody>
+        </Card>
+      )}
 
       {loading ? <LoadingScreen /> : err ? <ErrorBox message={err} /> :
        items.length === 0 ? <EmptyState icon="📅" title="Sin clases" description="Hacé clic en '+ Nueva clase' para programar una." /> : (
@@ -194,6 +430,8 @@ export default function AdminSessionsPage() {
                       <Badge variant={s.modality === "online" ? "brand" : s.modality === "presencial" ? "accent" : "info"}>{s.modality}</Badge>
                       <Badge>{s.level_code}</Badge>
                       {s.is_open_event && <Badge variant="warning">🎫 Evento</Badge>}
+                      {s.series_id && <Badge variant="info">🔁 Recurrente</Badge>}
+                      {s.student_id && <Badge variant="info">👤 Privada</Badge>}
                       {s.status === "cancelled" && <Badge variant="danger">Cancelada</Badge>}
                     </div>
                     <p className="font-semibold">{s.title}</p>
@@ -341,6 +579,185 @@ export default function AdminSessionsPage() {
         title="¿Cancelar esta clase?"
         message="Los estudiantes ya no podrán verla en su calendario. Esta acción se puede revertir manualmente desde la base de datos."
         confirmLabel="Sí, cancelar"
+      />
+
+      {/* V1.7: Modal Serie recurrente */}
+      <Modal open={showSeries} onClose={() => setShowSeries(false)} title="🔁 Programar serie recurrente" size="lg">
+        <div className="space-y-3">
+          <Input label="Nombre de la serie *" value={seriesForm.name} onChange={(e: any) => setSeriesForm({ ...seriesForm, name: e.target.value })} placeholder="Ej: B1 Nocturno" />
+
+          <div className="grid grid-cols-2 gap-2">
+            <Select label="Curso *" value={seriesForm.course_id} onChange={(e: any) => onSeriesCourseChange(e.target.value)}>
+              <option value="">Seleccionar...</option>
+              {courses.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </Select>
+            <Select label="Nivel *" value={seriesForm.level_id} onChange={(e: any) => setSeriesForm({ ...seriesForm, level_id: e.target.value })} disabled={!levels.length}>
+              <option value="">{levels.length ? "Seleccionar..." : "Curso primero"}</option>
+              {levels.map((l: any) => <option key={l.id} value={l.id}>{l.code} — {l.name}</option>)}
+            </Select>
+          </div>
+
+          <Select label="Profesor *" value={seriesForm.teacher_id} onChange={(e: any) => setSeriesForm({ ...seriesForm, teacher_id: e.target.value })}>
+            <option value="">Seleccionar...</option>
+            {teachers.map((t: any) => <option key={t.id} value={t.id}>{t.full_name}</option>)}
+          </Select>
+
+          {/* Días de la semana */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">Días de la semana *</label>
+            <div className="grid grid-cols-7 gap-1">
+              {[
+                { value: "mon", label: "Lun" },
+                { value: "tue", label: "Mar" },
+                { value: "wed", label: "Mié" },
+                { value: "thu", label: "Jue" },
+                { value: "fri", label: "Vie" },
+                { value: "sat", label: "Sáb" },
+                { value: "sun", label: "Dom" },
+              ].map((d) => (
+                <button
+                  key={d.value}
+                  type="button"
+                  onClick={() => toggleDay(d.value)}
+                  className={`p-2 rounded-lg text-xs font-bold border-2 transition ${
+                    seriesForm.days_of_week.includes(d.value)
+                      ? "border-brand-500 bg-brand-50 text-brand-700"
+                      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                  }`}
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <Input label="Hora inicio *" type="time" value={seriesForm.start_time_hhmm} onChange={(e: any) => setSeriesForm({ ...seriesForm, start_time_hhmm: e.target.value })} />
+            <Input label="Duración (min)" type="number" value={seriesForm.duration_min} onChange={(e: any) => setSeriesForm({ ...seriesForm, duration_min: parseInt(e.target.value) || 90 })} />
+          </div>
+
+          <Input label="Fecha de inicio *" type="date" value={seriesForm.start_date} onChange={(e: any) => setSeriesForm({ ...seriesForm, start_date: e.target.value })} />
+
+          {/* Tipo de fin */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">¿Cómo termina la serie?</label>
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              <button
+                type="button"
+                onClick={() => setSeriesForm({ ...seriesForm, end_type: "num_classes" })}
+                className={`p-2 rounded-lg text-xs font-semibold border-2 ${seriesForm.end_type === "num_classes" ? "border-brand-500 bg-brand-50 text-brand-700" : "border-slate-200"}`}
+              >
+                Por # de clases
+              </button>
+              <button
+                type="button"
+                onClick={() => setSeriesForm({ ...seriesForm, end_type: "end_date" })}
+                className={`p-2 rounded-lg text-xs font-semibold border-2 ${seriesForm.end_type === "end_date" ? "border-brand-500 bg-brand-50 text-brand-700" : "border-slate-200"}`}
+              >
+                Por fecha fin
+              </button>
+            </div>
+            {seriesForm.end_type === "num_classes" ? (
+              <Input label="Cantidad de clases *" type="number" value={seriesForm.num_classes} onChange={(e: any) => setSeriesForm({ ...seriesForm, num_classes: e.target.value })} placeholder="Ej: 24" />
+            ) : (
+              <Input label="Fecha de fin *" type="date" value={seriesForm.end_date} onChange={(e: any) => setSeriesForm({ ...seriesForm, end_date: e.target.value })} />
+            )}
+          </div>
+
+          <Select label="Modalidad" value={seriesForm.modality} onChange={(e: any) => setSeriesForm({ ...seriesForm, modality: e.target.value })}>
+            <option value="online">Online</option>
+            <option value="presencial">Presencial</option>
+            <option value="hibrida">Híbrida</option>
+          </Select>
+
+          {seriesForm.modality !== "presencial" && (
+            <Input label="Link Zoom/Meet/Teams" value={seriesForm.meeting_url} onChange={(e: any) => setSeriesForm({ ...seriesForm, meeting_url: e.target.value })} placeholder="https://zoom.us/..." />
+          )}
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-900">
+            💡 Se generarán todas las clases automáticamente con los datos especificados. Después podés editar o cancelar cualquier clase individualmente.
+          </div>
+
+          <Button onClick={submitSeries} className="w-full" size="lg">
+            🔁 Crear serie y generar clases
+          </Button>
+        </div>
+      </Modal>
+
+      {/* V1.7: Modal Clase privada */}
+      <Modal open={showPrivate} onClose={() => setShowPrivate(false)} title="👤 Crear clase privada 1-a-1" size="lg">
+        <div className="space-y-3">
+          <Select label="Estudiante *" value={privateForm.student_id} onChange={(e: any) => setPrivateForm({ ...privateForm, student_id: e.target.value })}>
+            <option value="">Seleccionar estudiante...</option>
+            {studentsList.map((s: any) => <option key={s.id} value={s.id}>{s.full_name} ({s.email})</option>)}
+          </Select>
+
+          <Select label="Profesor *" value={privateForm.teacher_id} onChange={(e: any) => setPrivateForm({ ...privateForm, teacher_id: e.target.value })}>
+            <option value="">Seleccionar...</option>
+            {teachers.map((t: any) => <option key={t.id} value={t.id}>{t.full_name}</option>)}
+          </Select>
+
+          <div className="grid grid-cols-2 gap-2">
+            <Select label="Curso *" value={privateForm.course_id} onChange={(e: any) => onPrivateCourseChange(e.target.value)}>
+              <option value="">Seleccionar...</option>
+              {courses.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </Select>
+            <Select label="Nivel *" value={privateForm.level_id} onChange={(e: any) => setPrivateForm({ ...privateForm, level_id: e.target.value })} disabled={!levels.length}>
+              <option value="">{levels.length ? "Seleccionar..." : "Curso primero"}</option>
+              {levels.map((l: any) => <option key={l.id} value={l.id}>{l.code} — {l.name}</option>)}
+            </Select>
+          </div>
+
+          <Input label="Título *" value={privateForm.title} onChange={(e: any) => setPrivateForm({ ...privateForm, title: e.target.value })} placeholder="Ej: Refuerzo grammar particular" />
+
+          <div className="grid grid-cols-2 gap-2">
+            <Input label="Fecha y hora *" type="datetime-local" value={privateForm.starts_at} onChange={(e: any) => setPrivateForm({ ...privateForm, starts_at: e.target.value })} />
+            <Input label="Duración (min)" type="number" value={privateForm.duration_min} onChange={(e: any) => setPrivateForm({ ...privateForm, duration_min: parseInt(e.target.value) || 60 })} />
+          </div>
+
+          <Select label="Modalidad" value={privateForm.modality} onChange={(e: any) => setPrivateForm({ ...privateForm, modality: e.target.value })}>
+            <option value="online">Online</option>
+            <option value="presencial">Presencial</option>
+            <option value="hibrida">Híbrida</option>
+          </Select>
+
+          {privateForm.modality !== "presencial" && (
+            <Input label="Link Zoom/Meet/Teams" value={privateForm.meeting_url} onChange={(e: any) => setPrivateForm({ ...privateForm, meeting_url: e.target.value })} placeholder="https://zoom.us/..." />
+          )}
+
+          <label className="flex items-start gap-2 cursor-pointer p-3 bg-slate-50 rounded-lg">
+            <input
+              type="checkbox"
+              checked={privateForm.counts_for_progress}
+              onChange={(e) => setPrivateForm({ ...privateForm, counts_for_progress: e.target.checked })}
+              className="mt-0.5"
+            />
+            <div className="flex-1">
+              <p className="text-sm font-semibold">Cuenta para el progreso CEFR</p>
+              <p className="text-xs text-slate-500">
+                Si marcás esto, la asistencia avanza el módulo en la ruta del estudiante. Si NO marcás, es solo refuerzo.
+              </p>
+            </div>
+          </label>
+
+          <div className="bg-violet-50 border border-violet-200 rounded-lg p-3 text-xs text-violet-900">
+            💡 Solo este estudiante verá la clase. Para cobrar adicional, registralo en Pagos manualmente.
+          </div>
+
+          <Button onClick={submitPrivate} className="w-full" size="lg">
+            👤 Crear clase privada
+          </Button>
+        </div>
+      </Modal>
+
+      <ConfirmModal
+        open={!!confirmDeleteSeries}
+        onClose={() => setConfirmDeleteSeries(null)}
+        onConfirm={doDeleteSeries}
+        title={`¿Cancelar serie "${confirmDeleteSeries?.name}"?`}
+        message={`Se cancelarán las ${confirmDeleteSeries?.future_classes || 0} clases futuras de esta serie. Las clases pasadas se mantienen para historial.`}
+        confirmLabel="Sí, cancelar serie"
+        confirmVariant="danger"
       />
     </>
   );

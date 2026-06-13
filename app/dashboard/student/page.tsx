@@ -350,7 +350,14 @@ export default function StudentDashboard() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className={`text-[10px] font-bold uppercase tracking-widest ${labelColor} mb-1`}>{labelText}</p>
-                  <h3 className="font-black text-xl md:text-2xl mb-1">{progressData.next_session.title}</h3>
+                  <h3 className="font-black text-xl md:text-2xl mb-1">
+                    {progressData.next_session.is_private && (
+                      <span className="inline-block px-2 py-0.5 rounded-md text-xs font-bold bg-violet-500/30 text-white mr-2 align-middle">
+                        👤 Privada
+                      </span>
+                    )}
+                    {progressData.next_session.title}
+                  </h3>
                   <p className="text-sm text-brand-100">
                     <Calendar size={14} className="inline mr-1.5 -mt-0.5" />
                     {progressData.next_session.starts_at_utc && new Date(progressData.next_session.starts_at_utc).toLocaleString("es", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}

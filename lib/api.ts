@@ -351,6 +351,19 @@ export const adminLessons = {
 };
 
 
+
+// V1.7 — Series recurrentes y clases privadas
+export const adminClassSeries = {
+  list: () => api("/admin/class-series", { auth: true }),
+  create: (body: any) => api("/admin/class-series", { method: "POST", body, auth: true }),
+  delete: (seriesId: string, futureOnly = true) =>
+    api(`/admin/class-series/${seriesId}?future_only=${futureOnly}`, { method: "DELETE", auth: true }),
+};
+export const adminPrivateClasses = {
+  create: (body: any) => api("/admin/private-classes", { method: "POST", body, auth: true }),
+};
+
+
 export function safeArray<T = any>(v: any): T[] { return Array.isArray(v) ? v : []; }
 export function safeObj<T>(v: any, fb: T): T {
   return v && typeof v === "object" && !Array.isArray(v) ? v : fb;
