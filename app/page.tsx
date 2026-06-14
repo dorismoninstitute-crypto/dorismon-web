@@ -47,11 +47,11 @@ export default function Home() {
             <p className="text-base md:text-lg text-slate-600 mb-8 leading-relaxed max-w-xl">
               Cursos para niños, jóvenes y adultos con profesores certificados,
               metodología comunicativa y certificación reconocida.
-              Aprendé hablando desde la primera clase.
+              Aprende hablando desde la primera clase.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 mb-8">
               <Link href="/register" className="inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-bold px-6 py-3.5 rounded-xl transition shadow-card text-sm md:text-base">
-                Empezá ahora
+                Empieza ahora
                 <ArrowRight size={18} />
               </Link>
               <a href="#programas" className="inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-900 font-bold px-6 py-3.5 rounded-xl border-2 border-slate-200 transition text-sm md:text-base">
@@ -79,7 +79,7 @@ export default function Home() {
                 </div>
                 <div>
                   <p className="font-bold text-slate-900">Test de nivel gratuito</p>
-                  <p className="text-xs text-slate-500">Conocé tu nivel CEFR en minutos</p>
+                  <p className="text-xs text-slate-500">Conoce tu nivel CEFR en minutos</p>
                 </div>
               </div>
               <p className="text-sm text-slate-600 mb-5">
@@ -183,7 +183,7 @@ export default function Home() {
 
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              { icon: Languages, title: "Metodología comunicativa", desc: "Aprendés hablando desde la primera clase. Sin enfoque gramatical tradicional aburrido." },
+              { icon: Languages, title: "Metodología comunicativa", desc: "Aprendes hablando desde la primera clase. Sin enfoque gramatical tradicional aburrido." },
               { icon: GraduationCap, title: "Profesores certificados", desc: "Docentes con certificación internacional (TEFL, CELTA) y experiencia comprobada." },
               { icon: Award, title: "Certificación oficial", desc: "Recibí un certificado digital verificable al completar cada nivel CEFR." },
               { icon: Calendar, title: "Flexibilidad horaria", desc: "Clases online, presenciales o híbridas. Elige lo que mejor se adapte a tu rutina." },
@@ -207,10 +207,10 @@ export default function Home() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent)]" />
         <div className="relative max-w-4xl mx-auto px-4 md:px-6 text-center">
           <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight mb-4">
-            Empezá hoy tu camino al inglés
+            Empieza hoy tu camino al inglés
           </h2>
           <p className="text-base md:text-xl text-brand-100 mb-8 max-w-2xl mx-auto">
-            Haz el test gratuito y conocé tu nivel CEFR. Te contactamos en 24 horas para diseñar tu plan personalizado.
+            Haz el test gratuito y conoce tu nivel CEFR. Te contactamos en 24 horas para diseñar tu plan personalizado.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/register" className="inline-flex items-center justify-center gap-2 bg-white text-brand-700 font-bold px-7 py-4 rounded-xl hover:bg-slate-50 transition shadow-lifted">

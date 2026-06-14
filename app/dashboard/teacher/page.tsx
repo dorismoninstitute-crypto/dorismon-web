@@ -55,7 +55,7 @@ export default function TeacherDashboard() {
                 {today.length === 0 ? (
                   <>No tienes clases hoy. <span className="text-white">Aprovecha para preparar las próximas.</span></>
                 ) : (
-                  <>Tenés <strong className="text-white">{today.length}</strong> {today.length === 1 ? "clase" : "clases"} hoy.</>
+                  <>Tienes <strong className="text-white">{today.length}</strong> {today.length === 1 ? "clase" : "clases"} hoy.</>
                 )}
               </p>
             </div>
@@ -307,7 +307,7 @@ export default function TeacherDashboard() {
                   Por calificar
                 </h3>
                 <p className="text-sm text-brand-800 mb-3">
-                  Tenés <strong>{stats.pending_grading}</strong> {stats.pending_grading === 1 ? "tarea" : "tareas"} esperando corrección.
+                  Tienes <strong>{stats.pending_grading}</strong> {stats.pending_grading === 1 ? "tarea" : "tareas"} esperando corrección.
                 </p>
                 <Link href="/dashboard/teacher/assignments">
                   <Button size="sm" className="w-full">

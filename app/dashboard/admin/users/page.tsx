@@ -227,7 +227,7 @@ export default function AdminUsersPage() {
       <Modal open={!!pausing} onClose={() => setPausing(null)} title={`Pausar a ${pausing?.full_name}`}>
         <div className="space-y-3">
           <p className="text-sm text-slate-600">
-            El estudiante quedará pausado: no aparece en listas activas pero conserva todo su progreso. Podés reactivarlo cuando quieras.
+            El estudiante quedará pausado: no aparece en listas activas pero conserva todo su progreso. Puedes reactivarlo cuando quieras.
           </p>
           <Input label="Razón de la pausa" value={pauseReason} onChange={(e: any) => setPauseReason(e.target.value)} placeholder="ej: Solicitó vacaciones, pago atrasado, etc." />
           <Button onClick={doPause} className="w-full" variant="primary" size="lg">⏸ Pausar estudiante</Button>

@@ -305,7 +305,7 @@ export default function AdminEnrollmentsPage() {
         onClose={() => setConfirmDeleteId(null)}
         onConfirm={() => confirmDeleteId && doDelete(confirmDeleteId)}
         title="¿Desactivar inscripción?"
-        message="El estudiante deja de aparecer como inscrito activo, pero conserva su histórico y progreso. Podés reactivar después creando una nueva inscripción."
+        message="El estudiante deja de aparecer como inscrito activo, pero conserva su histórico y progreso. Puedes reactivar después creando una nueva inscripción."
         confirmLabel="Sí, desactivar"
       />
     </>

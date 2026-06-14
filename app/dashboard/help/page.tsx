@@ -162,7 +162,7 @@ export default function HelpPage() {
               />
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Describí el problema *</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Describe el problema *</label>
                 <textarea
                   value={form.body}
                   onChange={(e) => setForm({ ...form, body: e.target.value })}

@@ -31,7 +31,7 @@ export default function AdminDashboard() {
   }, []);
 
   if (loading) return <LoadingScreen />;
-  if (err) return <ErrorBox message={err.includes("403") ? "Necesitás rol admin" : err} />;
+  if (err) return <ErrorBox message={err.includes("403") ? "Necesitas rol admin" : err} />;
   const d = safeObj(data, {}) as any;
   const stats = safeObj(d.stats, {}) as any;
   const f = safeObj(finance, {}) as any;
@@ -50,7 +50,7 @@ export default function AdminDashboard() {
                 <h3 className="font-bold text-amber-900 mb-1">Tu sistema todavía no tiene módulos cargados</h3>
                 <p className="text-sm text-amber-800 mb-3">
                   Para que el progreso de los estudiantes avance al tomar asistencia, las clases deben estar vinculadas a módulos.
-                  Podés cargar una <strong>plantilla pre-hecha</strong> con módulos típicos por nivel CEFR (A1, A2, B1, B2, C1, C2) y editarlos después.
+                  Puedes cargar una <strong>plantilla pre-hecha</strong> con módulos típicos por nivel CEFR (A1, A2, B1, B2, C1, C2) y editarlos después.
                 </p>
                 <Link href="/dashboard/admin/content">
                   <Button size="sm">

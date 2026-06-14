@@ -186,7 +186,7 @@ export default function AdminContentPage() {
               <div className="flex-1">
                 <p className="font-bold text-amber-900 text-sm">Este nivel no tiene módulos aún</p>
                 <p className="text-xs text-amber-800 mt-1">
-                  Podés cargar la <strong>plantilla pre-hecha</strong> con módulos típicos del nivel, o crear los tuyos desde cero.
+                  Puedes cargar la <strong>plantilla pre-hecha</strong> con módulos típicos del nivel, o crear los tuyos desde cero.
                 </p>
                 <div className="flex gap-2 mt-2">
                   <Button size="sm" onClick={() => setShowTemplateConfirm(true)}>

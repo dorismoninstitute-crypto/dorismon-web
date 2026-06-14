@@ -148,7 +148,7 @@ export default function StudentEventsPage() {
         onClose={() => setConfirmCancel(null)}
         onConfirm={() => cancel(confirmCancel.id)}
         title="¿Cancelar registro?"
-        message={`Vas a cancelar tu registro al evento "${confirmCancel?.title}". Podés volver a anotarte si hay cupo disponible.`}
+        message={`Vas a cancelar tu registro al evento "${confirmCancel?.title}". Puedes volver a anotarte si hay cupo disponible.`}
         confirmLabel="Sí, cancelar"
       />
     </>

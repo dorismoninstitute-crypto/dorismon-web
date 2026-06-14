@@ -194,17 +194,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div />
         </header>
 
-        {/* V2.1: banner si email no verificado */}
-        {u && !u.email_verified && (
-          <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 text-center text-sm">
-            <span className="text-amber-900">
-              📧 <strong>Verificá tu email</strong> para aprovechar todas las funciones.
-            </span>{" "}
-            <Link href="/verify-email" className="font-bold text-amber-700 hover:text-amber-800 underline">
-              Verificar ahora →
-            </Link>
-          </div>
-        )}
+        {/* V2.4: Banner de verificación de email REMOVIDO.
+           El registro ya valida el email con MX records, marcamos email_verified=true.
+           Si en el futuro queremos verificación adicional, será opcional. */}
 
         <main className="p-3 md:p-8 max-w-7xl mx-auto pb-20 md:pb-8">{children}</main>
       </div>
