@@ -53,7 +53,7 @@ export default function HelpPage() {
   const submit = async () => {
     if (!selectedCategory) return;
     if (!form.subject.trim() || !form.body.trim()) {
-      showToast("error", "Completá asunto y descripción");
+      showToast("error", "Completa asunto y descripción");
       return;
     }
     setSending(true);
@@ -80,7 +80,7 @@ export default function HelpPage() {
       {!selectedCategory ? (
         <>
           <p className="text-sm text-slate-600 mb-4">
-            Elegí qué tipo de problema tenés. Tu solicitud llegará al administrador con la prioridad correcta.
+            Elige qué tipo de problema tienes. Tu solicitud llegará al administrador con la prioridad correcta.
           </p>
 
           <div className="grid md:grid-cols-2 gap-3">
@@ -114,7 +114,7 @@ export default function HelpPage() {
               <div className="flex items-start gap-3">
                 <HelpCircle className="text-slate-400 flex-shrink-0" size={20} />
                 <div>
-                  <p className="text-sm font-bold text-slate-700">¿Querés escribirle directo a alguien?</p>
+                  <p className="text-sm font-bold text-slate-700">¿Quieres escribirle directo a alguien?</p>
                   <p className="text-xs text-slate-600 mt-1">
                     Usá <a href="/dashboard/messages" className="text-brand-600 font-bold hover:underline">Mensajes</a> para hablar con tu profesor o el administrador sin abrir un ticket formal.
                   </p>

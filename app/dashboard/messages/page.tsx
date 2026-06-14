@@ -49,7 +49,7 @@ export default function MessagesPage() {
 
   const send = async () => {
     if (!form.to_user_id || !form.subject || !form.body) {
-      showToast("error", "Completá destinatario, asunto y mensaje");
+      showToast("error", "Completa destinatario, asunto y mensaje");
       return;
     }
     try {
@@ -117,8 +117,8 @@ export default function MessagesPage() {
           <CardBody>
             <div className="text-center py-12 text-slate-400">
               <Mail size={40} className="mx-auto mb-3 text-slate-300" />
-              <p className="font-semibold">No tenés mensajes {tab === "inbox" ? "recibidos" : "enviados"}</p>
-              <p className="text-xs mt-1">Hacé clic en "+ Nuevo mensaje" para empezar una conversación.</p>
+              <p className="font-semibold">No tienes mensajes {tab === "inbox" ? "recibidos" : "enviados"}</p>
+              <p className="text-xs mt-1">Haz clic en "+ Nuevo mensaje" para empezar una conversación.</p>
             </div>
           </CardBody>
         </Card>
@@ -178,7 +178,7 @@ export default function MessagesPage() {
           </Select>
           {contacts.length === 0 && (
             <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded">
-              ⚠️ No tenés contactos disponibles. Si sos estudiante, asegurate de tener un profesor asignado.
+              ⚠️ No tienes contactos disponibles. Si eres estudiante, asegúrate de tener un profesor asignado.
             </p>
           )}
 

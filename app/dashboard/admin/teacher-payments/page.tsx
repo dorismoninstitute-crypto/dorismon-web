@@ -233,7 +233,7 @@ export default function AdminTeacherPaymentsPage() {
             <li>✅ Las clases canceladas NO se pagan</li>
             <li>✅ Cada profesor tiene tarifas independientes (Grupal / Privada / Evento)</li>
             <li>✅ El sistema calcula automáticamente. Vos solo registrás cuando hayas hecho la transferencia</li>
-            <li>⚠️ Por ahora <strong>las transferencias las hacés manualmente</strong> (Banco / Efectivo). Stripe lo agregamos en V2.4+</li>
+            <li>⚠️ Por ahora <strong>las transferencias las haces manualmente</strong> (Banco / Efectivo). Stripe lo agregamos en V2.4+</li>
           </ul>
         </CardBody>
       </Card>

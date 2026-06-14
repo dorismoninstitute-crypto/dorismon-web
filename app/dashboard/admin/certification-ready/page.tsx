@@ -68,7 +68,7 @@ export default function CertificationReadyPage() {
                   </h3>
                   <p className="text-sm text-emerald-800">
                     Estos estudiantes completaron todos los módulos de su nivel y tienen buena asistencia.
-                    Revisá y emití su certificado con 1 click.
+                    Revisa y emití su certificado con 1 click.
                   </p>
                 </div>
               </div>

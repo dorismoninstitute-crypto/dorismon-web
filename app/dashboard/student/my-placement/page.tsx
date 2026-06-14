@@ -25,8 +25,8 @@ export default function MyPlacementPage() {
         <Card>
           <CardBody className="text-center py-12">
             <div className="text-5xl mb-3">🎯</div>
-            <p className="text-slate-600 mb-2">Aún no tenés un nivel asignado.</p>
-            <p className="text-sm text-slate-500">Hacé el test de nivel para conocer tu CEFR estimado.</p>
+            <p className="text-slate-600 mb-2">Aún no tienes un nivel asignado.</p>
+            <p className="text-sm text-slate-500">Haz el test de nivel para conocer tu CEFR estimado.</p>
           </CardBody>
         </Card>
       </>
@@ -61,7 +61,7 @@ export default function MyPlacementPage() {
               <p className="font-bold mb-2">📋 Nivel asignado por el coordinador</p>
               <p>
                 Tu nivel actual fue asignado directamente por un coordinador, basado en tu entrevista o experiencia previa.
-                Si querés tener un detalle de scores por destrezas, podés solicitar hacer el test de nivel hablando con tu coordinador.
+                Si quieres tener un detalle de scores por destrezas, puedes solicitar hacer el test de nivel hablando con tu coordinador.
               </p>
             </div>
           ) : (

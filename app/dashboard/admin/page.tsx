@@ -132,6 +132,31 @@ export default function AdminDashboard() {
                     <Button size="sm" variant="outline">Configurar niveles de profes</Button>
                   </Link>
                 </div>
+
+                {/* V2.3: Lista de profes sin alumnos (si los hay) */}
+                {stats.teachers_without_students_list && stats.teachers_without_students_list.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-blue-200">
+                    <p className="text-xs font-bold text-blue-900 mb-2">📋 Profesores sin estudiantes asignados:</p>
+                    <div className="space-y-1">
+                      {stats.teachers_without_students_list.map((t: any) => (
+                        <div key={t.user_id} className="flex items-center gap-2 text-xs">
+                          <span className="w-6 h-6 rounded-full bg-blue-200 text-blue-800 flex items-center justify-center font-bold">
+                            {t.full_name?.[0]?.toUpperCase() || "?"}
+                          </span>
+                          <span className="font-semibold text-blue-900">{t.full_name}</span>
+                          <span className="text-blue-700">·</span>
+                          <span className="text-blue-700">{t.email}</span>
+                          {t.modalities && (
+                            <span className="text-blue-600">· {t.modalities}</span>
+                          )}
+                          {t.levels_taught && (
+                            <span className="text-blue-600">· Niveles: {t.levels_taught}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </CardBody>

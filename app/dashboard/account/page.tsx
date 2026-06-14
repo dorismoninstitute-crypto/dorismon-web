@@ -222,7 +222,7 @@ export default function AccountPage() {
                 </div>
                 <div>
                   <h3 className="font-extrabold text-slate-900">Seguridad</h3>
-                  <p className="text-xs text-slate-500">Cambiá tu contraseña</p>
+                  <p className="text-xs text-slate-500">Cambia tu contraseña</p>
                 </div>
               </div>
 

@@ -131,7 +131,7 @@ export default function AdminSessionsPage() {
   // V1.7: Crear serie
   const submitSeries = async () => {
     if (!seriesForm.name || !seriesForm.course_id || !seriesForm.level_id || !seriesForm.teacher_id || seriesForm.days_of_week.length === 0 || !seriesForm.start_date) {
-      showToast("error", "Completá nombre, curso, nivel, profesor, días y fecha de inicio");
+      showToast("error", "Completa nombre, curso, nivel, profesor, días y fecha de inicio");
       return;
     }
     if (seriesForm.end_type === "end_date" && !seriesForm.end_date) {
@@ -169,7 +169,7 @@ export default function AdminSessionsPage() {
   // V1.7: Crear clase privada
   const submitPrivate = async () => {
     if (!privateForm.student_id || !privateForm.teacher_id || !privateForm.course_id || !privateForm.level_id || !privateForm.title || !privateForm.starts_at) {
-      showToast("error", "Completá todos los campos requeridos");
+      showToast("error", "Completa todos los campos requeridos");
       return;
     }
     try {
@@ -356,7 +356,7 @@ export default function AdminSessionsPage() {
         <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4 bg-black/50" onClick={() => setShowMenu(false)}>
           <div className="bg-white rounded-2xl w-full max-w-md p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3 px-2">
-              <h3 className="font-extrabold text-lg">¿Qué tipo de clase querés crear?</h3>
+              <h3 className="font-extrabold text-lg">¿Qué tipo de clase quieres crear?</h3>
               <button onClick={() => setShowMenu(false)} className="text-slate-400 hover:text-slate-600 p-1">
                 <X size={20} />
               </button>
@@ -437,7 +437,7 @@ export default function AdminSessionsPage() {
       )}
 
       {loading ? <LoadingScreen /> : err ? <ErrorBox message={err} /> :
-       items.length === 0 ? <EmptyState icon="📅" title="Sin clases" description="Hacé clic en '+ Nueva clase' para programar una." /> : (
+       items.length === 0 ? <EmptyState icon="📅" title="Sin clases" description="Haz clic en '+ Nueva clase' para programar una." /> : (
         <Card>
           <CardBody className="p-0">
             <div className="divide-y divide-slate-100">
@@ -489,13 +489,13 @@ export default function AdminSessionsPage() {
           </div>
 
           <Select label="Nivel *" value={form.level_id} onChange={(e: any) => onLevelChange(e.target.value)} disabled={!levels.length}>
-            <option value="">{levels.length ? "Seleccionar..." : "Seleccioná un curso primero"}</option>
+            <option value="">{levels.length ? "Seleccionar..." : "Selecciona un curso primero"}</option>
             {levels.map(l => <option key={l.id} value={l.id}>{l.code} — {l.name}</option>)}
           </Select>
 
           {/* V1.5: Vincular clase a módulo */}
           <Select label="Módulo (opcional)" value={form.module_id} onChange={(e: any) => setForm({ ...form, module_id: e.target.value })} disabled={!modules.length}>
-            <option value="">{modules.length ? "Sin módulo específico" : "Seleccioná un nivel primero"}</option>
+            <option value="">{modules.length ? "Sin módulo específico" : "Selecciona un nivel primero"}</option>
             {modules.map((m: any) => <option key={m.id} value={m.id}>M{m.order_index || "?"}. {m.name}</option>)}
           </Select>
           {form.module_id && (
@@ -577,7 +577,7 @@ export default function AdminSessionsPage() {
         <div className="space-y-3">
           {isEditPast && (
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
-              ⚠️ Esta clase ya pasó. Solo podés editar el título, descripción y notas.
+              ⚠️ Esta clase ya pasó. Solo puedes editar el título, descripción y notas.
             </div>
           )}
           <Input label="Título" value={editForm.title} onChange={(e: any) => setEditForm({ ...editForm, title: e.target.value })} />
@@ -693,7 +693,7 @@ export default function AdminSessionsPage() {
           )}
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-900">
-            💡 Se generarán todas las clases automáticamente con los datos especificados. Después podés editar o cancelar cualquier clase individualmente.
+            💡 Se generarán todas las clases automáticamente con los datos especificados. Después puedes editar o cancelar cualquier clase individualmente.
           </div>
 
           <Button onClick={submitSeries} className="w-full" size="lg">

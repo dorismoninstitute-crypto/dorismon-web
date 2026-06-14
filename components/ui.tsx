@@ -403,7 +403,7 @@ export function JoinClassButton({ session }: { session: any }) {
     platform = "zoom";
     platformLabel = "Zoom";
     platformIcon = "💙";
-    platformInstructions = "Si Zoom pide instalar la app, podés continuar desde el navegador haciendo click en 'Únete desde tu navegador'.";
+    platformInstructions = "Si Zoom pide instalar la app, puedes continuar desde el navegador haciendo click en 'Únete desde tu navegador'.";
   } else if (/^https?:\/\/meet\.google\.com\//i.test(url)) {
     platform = "google_meet";
     platformLabel = "Google Meet";
@@ -413,12 +413,12 @@ export function JoinClassButton({ session }: { session: any }) {
     platform = "teams";
     platformLabel = "Microsoft Teams";
     platformIcon = "🟣";
-    platformInstructions = "Si Teams pide instalar la app, podés continuar desde el navegador.";
+    platformInstructions = "Si Teams pide instalar la app, puedes continuar desde el navegador.";
   } else {
     platform = "other";
     platformLabel = "Reunión externa";
     platformIcon = "🔗";
-    platformInstructions = "Verificá que el link sea correcto. Si no funciona, contactá a tu profesor.";
+    platformInstructions = "Verificá que el link sea correcto. Si no funciona, contacta a tu profesor.";
   }
 
   const open = () => {
@@ -516,9 +516,9 @@ export function MeetingUrlGuide() {
     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs">
       <p className="font-bold text-blue-900 mb-1">📌 Cómo crear el link correcto:</p>
       <ul className="text-blue-800 space-y-1">
-        <li><strong>Google Meet:</strong> creá el evento desde Google Calendar y agregá videollamada (no uses meet.google.com directo, esos links piden permiso).</li>
+        <li><strong>Google Meet:</strong> crea el evento desde Google Calendar y agrega videollamada (no uses meet.google.com directo, esos links piden permiso).</li>
         <li><strong>Zoom:</strong> programá la reunión desde la app y copiá el link de invitación.</li>
-        <li><strong>Teams:</strong> creá la reunión desde Microsoft Teams y copiá el link.</li>
+        <li><strong>Teams:</strong> crea la reunión desde Microsoft Teams y copiá el link.</li>
       </ul>
     </div>
   );

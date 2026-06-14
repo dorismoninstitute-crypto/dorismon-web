@@ -31,14 +31,14 @@ export default function AdminEventsPage() {
     <>
       <PageHeader
         title="Eventos abiertos"
-        subtitle="Talleres, clubs y actividades que cualquier estudiante puede registrarse. Creá nuevos desde 'Clases' marcando 'Evento abierto'."
+        subtitle="Talleres, clubs y actividades que cualquier estudiante puede registrarse. Crea nuevos desde 'Clases' marcando 'Evento abierto'."
       />
 
       {items.length === 0 ? (
         <EmptyState
           icon="🎫"
           title="Sin eventos creados"
-          description="Andá a 'Clases' → '+ Nueva clase' y marcá 'Evento abierto'."
+          description="Ve a 'Clases' → '+ Nueva clase' y marcá 'Evento abierto'."
         />
       ) : (
         <div className="grid md:grid-cols-2 gap-4">

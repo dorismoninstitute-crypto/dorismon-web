@@ -106,7 +106,7 @@ export default function VerifyEmailPage() {
             </div>
 
             <div className="mt-4 text-xs text-slate-500">
-              <p>💡 Si no encontrás el email, revisá la carpeta de SPAM.</p>
+              <p>💡 Si no encontrás el email, revisa la carpeta de SPAM.</p>
               <p className="mt-2">El código vence en 30 minutos.</p>
             </div>
           </CardBody>

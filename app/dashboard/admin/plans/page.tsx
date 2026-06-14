@@ -110,7 +110,7 @@ export default function AdminPlansPage() {
       />
 
       {items.length === 0 ? (
-        <EmptyState icon="💳" title="Sin planes" description="Hacé clic en '+ Nuevo plan' para crear uno." />
+        <EmptyState icon="💳" title="Sin planes" description="Haz clic en '+ Nuevo plan' para crear uno." />
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {items.map((p: any) => {

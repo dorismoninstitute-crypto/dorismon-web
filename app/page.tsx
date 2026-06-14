@@ -186,7 +186,7 @@ export default function Home() {
               { icon: Languages, title: "Metodología comunicativa", desc: "Aprendés hablando desde la primera clase. Sin enfoque gramatical tradicional aburrido." },
               { icon: GraduationCap, title: "Profesores certificados", desc: "Docentes con certificación internacional (TEFL, CELTA) y experiencia comprobada." },
               { icon: Award, title: "Certificación oficial", desc: "Recibí un certificado digital verificable al completar cada nivel CEFR." },
-              { icon: Calendar, title: "Flexibilidad horaria", desc: "Clases online, presenciales o híbridas. Elegí lo que mejor se adapte a tu rutina." },
+              { icon: Calendar, title: "Flexibilidad horaria", desc: "Clases online, presenciales o híbridas. Elige lo que mejor se adapte a tu rutina." },
               { icon: Target, title: "Test de nivel inteligente", desc: "Evaluación gratuita con 60 preguntas balanceadas. Te asignamos al nivel correcto." },
               { icon: Globe, title: "Plataforma moderna", desc: "Acceso a clases, materiales, tareas y progreso desde cualquier dispositivo." },
             ].map((b, i) => (
@@ -210,7 +210,7 @@ export default function Home() {
             Empezá hoy tu camino al inglés
           </h2>
           <p className="text-base md:text-xl text-brand-100 mb-8 max-w-2xl mx-auto">
-            Hacé el test gratuito y conocé tu nivel CEFR. Te contactamos en 24 horas para diseñar tu plan personalizado.
+            Haz el test gratuito y conocé tu nivel CEFR. Te contactamos en 24 horas para diseñar tu plan personalizado.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/register" className="inline-flex items-center justify-center gap-2 bg-white text-brand-700 font-bold px-7 py-4 rounded-xl hover:bg-slate-50 transition shadow-lifted">

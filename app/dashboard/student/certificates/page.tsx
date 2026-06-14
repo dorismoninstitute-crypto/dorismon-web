@@ -21,7 +21,7 @@ export default function MyCertificatesPage() {
   return (
     <>
       <PageHeader title="Mis certificados" subtitle={`${items.length} certificados obtenidos`} />
-      {items.length === 0 ? <EmptyState icon="🎓" title="Aún no tienes certificados" description="Completá un curso para obtener tu primer certificado." /> : (
+      {items.length === 0 ? <EmptyState icon="🎓" title="Aún no tienes certificados" description="Completa un curso para obtener tu primer certificado." /> : (
         <div className="space-y-4">
           {items.map((c: any) => (
             <div key={c.id} className="rounded-2xl overflow-hidden shadow-lg"

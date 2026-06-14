@@ -123,7 +123,7 @@ export default function StudentProfilePage() {
                 <>
                   <p className="font-bold text-amber-900">⚠️ Tu perfil está incompleto</p>
                   <p className="text-xs text-amber-700">
-                    Completá los campos marcados con * para mejor servicio del instituto.
+                    Completa los campos marcados con * para mejor servicio del instituto.
                   </p>
                 </>
               )}
@@ -250,7 +250,7 @@ export default function StudentProfilePage() {
               Tutor / Responsable legal *
             </h3>
             <p className="text-xs text-amber-800 mb-4">
-              Como sos menor de edad, los datos del tutor son <strong>obligatorios</strong> para que el instituto pueda comunicarse con él/ella.
+              Como eres menor de edad, los datos del tutor son <strong>obligatorios</strong> para que el instituto pueda comunicarse con él/ella.
             </p>
             <div className="grid md:grid-cols-2 gap-3">
               <Input
@@ -322,7 +322,7 @@ export default function StudentProfilePage() {
                 value={form.special_notes}
                 onChange={(e) => setForm({ ...form, special_notes: e.target.value })}
                 rows={3}
-                placeholder="Si tenés alguna alergia, condición médica o algo que el instituto debería saber..."
+                placeholder="Si tienes alguna alergia, condición médica o algo que el instituto debería saber..."
                 className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-brand-500"
               />
             </div>

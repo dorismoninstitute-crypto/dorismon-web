@@ -61,7 +61,7 @@ function ResetPasswordContent() {
                     <Lock className="text-brand-600" size={32} />
                   </div>
                   <h1 className="text-2xl font-extrabold text-slate-900 mb-2">Crear nueva contraseña</h1>
-                  <p className="text-sm text-slate-600">Elegí una contraseña segura.</p>
+                  <p className="text-sm text-slate-600">Elige una contraseña segura.</p>
                 </div>
 
                 <form onSubmit={submit} className="space-y-4">

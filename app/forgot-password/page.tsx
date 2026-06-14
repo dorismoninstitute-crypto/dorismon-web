@@ -42,7 +42,7 @@ export default function ForgotPasswordPage() {
                   </div>
                   <h1 className="text-2xl font-extrabold text-slate-900 mb-2">¿Olvidaste tu contraseña?</h1>
                   <p className="text-sm text-slate-600">
-                    Ingresá tu email y te enviamos un link para crear una nueva.
+                    Ingresa tu email y te enviamos un link para crear una nueva.
                   </p>
                 </div>
 
@@ -65,12 +65,12 @@ export default function ForgotPasswordPage() {
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-50 flex items-center justify-center">
                   <CheckCircle2 className="text-emerald-600" size={32} />
                 </div>
-                <h2 className="text-xl font-extrabold text-slate-900 mb-2">Revisá tu email</h2>
+                <h2 className="text-xl font-extrabold text-slate-900 mb-2">Revisa tu email</h2>
                 <p className="text-sm text-slate-600 mb-4">
                   Si <strong>{email}</strong> está registrado, te enviamos un link para resetear tu contraseña.
                 </p>
                 <p className="text-xs text-slate-500">
-                  💡 El link vence en 2 horas. Si no lo encontrás, revisá la carpeta de SPAM.
+                  💡 El link vence en 2 horas. Si no lo encontrás, revisa la carpeta de SPAM.
                 </p>
               </div>
             )}

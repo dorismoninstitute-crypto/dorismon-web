@@ -77,7 +77,7 @@ export default function TeacherAssignmentsPage() {
       {msg.startsWith("✓") && <div className="mb-4"><SuccessBox message={msg} /></div>}
       {msg.startsWith("✗") && <div className="mb-4"><ErrorBox message={msg.slice(2)} /></div>}
 
-      {items.length === 0 ? <EmptyState icon="📝" title="Aún no creaste tareas" description="Hacé clic en '+ Nueva tarea' para crear una." /> : (
+      {items.length === 0 ? <EmptyState icon="📝" title="Aún no creaste tareas" description="Haz clic en '+ Nueva tarea' para crear una." /> : (
         <div className="space-y-2">
           {items.map((a: any) => (
             <Card key={a.id}>

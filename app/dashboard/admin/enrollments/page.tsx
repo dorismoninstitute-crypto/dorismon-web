@@ -21,9 +21,9 @@ export default function AdminEnrollmentsPage() {
   const [search, setSearch] = useState("");
 
   const [form, setForm] = useState({
-    student_id: "", course_id: "", level_id: "", teacher_id: "", plan_id: "",
+    student_id: "", course_id: "", level_id: "", teacher_id: "", plan_id: "", modality: "online",
   });
-  const [editForm, setEditForm] = useState({ teacher_id: "", level_id: "", plan_id: "" });
+  const [editForm, setEditForm] = useState({ teacher_id: "", level_id: "", plan_id: "", modality: "online" });
 
   const load = () => {
     setLoading(true);
@@ -48,14 +48,14 @@ export default function AdminEnrollmentsPage() {
 
   const openCreate = async () => {
     await loadDropdowns();
-    setForm({ student_id: "", course_id: "", level_id: "", teacher_id: "", plan_id: "" });
+    setForm({ student_id: "", course_id: "", level_id: "", teacher_id: "", plan_id: "", modality: "online" });
     setShow(true);
   };
 
   const openEdit = async (e: any) => {
     await loadDropdowns();
     setEditing(e);
-    setEditForm({ teacher_id: e.teacher_id || "", level_id: String(e.level_id || ""), plan_id: String(e.plan_id || "") });
+    setEditForm({ teacher_id: e.teacher_id || "", level_id: String(e.level_id || ""), plan_id: String(e.plan_id || ""), modality: e.modality || "online" });
     // Cargar niveles del curso
     try {
       const lvls = await adminHelpers.levelsByCourse(e.course_id);
@@ -92,6 +92,7 @@ export default function AdminEnrollmentsPage() {
         level_id: parseInt(form.level_id),
         teacher_id: form.teacher_id || undefined,
         plan_id: form.plan_id ? parseInt(form.plan_id) : undefined,
+        modality: form.modality,
       });
       showToast("success", "Estudiante inscrito");
       setShow(false);
@@ -106,6 +107,7 @@ export default function AdminEnrollmentsPage() {
       if (editForm.teacher_id) body.teacher_id = editForm.teacher_id;
       if (editForm.level_id) body.level_id = parseInt(editForm.level_id);
       if (editForm.plan_id) body.plan_id = parseInt(editForm.plan_id);
+      if (editForm.modality) body.modality = editForm.modality;
       await adminEdit.updateEnrollment(editing.id, body);
       showToast("success", "Inscripción actualizada. Estudiante notificado.");
       setEditing(null);
@@ -198,6 +200,10 @@ export default function AdminEnrollmentsPage() {
                       {e.teacher_name && ` · 👨‍🏫 ${e.teacher_name}`}
                     </p>
                   </div>
+                  {/* V2.3: Badge modalidad */}
+                  {e.modality === "online" && <Badge variant="info">💻 Online</Badge>}
+                  {e.modality === "presencial" && <Badge variant="warning">🏫 Presencial</Badge>}
+                  {e.modality === "hibrida" && <Badge variant="brand">🔄 Híbrida</Badge>}
                   {e.is_active ? <Badge variant="success">Activa</Badge> : <Badge>Inactiva</Badge>}
                   <Button size="sm" variant="outline" onClick={() => openEdit(e)}>Editar</Button>
                   {e.is_active && (
@@ -247,7 +253,7 @@ export default function AdminEnrollmentsPage() {
                 ))}
               </select>
               <p className="text-xs text-slate-500 mt-1">
-                💡 Si dejás "Auto-asignar", el sistema elegirá el profe con menos carga.
+                💡 Si dejas "Auto-asignar", el sistema elegirá el profe con menos carga.
               </p>
             </div>
           ) : (
@@ -259,6 +265,11 @@ export default function AdminEnrollmentsPage() {
           <Select label="Plan (opcional)" value={form.plan_id} onChange={(e: any) => setForm({ ...form, plan_id: e.target.value })}>
             <option value="">Sin plan asignado</option>
             {plans.map(p => <option key={p.id} value={p.id}>{p.name} - ${parseFloat(p.price).toFixed(2)}/mes</option>)}
+          </Select>
+          <Select label="Modalidad *" value={form.modality} onChange={(e: any) => setForm({ ...form, modality: e.target.value })}>
+            <option value="online">💻 Online</option>
+            <option value="presencial">🏫 Presencial</option>
+            <option value="hibrida">🔄 Híbrida</option>
           </Select>
           <Button onClick={create} disabled={!formValid} className="w-full" size="lg">Inscribir</Button>
         </div>
@@ -279,6 +290,11 @@ export default function AdminEnrollmentsPage() {
           <Select label="Plan" value={editForm.plan_id} onChange={(e: any) => setEditForm({ ...editForm, plan_id: e.target.value })}>
             <option value="">Sin plan</option>
             {plans.map(p => <option key={p.id} value={p.id}>{p.name} - ${parseFloat(p.price).toFixed(2)}/mes</option>)}
+          </Select>
+          <Select label="Modalidad" value={editForm.modality} onChange={(e: any) => setEditForm({ ...editForm, modality: e.target.value })}>
+            <option value="online">💻 Online</option>
+            <option value="presencial">🏫 Presencial</option>
+            <option value="hibrida">🔄 Híbrida</option>
           </Select>
           <Button onClick={saveEdit} className="w-full" size="lg">Guardar cambios</Button>
         </div>

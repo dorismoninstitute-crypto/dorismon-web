@@ -64,7 +64,7 @@ export default function CourseDetailPage() {
         ))}
       </div>
 
-      {!activeLevel ? <EmptyState icon="📚" title="Seleccioná un nivel" /> : (
+      {!activeLevel ? <EmptyState icon="📚" title="Selecciona un nivel" /> : (
         <div className="space-y-4">
           {modules.length === 0 ? (
             <EmptyState icon="📖" title="Sin módulos todavía" description="Tu profesor aún no ha publicado contenido para este nivel." />

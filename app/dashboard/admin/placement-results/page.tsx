@@ -137,7 +137,7 @@ export default function AdminPlacementResultsPage() {
             })
           : items;
         return filtered.length === 0 ? (
-        <EmptyState icon="🎯" title={search ? "Sin resultados para tu búsqueda" : (filter === "pending" ? "Sin placements pendientes" : "Sin resultados")} description={search ? "Probá con otro nombre o email." : (filter === "pending" ? "Cuando un estudiante completa el test, aparece aquí." : "")} />
+        <EmptyState icon="🎯" title={search ? "Sin resultados para tu búsqueda" : (filter === "pending" ? "Sin placements pendientes" : "Sin resultados")} description={search ? "Prueba con otro nombre o email." : (filter === "pending" ? "Cuando un estudiante completa el test, aparece aquí." : "")} />
       ) : (
         <div className="space-y-3">
           {filtered.map((r: any) => {
@@ -260,7 +260,7 @@ export default function AdminPlacementResultsPage() {
             {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </Select>
           <Select label="Nivel *" value={enrollForm.level_id} onChange={(e: any) => setEnrollForm({ ...enrollForm, level_id: e.target.value })} disabled={!levels.length}>
-            <option value="">{levels.length ? "Seleccionar..." : "Elegí un curso primero"}</option>
+            <option value="">{levels.length ? "Seleccionar..." : "Elige un curso primero"}</option>
             {levels.map(l => <option key={l.id} value={l.id}>{l.code} — {l.name}</option>)}
           </Select>
           <Select label="Profesor (opcional)" value={enrollForm.teacher_id} onChange={(e: any) => setEnrollForm({ ...enrollForm, teacher_id: e.target.value })}>

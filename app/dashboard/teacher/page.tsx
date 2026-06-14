@@ -53,7 +53,7 @@ export default function TeacherDashboard() {
               </h1>
               <p className="text-slate-300 text-xs md:text-sm">
                 {today.length === 0 ? (
-                  <>No tenés clases hoy. <span className="text-white">Aprovechá para preparar las próximas.</span></>
+                  <>No tienes clases hoy. <span className="text-white">Aprovecha para preparar las próximas.</span></>
                 ) : (
                   <>Tenés <strong className="text-white">{today.length}</strong> {today.length === 1 ? "clase" : "clases"} hoy.</>
                 )}
@@ -132,8 +132,8 @@ export default function TeacherDashboard() {
               {today.length === 0 ? (
                 <div className="text-center py-8 text-slate-400">
                   <Sparkles size={32} className="mx-auto mb-2 text-slate-300" />
-                  <p className="text-sm">No tenés clases hoy.</p>
-                  <p className="text-xs mt-1">Aprovechá para preparar las próximas.</p>
+                  <p className="text-sm">No tienes clases hoy.</p>
+                  <p className="text-xs mt-1">Aprovecha para preparar las próximas.</p>
                 </div>
               ) : (
                 <div className="space-y-3">

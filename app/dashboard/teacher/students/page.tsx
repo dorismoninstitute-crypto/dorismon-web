@@ -33,7 +33,7 @@ export default function TeacherStudentsPage() {
       {items.length === 0 ? (
         <EmptyState
           icon="👥"
-          title="Aún no tenés estudiantes asignados"
+          title="Aún no tienes estudiantes asignados"
           description="El administrador te asignará estudiantes al inscribirlos. Cuando esto pase, los verás acá."
         />
       ) : (

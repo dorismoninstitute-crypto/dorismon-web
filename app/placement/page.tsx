@@ -98,7 +98,7 @@ export default function PlacementTestPage() {
               <h3 className="font-bold mb-3 text-sm uppercase text-slate-500 tracking-wider">Recomendaciones</h3>
               <ul className="space-y-2 text-sm text-slate-700">
                 <li>✓ Respondé sin ayuda externa, queremos saber tu nivel real</li>
-                <li>✓ Si no sabés una respuesta, hacé tu mejor intento</li>
+                <li>✓ Si no sabes una respuesta, haz tu mejor intento</li>
                 <li>✓ Las preguntas van de fáciles a difíciles</li>
                 <li>✓ Al final, te asignaremos un nivel CEFR (A1 a C1)</li>
               </ul>

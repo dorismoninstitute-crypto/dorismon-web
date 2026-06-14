@@ -128,7 +128,7 @@ export default function StudentDashboard() {
                   Speaking y Writing) y asignarte a un grupo con tu profesor.
                 </p>
                 <p className="text-xs text-amber-700 mt-2">
-                  Mientras tanto, podés explorar los <Link href="/dashboard/student/events" className="font-bold underline">eventos abiertos</Link> y la <Link href="/dashboard/student/library" className="font-bold underline">biblioteca</Link>.
+                  Mientras tanto, puedes explorar los <Link href="/dashboard/student/events" className="font-bold underline">eventos abiertos</Link> y la <Link href="/dashboard/student/library" className="font-bold underline">biblioteca</Link>.
                 </p>
               </div>
             </div>

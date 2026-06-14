@@ -91,7 +91,7 @@ export default function TeacherQuizzesPage() {
     try {
       // Validar
       if (!quiz.title || !quiz.level_id || questions.length === 0) {
-        setMsg("✗ Completá título, nivel y al menos una pregunta");
+        setMsg("✗ Completa título, nivel y al menos una pregunta");
         return;
       }
       for (const q of questions) {
@@ -136,7 +136,7 @@ export default function TeacherQuizzesPage() {
       {msg.startsWith("✓") && <div className="mb-4"><SuccessBox message={msg} /></div>}
       {msg.startsWith("✗") && <div className="mb-4"><ErrorBox message={msg.slice(2)} /></div>}
 
-      {items.length === 0 ? <EmptyState icon="✓" title="Sin quizzes todavía" description="Hacé clic en '+ Nuevo quiz' para crear uno." /> : (
+      {items.length === 0 ? <EmptyState icon="✓" title="Sin quizzes todavía" description="Haz clic en '+ Nuevo quiz' para crear uno." /> : (
         <div className="space-y-2">
           {items.map((q: any) => (
             <Card key={q.id}>

@@ -157,7 +157,7 @@ export default function TeacherIncomePage() {
             <span className="text-xs text-slate-500">{details.length} clases programadas</span>
           </div>
           {details.length === 0 ? (
-            <p className="text-sm text-slate-400 text-center py-6">No tenés clases en este período.</p>
+            <p className="text-sm text-slate-400 text-center py-6">No tienes clases en este período.</p>
           ) : (
             <div className="space-y-2">
               {details.map((c: any) => (
@@ -205,7 +205,7 @@ export default function TeacherIncomePage() {
             <li>✅ La clase debe haber <strong>terminado</strong> (pasó la hora de fin)</li>
             <li>❌ Las clases canceladas NO se pagan</li>
             <li>📅 El corte es mensual. El admin procesa los pagos al inicio del mes siguiente</li>
-            <li>💵 Tarifas configuradas por el admin (no podés modificarlas)</li>
+            <li>💵 Tarifas configuradas por el admin (no puedes modificarlas)</li>
           </ul>
         </CardBody>
       </Card>

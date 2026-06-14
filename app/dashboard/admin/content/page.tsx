@@ -230,7 +230,7 @@ export default function AdminContentPage() {
           <CardBody>
             <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">2. Nivel</p>
             {!selectedCourse ? (
-              <p className="text-xs text-slate-400">Elegí un curso</p>
+              <p className="text-xs text-slate-400">Elige un curso</p>
             ) : levels.length === 0 ? (
               <p className="text-xs text-slate-400">Sin niveles</p>
             ) : (
@@ -267,9 +267,9 @@ export default function AdminContentPage() {
               )}
             </div>
             {!selectedLevel ? (
-              <p className="text-xs text-slate-400">Elegí un nivel</p>
+              <p className="text-xs text-slate-400">Elige un nivel</p>
             ) : modules.length === 0 ? (
-              <p className="text-xs text-slate-400">Sin módulos. Creá uno o cargá plantilla.</p>
+              <p className="text-xs text-slate-400">Sin módulos. Crea uno o cargá plantilla.</p>
             ) : (
               <div className="space-y-1">
                 {modules.map((m: any) => (
@@ -314,9 +314,9 @@ export default function AdminContentPage() {
               )}
             </div>
             {!selectedModule ? (
-              <p className="text-xs text-slate-400">Elegí un módulo</p>
+              <p className="text-xs text-slate-400">Elige un módulo</p>
             ) : lessons.length === 0 ? (
-              <p className="text-xs text-slate-400">Sin lecciones. Creá una.</p>
+              <p className="text-xs text-slate-400">Sin lecciones. Crea una.</p>
             ) : (
               <div className="space-y-1">
                 {lessons.map((l: any) => (
