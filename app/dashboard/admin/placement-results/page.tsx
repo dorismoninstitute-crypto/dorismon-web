@@ -141,14 +141,18 @@ export default function AdminPlacementResultsPage() {
       ) : (
         <div className="space-y-3">
           {filtered.map((r: any) => {
-            const theme = getLevelTheme(r.suggested_level_code);
+            // V2.1.1: Si el estudiante ya está inscripto, el nivel REAL es current_level_code
+            // El sugerido por el test puede diferir si el admin lo ajustó al inscribirlo
+            const displayLevel = r.current_level_code || r.suggested_level_code;
+            const showBothLevels = r.current_level_code && r.current_level_code !== r.suggested_level_code;
+            const theme = getLevelTheme(displayLevel);
             return (
               <Card key={r.test_id}>
                 <CardBody>
                   <div className="flex items-start gap-3">
                     {/* Badge nivel compacto */}
                     <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl ${theme.bg} flex items-center justify-center font-black text-white text-lg md:text-xl flex-shrink-0 shadow-soft`}>
-                      {r.suggested_level_code || "?"}
+                      {displayLevel || "?"}
                     </div>
 
                     {/* Info estudiante — ocupa todo el espacio disponible */}
@@ -157,6 +161,11 @@ export default function AdminPlacementResultsPage() {
                         <p className="font-bold text-slate-900 text-sm md:text-base truncate">{r.student_name}</p>
                         {r.is_paused && <Badge variant="warning">⏸</Badge>}
                         {r.is_enrolled && <Badge variant="success">✓ Inscrito</Badge>}
+                        {showBothLevels && (
+                          <Badge variant="info" title={`Test sugirió ${r.suggested_level_code} pero admin asignó ${r.current_level_code}`}>
+                            ⚠️ Test: {r.suggested_level_code} → Actual: {r.current_level_code}
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-xs text-slate-500 truncate" title={r.student_email}>
                         {r.student_email}
