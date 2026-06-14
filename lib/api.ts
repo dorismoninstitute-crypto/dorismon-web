@@ -412,6 +412,17 @@ export const adminTicketsApi = {
 };
 
 
+
+// V2.1 — Verificación de email + recuperar contraseña
+export const authEmailApi = {
+  verifyEmail: (code: string) => api("/auth/verify-email", { method: "POST", body: { code }, auth: true }),
+  resendVerification: () => api("/auth/resend-verification", { method: "POST", auth: true }),
+  forgotPassword: (email: string) => api("/auth/forgot-password", { method: "POST", body: { email } }),
+  resetPassword: (token: string, new_password: string) =>
+    api("/auth/reset-password", { method: "POST", body: { token, new_password } }),
+};
+
+
 export function safeArray<T = any>(v: any): T[] { return Array.isArray(v) ? v : []; }
 export function safeObj<T>(v: any, fb: T): T {
   return v && typeof v === "object" && !Array.isArray(v) ? v : fb;

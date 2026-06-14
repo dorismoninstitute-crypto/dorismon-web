@@ -62,6 +62,11 @@ export default function LoginPage() {
               onChange={(e: any) => setForm({ ...form, password: e.target.value })}
               placeholder="••••••••"
             />
+            <div className="text-right">
+              <Link href="/forgot-password" className="text-xs font-bold text-brand-600 hover:text-brand-700">
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
             <Button type="submit" disabled={loading} className="w-full" size="lg">
               {loading ? "Ingresando..." : "Iniciar sesión"}
             </Button>
