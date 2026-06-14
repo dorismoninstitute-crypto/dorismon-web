@@ -423,6 +423,19 @@ export const authEmailApi = {
 };
 
 
+
+// V2.2 — Perfil completo estudiante
+export const studentProfileApi = {
+  get: () => api("/student/profile", { auth: true }),
+  update: (body: any) => api("/student/profile", { method: "PATCH", body, auth: true }),
+};
+export const adminStudentProfileApi = {
+  get: (studentId: string) => api(`/admin/students/${studentId}/profile`, { auth: true }),
+  update: (studentId: string, body: any) =>
+    api(`/admin/students/${studentId}/profile`, { method: "PATCH", body, auth: true }),
+};
+
+
 export function safeArray<T = any>(v: any): T[] { return Array.isArray(v) ? v : []; }
 export function safeObj<T>(v: any, fb: T): T {
   return v && typeof v === "object" && !Array.isArray(v) ? v : fb;

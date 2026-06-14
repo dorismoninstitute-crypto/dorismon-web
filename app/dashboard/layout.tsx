@@ -29,6 +29,7 @@ const studentItems = [
   { href: "/dashboard/messages", label: "Mensajes", Icon: MessageCircle },
   { href: "/dashboard/help", label: "Ayuda", Icon: HelpCircle },
   { href: "/dashboard/student/notifications", label: "Notificaciones", Icon: Bell },
+  { href: "/dashboard/student/profile", label: "Mi perfil completo", Icon: ClipboardList },
   { href: "/dashboard/account", label: "Mi cuenta", Icon: Settings },
 ];
 const teacherItems = [
