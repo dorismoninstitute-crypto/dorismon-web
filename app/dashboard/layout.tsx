@@ -10,7 +10,8 @@ import {
   Home, BookOpen, Calendar, FileText, CheckCircle2, Ticket, Library,
   Target, BarChart3, GraduationCap, Bell, Settings, LogOut, Menu, Award,
   Users, Briefcase, MapPin, CreditCard, DollarSign, FileSearch, Wrench,
-  ClipboardList, FolderKanban, FileEdit, BookMarked, Layers,
+  ClipboardList, FolderKanban, FileEdit, BookMarked, Layers, Wallet,
+  MessageCircle, HelpCircle, Inbox,
 } from "lucide-react";
 
 // Iconos como componentes Lucide
@@ -25,6 +26,8 @@ const studentItems = [
   { href: "/dashboard/student/my-placement", label: "Mi nivel", Icon: Target },
   { href: "/dashboard/student/transcript", label: "Expediente", Icon: BarChart3 },
   { href: "/dashboard/student/certificates", label: "Certificados", Icon: GraduationCap },
+  { href: "/dashboard/messages", label: "Mensajes", Icon: MessageCircle },
+  { href: "/dashboard/help", label: "Ayuda", Icon: HelpCircle },
   { href: "/dashboard/student/notifications", label: "Notificaciones", Icon: Bell },
   { href: "/dashboard/account", label: "Mi cuenta", Icon: Settings },
 ];
@@ -35,6 +38,8 @@ const teacherItems = [
   { href: "/dashboard/teacher/assignments", label: "Tareas", Icon: FileText },
   { href: "/dashboard/teacher/quizzes", label: "Quizzes", Icon: CheckCircle2 },
   { href: "/dashboard/teacher/materials", label: "Materiales", Icon: BookMarked },
+  { href: "/dashboard/teacher/income", label: "Mis ingresos", Icon: Wallet },
+  { href: "/dashboard/messages", label: "Mensajes", Icon: MessageCircle },
   { href: "/dashboard/account", label: "Mi cuenta", Icon: Settings },
 ];
 const adminItems = [
@@ -48,7 +53,10 @@ const adminItems = [
   { href: "/dashboard/admin/enrollments", label: "Inscripciones", Icon: ClipboardList },
   { href: "/dashboard/admin/branches", label: "Sedes y aulas", Icon: MapPin },
   { href: "/dashboard/admin/plans", label: "Planes", Icon: CreditCard },
-  { href: "/dashboard/admin/payments", label: "Pagos", Icon: DollarSign },
+  { href: "/dashboard/admin/payments", label: "Pagos estudiantes", Icon: DollarSign },
+  { href: "/dashboard/admin/teacher-payments", label: "Pagos a profesores", Icon: Wallet },
+  { href: "/dashboard/messages", label: "Mensajes", Icon: MessageCircle },
+  { href: "/dashboard/admin/tickets", label: "Tickets soporte", Icon: Inbox },
   { href: "/dashboard/admin/certificates", label: "Certificados", Icon: GraduationCap },
   { href: "/dashboard/admin/certification-ready", label: "Listos certificar", Icon: Award },
   { href: "/dashboard/admin/audit", label: "Auditoría", Icon: FileSearch },

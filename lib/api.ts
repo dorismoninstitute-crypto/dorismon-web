@@ -364,6 +364,54 @@ export const adminPrivateClasses = {
 };
 
 
+
+// V1.9 — Pagos a profesores
+export const adminTeacherPayments = {
+  list: (year?: number, month?: number) => {
+    const q = [];
+    if (year) q.push(`year=${year}`);
+    if (month) q.push(`month=${month}`);
+    return api(`/admin/teacher-payments${q.length ? "?" + q.join("&") : ""}`, { auth: true });
+  },
+  detail: (teacherId: string, year: number, month: number) =>
+    api(`/admin/teacher-payments/${teacherId}/${year}/${month}`, { auth: true }),
+  markPaid: (body: any) =>
+    api("/admin/teacher-payments/mark-paid", { method: "POST", body, auth: true }),
+  delete: (paymentId: string) =>
+    api(`/admin/teacher-payments/${paymentId}`, { method: "DELETE", auth: true }),
+  updateRates: (teacherId: string, body: any) =>
+    api(`/admin/teachers/${teacherId}/rates`, { method: "PATCH", body, auth: true }),
+  history: (teacherId: string) =>
+    api(`/admin/teacher-payments-history/${teacherId}`, { auth: true }),
+};
+export const teacherIncomeApi = {
+  current: (year?: number, month?: number) => {
+    const q = [];
+    if (year) q.push(`year=${year}`);
+    if (month) q.push(`month=${month}`);
+    return api(`/teacher/income${q.length ? "?" + q.join("&") : ""}`, { auth: true });
+  },
+  history: () => api("/teacher/income-history", { auth: true }),
+};
+
+
+
+// V2.0 — Mensajes y tickets
+export const messagesApi = {
+  send: (body: any) => api("/messages", { method: "POST", body, auth: true }),
+  inbox: () => api("/messages/inbox", { auth: true }),
+  sent: () => api("/messages/sent", { auth: true }),
+  contacts: () => api("/messages/contacts", { auth: true }),
+  markRead: (id: string) => api(`/messages/${id}/read`, { method: "POST", auth: true }),
+  unreadCount: () => api("/messages/unread-count", { auth: true }),
+};
+export const adminTicketsApi = {
+  list: (status?: string) => api(`/messages/admin/tickets${status ? `?status=${status}` : ""}`, { auth: true }),
+  updateStatus: (id: string, status: string) =>
+    api(`/messages/admin/tickets/${id}`, { method: "PATCH", body: { status }, auth: true }),
+};
+
+
 export function safeArray<T = any>(v: any): T[] { return Array.isArray(v) ? v : []; }
 export function safeObj<T>(v: any, fb: T): T {
   return v && typeof v === "object" && !Array.isArray(v) ? v : fb;
