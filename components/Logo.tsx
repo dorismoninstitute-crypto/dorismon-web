@@ -1,5 +1,7 @@
 "use client";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { publicApi } from "@/lib/api";
 
 interface LogoProps {
   size?: "sm" | "md" | "lg" | "xl";
@@ -9,7 +11,8 @@ interface LogoProps {
 }
 
 /**
- * V1.6.1 — Logo oficial de Dorismon Language Institute
+ * V2.5 — Logo dinámico: si el instituto subió un logo, lo muestra.
+ * Si no, muestra el logo "DORISMON" por default.
  *
  * Variantes:
  * - default: texto oscuro + tagline (para uso general en fondos claros)
@@ -22,22 +25,62 @@ export default function Logo({
   withTagline = true,
   asLink = true,
 }: LogoProps) {
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [instituteName, setInstituteName] = useState<string>("DORISMON");
+
+  useEffect(() => {
+    // Cargar logo del instituto (cache 1 hora)
+    const cached = typeof window !== "undefined" ? sessionStorage.getItem("institute_logo") : null;
+    const cachedName = typeof window !== "undefined" ? sessionStorage.getItem("institute_name") : null;
+
+    if (cached !== null) {
+      setLogoUrl(cached || null);
+      if (cachedName) setInstituteName(cachedName);
+      return;
+    }
+
+    publicApi.instituteSettings()
+      .then((s: any) => {
+        const url = s.logo_url || "";
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("institute_logo", url);
+          sessionStorage.setItem("institute_name", s.name || "DORISMON");
+        }
+        setLogoUrl(url || null);
+        setInstituteName(s.name || "DORISMON");
+      })
+      .catch(() => {});
+  }, []);
+
   const sizes = {
-    sm: { title: "text-base", tagline: "text-[9px]" },
-    md: { title: "text-xl", tagline: "text-[10px]" },
-    lg: { title: "text-2xl", tagline: "text-xs" },
-    xl: { title: "text-4xl md:text-5xl", tagline: "text-sm md:text-base" },
+    sm: { title: "text-base", tagline: "text-[9px]", img: "h-7" },
+    md: { title: "text-xl", tagline: "text-[10px]", img: "h-9" },
+    lg: { title: "text-2xl", tagline: "text-xs", img: "h-12" },
+    xl: { title: "text-4xl md:text-5xl", tagline: "text-sm md:text-base", img: "h-16 md:h-20" },
   };
   const s = sizes[size];
 
   const titleColor = variant === "white" ? "text-white" : "text-slate-900";
   const taglineColor = variant === "white" ? "text-white/80" : "text-slate-500";
-  const accentColor = variant === "white" ? "text-accent-300" : "text-brand-600";
   const dotColor = variant === "white" ? "bg-accent-400" : "bg-brand-600";
 
+  // Si hay logo configurado → mostrarlo
+  if (logoUrl) {
+    const content = (
+      <div className="inline-flex items-center gap-2.5">
+        <img src={logoUrl} alt={instituteName} className={`${s.img} w-auto object-contain`} />
+      </div>
+    );
+    if (asLink) {
+      return <Link href="/" className="inline-block">{content}</Link>;
+    }
+    return content;
+  }
+
+  // Fallback: logo por defecto DORISMON
+  const titleText = instituteName.toUpperCase();
   const content = (
     <div className="inline-flex items-center gap-2.5 group">
-      {/* Símbolo: cuadrado azul con letra D */}
       <div className="relative flex-shrink-0">
         <div className={`${
           size === "sm" ? "w-7 h-7" :
@@ -50,9 +93,8 @@ export default function Logo({
           size === "lg" ? "text-lg" :
           "text-2xl"
         }`}>
-          D
+          {titleText[0] || "D"}
         </div>
-        {/* Dot accent turquesa */}
         <div className={`absolute -bottom-0.5 -right-0.5 ${
           size === "sm" ? "w-2 h-2" :
           size === "md" ? "w-2.5 h-2.5" :
@@ -60,11 +102,10 @@ export default function Logo({
         } ${dotColor} rounded-full ring-2 ring-white`} />
       </div>
 
-      {/* Texto */}
       {variant !== "compact" || withTagline ? (
         <div className="flex flex-col leading-none">
           <span className={`${s.title} font-black tracking-tight ${titleColor}`}>
-            DORISMON
+            {titleText}
           </span>
           {withTagline && variant !== "compact" && (
             <span className={`${s.tagline} font-semibold uppercase tracking-[0.18em] ${taglineColor} mt-0.5`}>
@@ -74,7 +115,7 @@ export default function Logo({
         </div>
       ) : (
         <span className={`${s.title} font-black tracking-tight ${titleColor}`}>
-          DORISMON
+          {titleText}
         </span>
       )}
     </div>

@@ -436,6 +436,29 @@ export const adminStudentProfileApi = {
 };
 
 
+
+// V2.5 — Logo, settings públicos, finance
+export const publicApi = {
+  instituteSettings: () => api("/institute-settings"),
+};
+export const adminFinance = {
+  summary: (year?: number, month?: number) => {
+    const q = new URLSearchParams();
+    if (year) q.set("year", String(year));
+    if (month) q.set("month", String(month));
+    const qs = q.toString();
+    return api(`/admin/finance/summary${qs ? "?" + qs : ""}`, { auth: true });
+  },
+  transactions: (year?: number, month?: number) => {
+    const q = new URLSearchParams();
+    if (year) q.set("year", String(year));
+    if (month) q.set("month", String(month));
+    const qs = q.toString();
+    return api(`/admin/finance/transactions${qs ? "?" + qs : ""}`, { auth: true });
+  },
+};
+
+
 export function safeArray<T = any>(v: any): T[] { return Array.isArray(v) ? v : []; }
 export function safeObj<T>(v: any, fb: T): T {
   return v && typeof v === "object" && !Array.isArray(v) ? v : fb;

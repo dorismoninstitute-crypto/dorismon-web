@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { adminApi, adminEdit, adminPause, adminTeacherLevels, safeArray, safeObj, getLevelTheme } from "@/lib/api";
 import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Input, Select, Modal, ConfirmModal, showToast } from "@/components/ui";
 
@@ -168,7 +169,12 @@ export default function AdminUsersPage() {
                     </div>
                     <p className="text-xs text-slate-500">{u.email} · {u.phone || "sin teléfono"}</p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
+                    {u.role === "student" && (
+                      <Link href={`/dashboard/admin/students/${u.id}/profile`}>
+                        <Button size="sm" variant="outline">👤 Ver perfil</Button>
+                      </Link>
+                    )}
                     <Button size="sm" variant="outline" onClick={() => openEdit(u)}>Editar</Button>
                     {u.role === "teacher" && (
                       <Button size="sm" variant="outline" onClick={() => openLevels(u)}>🎯 Niveles</Button>

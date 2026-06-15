@@ -11,7 +11,7 @@ export default function AccountPage() {
   const [err, setErr] = useState("");
 
   // Form perfil
-  const [profileForm, setProfileForm] = useState({ full_name: "", phone: "", gender: "", bio: "" });
+  const [profileForm, setProfileForm] = useState({ full_name: "", email: "", phone: "", gender: "", bio: "" });
   const [savingProfile, setSavingProfile] = useState(false);
 
   // Form contraseña
@@ -24,6 +24,7 @@ export default function AccountPage() {
         setUser(u);
         setProfileForm({
           full_name: u.full_name || "",
+          email: u.email || "",
           phone: u.phone || "",
           gender: u.gender || "",
           bio: u.bio || "",
@@ -36,14 +37,19 @@ export default function AccountPage() {
   const saveProfile = async () => {
     setSavingProfile(true);
     try {
-      const r: any = await profileApi.update({
+      const body: any = {
         full_name: profileForm.full_name,
         phone: profileForm.phone,
         gender: profileForm.gender,
         bio: profileForm.bio,
-      });
+      };
+      // V2.5: si cambió el email, enviarlo
+      if (profileForm.email && profileForm.email.toLowerCase() !== (user.email || "").toLowerCase()) {
+        body.email = profileForm.email;
+      }
+      const r: any = await profileApi.update(body);
       setUser({ ...user, ...r.user });
-      showToast("success", "Perfil actualizado");
+      showToast("success", body.email ? "✓ Perfil y email actualizados" : "✓ Perfil actualizado");
     } catch (e: any) {
       showToast("error", e.message);
     } finally {
@@ -152,6 +158,17 @@ export default function AccountPage() {
                   onChange={(e: any) => setProfileForm({ ...profileForm, full_name: e.target.value })}
                   placeholder="Ej: María Rodríguez"
                 />
+                {/* V2.5: cambiar email propio */}
+                <Input
+                  label="Email"
+                  type="email"
+                  value={profileForm.email}
+                  onChange={(e: any) => setProfileForm({ ...profileForm, email: e.target.value })}
+                  placeholder="tu.email@gmail.com"
+                />
+                <p className="text-xs text-slate-500 -mt-2 ml-1">
+                  ⚠️ Cambiar tu email es importante. Asegúrate de poner uno que controles.
+                </p>
                 <Input
                   label="Teléfono"
                   value={profileForm.phone}

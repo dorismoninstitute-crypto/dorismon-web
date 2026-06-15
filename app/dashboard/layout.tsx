@@ -11,7 +11,7 @@ import {
   Target, BarChart3, GraduationCap, Bell, Settings, LogOut, Menu, Award,
   Users, Briefcase, MapPin, CreditCard, DollarSign, FileSearch, Wrench,
   ClipboardList, FolderKanban, FileEdit, BookMarked, Layers, Wallet,
-  MessageCircle, HelpCircle, Inbox,
+  MessageCircle, HelpCircle, Inbox, TrendingUp,
 } from "lucide-react";
 
 // Iconos como componentes Lucide
@@ -56,6 +56,7 @@ const adminItems = [
   { href: "/dashboard/admin/plans", label: "Planes", Icon: CreditCard },
   { href: "/dashboard/admin/payments", label: "Pagos estudiantes", Icon: DollarSign },
   { href: "/dashboard/admin/teacher-payments", label: "Pagos a profesores", Icon: Wallet },
+  { href: "/dashboard/admin/finance", label: "Contabilidad", Icon: TrendingUp },
   { href: "/dashboard/messages", label: "Mensajes", Icon: MessageCircle },
   { href: "/dashboard/admin/tickets", label: "Tickets soporte", Icon: Inbox },
   { href: "/dashboard/admin/certificates", label: "Certificados", Icon: GraduationCap },
