@@ -459,6 +459,38 @@ export const adminFinance = {
 };
 
 
+
+// V2.6 — Pagos por transferencia + clase de prueba
+export const adminBankAccounts = {
+  list: () => api("/admin/bank-accounts", { auth: true }),
+  create: (body: any) => api("/admin/bank-accounts", { method: "POST", body, auth: true }),
+  update: (id: number, body: any) => api(`/admin/bank-accounts/${id}`, { method: "PATCH", body, auth: true }),
+  delete: (id: number) => api(`/admin/bank-accounts/${id}`, { method: "DELETE", auth: true }),
+};
+
+export const adminPaymentProofs = {
+  list: (status?: string) => api(`/admin/payment-proofs${status ? "?status=" + status : ""}`, { auth: true }),
+  approve: (id: string, adminNotes?: string) =>
+    api(`/admin/payment-proofs/${id}/approve`, { method: "POST", body: { admin_notes: adminNotes || "" }, auth: true }),
+  reject: (id: string, reason: string) =>
+    api(`/admin/payment-proofs/${id}/reject`, { method: "POST", body: { reason }, auth: true }),
+};
+
+export const adminTrialClasses = {
+  list: (status?: string) => api(`/admin/trial-classes${status ? "?status=" + status : ""}`, { auth: true }),
+  schedule: (id: string, body: { teacher_id: string; scheduled_at: string }) =>
+    api(`/admin/trial-classes/${id}/schedule`, { method: "POST", body, auth: true }),
+};
+
+export const studentPayments = {
+  bankAccounts: () => api("/payments/bank-accounts", { auth: true }),
+  submitProof: (body: any) => api("/payments/submit-proof", { method: "POST", body, auth: true }),
+  myProofs: () => api("/payments/my-proofs", { auth: true }),
+  trialStatus: () => api("/payments/trial-class/status", { auth: true }),
+  requestTrial: (body: any) => api("/payments/trial-class/request", { method: "POST", body, auth: true }),
+};
+
+
 export function safeArray<T = any>(v: any): T[] { return Array.isArray(v) ? v : []; }
 export function safeObj<T>(v: any, fb: T): T {
   return v && typeof v === "object" && !Array.isArray(v) ? v : fb;

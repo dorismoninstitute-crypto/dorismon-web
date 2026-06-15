@@ -8,34 +8,38 @@ interface LogoProps {
   variant?: "default" | "white" | "compact";
   withTagline?: boolean;
   asLink?: boolean;
+  /** V2.6b: forzar usar solo escudo (sin texto). Útil para sidebar/header pequeño */
+  shieldOnly?: boolean;
 }
 
 /**
- * V2.5 — Logo dinámico: si el instituto subió un logo, lo muestra.
- * Si no, muestra el logo "DORISMON" por default.
+ * V2.6b — Logo dinámico mejorado.
  *
- * Variantes:
- * - default: texto oscuro + tagline (para uso general en fondos claros)
- * - white: texto blanco (para fondos oscuros)
- * - compact: solo "Dorismon" sin tagline (para espacios reducidos)
+ * Prioridad de logo:
+ * 1. Logo del instituto (subido en admin/settings) → si existe, se muestra
+ * 2. Logo del archivo `/logo-shield.png` (escudo Dorismon) → fallback
+ * 3. Logo generado por código (gradiente azul + "D") → fallback final
  */
 export default function Logo({
   size = "md",
   variant = "default",
   withTagline = true,
   asLink = true,
+  shieldOnly = false,
 }: LogoProps) {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const [instituteName, setInstituteName] = useState<string>("DORISMON");
+  const [instituteName, setInstituteName] = useState<string>("Dorismon Language Institute");
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    // Cargar logo del instituto (cache 1 hora)
-    const cached = typeof window !== "undefined" ? sessionStorage.getItem("institute_logo") : null;
+    // Cargar logo del instituto (cache session)
+    const cached = typeof window !== "undefined" ? sessionStorage.getItem("institute_logo_v2") : null;
     const cachedName = typeof window !== "undefined" ? sessionStorage.getItem("institute_name") : null;
 
     if (cached !== null) {
       setLogoUrl(cached || null);
       if (cachedName) setInstituteName(cachedName);
+      setLoaded(true);
       return;
     }
 
@@ -43,81 +47,50 @@ export default function Logo({
       .then((s: any) => {
         const url = s.logo_url || "";
         if (typeof window !== "undefined") {
-          sessionStorage.setItem("institute_logo", url);
-          sessionStorage.setItem("institute_name", s.name || "DORISMON");
+          sessionStorage.setItem("institute_logo_v2", url);
+          sessionStorage.setItem("institute_name", s.name || "Dorismon Language Institute");
         }
         setLogoUrl(url || null);
-        setInstituteName(s.name || "DORISMON");
+        setInstituteName(s.name || "Dorismon Language Institute");
+        setLoaded(true);
       })
-      .catch(() => {});
+      .catch(() => setLoaded(true));
   }, []);
 
+  // Tamaños — V2.6b: más generosos para que el logo se vea bien
   const sizes = {
-    sm: { title: "text-base", tagline: "text-[9px]", img: "h-7" },
-    md: { title: "text-xl", tagline: "text-[10px]", img: "h-9" },
-    lg: { title: "text-2xl", tagline: "text-xs", img: "h-12" },
-    xl: { title: "text-4xl md:text-5xl", tagline: "text-sm md:text-base", img: "h-16 md:h-20" },
+    sm: { img: "h-9 max-w-[120px]" },           // 36px
+    md: { img: "h-12 max-w-[160px]" },          // 48px (antes 36)
+    lg: { img: "h-16 max-w-[200px]" },          // 64px (antes 48)
+    xl: { img: "h-24 md:h-28 max-w-[280px] md:max-w-[320px]" },  // 96-112px (antes 64-80)
   };
   const s = sizes[size];
 
-  const titleColor = variant === "white" ? "text-white" : "text-slate-900";
-  const taglineColor = variant === "white" ? "text-white/80" : "text-slate-500";
-  const dotColor = variant === "white" ? "bg-accent-400" : "bg-brand-600";
+  // Determinar qué fuente de logo usar
+  // Prioridad: 1. Logo subido custom, 2. logo-shield.png (escudo Dorismon), 3. Fallback texto
+  const logoSrc = logoUrl || (shieldOnly ? "/logo-shield.png" : "/logo-full.png");
 
-  // Si hay logo configurado → mostrarlo
-  if (logoUrl) {
-    const content = (
-      <div className="inline-flex items-center gap-2.5">
-        <img src={logoUrl} alt={instituteName} className={`${s.img} w-auto object-contain`} />
-      </div>
-    );
-    if (asLink) {
-      return <Link href="/" className="inline-block">{content}</Link>;
-    }
-    return content;
+  // Si todavía no cargó, mostrar placeholder
+  if (!loaded) {
+    return <div className={`${s.img} bg-slate-200 rounded animate-pulse`} style={{ width: 120 }} />;
   }
 
-  // Fallback: logo por defecto DORISMON
-  const titleText = instituteName.toUpperCase();
   const content = (
-    <div className="inline-flex items-center gap-2.5 group">
-      <div className="relative flex-shrink-0">
-        <div className={`${
-          size === "sm" ? "w-7 h-7" :
-          size === "md" ? "w-9 h-9" :
-          size === "lg" ? "w-11 h-11" :
-          "w-14 h-14"
-        } rounded-xl bg-gradient-to-br from-brand-600 to-brand-700 flex items-center justify-center font-black text-white shadow-md group-hover:shadow-lg transition-shadow ${
-          size === "sm" ? "text-sm" :
-          size === "md" ? "text-base" :
-          size === "lg" ? "text-lg" :
-          "text-2xl"
-        }`}>
-          {titleText[0] || "D"}
-        </div>
-        <div className={`absolute -bottom-0.5 -right-0.5 ${
-          size === "sm" ? "w-2 h-2" :
-          size === "md" ? "w-2.5 h-2.5" :
-          "w-3 h-3"
-        } ${dotColor} rounded-full ring-2 ring-white`} />
-      </div>
-
-      {variant !== "compact" || withTagline ? (
-        <div className="flex flex-col leading-none">
-          <span className={`${s.title} font-black tracking-tight ${titleColor}`}>
-            {titleText}
-          </span>
-          {withTagline && variant !== "compact" && (
-            <span className={`${s.tagline} font-semibold uppercase tracking-[0.18em] ${taglineColor} mt-0.5`}>
-              Language Institute
-            </span>
-          )}
-        </div>
-      ) : (
-        <span className={`${s.title} font-black tracking-tight ${titleColor}`}>
-          {titleText}
-        </span>
-      )}
+    <div className="inline-flex items-center gap-2">
+      <img
+        src={logoSrc}
+        alt={instituteName}
+        className={`${s.img} w-auto object-contain`}
+        onError={(e) => {
+          // Si el logo subido falla, intentar con archivo local
+          const img = e.target as HTMLImageElement;
+          if (img.src.includes("/logo-full.png") || img.src.includes("/logo-shield.png")) {
+            // Ya estamos en fallback final, no hacer nada
+            return;
+          }
+          img.src = shieldOnly ? "/logo-shield.png" : "/logo-full.png";
+        }}
+      />
     </div>
   );
 

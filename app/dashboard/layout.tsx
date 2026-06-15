@@ -5,13 +5,14 @@ import { usePathname, useRouter } from "next/navigation";
 import { auth, safeObj, progress, getLevelTheme } from "@/lib/api";
 import { LoadingScreen } from "@/components/ui";
 import Avatar from "@/components/Avatar";
+import Logo from "@/components/Logo";
 import clsx from "clsx";
 import {
   Home, BookOpen, Calendar, FileText, CheckCircle2, Ticket, Library,
   Target, BarChart3, GraduationCap, Bell, Settings, LogOut, Menu, Award,
   Users, Briefcase, MapPin, CreditCard, DollarSign, FileSearch, Wrench,
   ClipboardList, FolderKanban, FileEdit, BookMarked, Layers, Wallet,
-  MessageCircle, HelpCircle, Inbox, TrendingUp,
+  MessageCircle, HelpCircle, Inbox, TrendingUp, Sparkles,
 } from "lucide-react";
 
 // Iconos como componentes Lucide
@@ -29,6 +30,8 @@ const studentItems = [
   { href: "/dashboard/messages", label: "Mensajes", Icon: MessageCircle },
   { href: "/dashboard/help", label: "Ayuda", Icon: HelpCircle },
   { href: "/dashboard/student/notifications", label: "Notificaciones", Icon: Bell },
+  { href: "/dashboard/student/payments", label: "Mis pagos", Icon: CreditCard },
+  { href: "/dashboard/student/trial", label: "Clase de prueba 🎁", Icon: Sparkles },
   { href: "/dashboard/student/profile", label: "Mi perfil completo", Icon: ClipboardList },
   { href: "/dashboard/account", label: "Mi cuenta", Icon: Settings },
 ];
@@ -55,6 +58,9 @@ const adminItems = [
   { href: "/dashboard/admin/branches", label: "Sedes y aulas", Icon: MapPin },
   { href: "/dashboard/admin/plans", label: "Planes", Icon: CreditCard },
   { href: "/dashboard/admin/payments", label: "Pagos estudiantes", Icon: DollarSign },
+  { href: "/dashboard/admin/payment-proofs", label: "Verificar pagos", Icon: CheckCircle2 },
+  { href: "/dashboard/admin/bank-accounts", label: "Cuentas bancarias", Icon: CreditCard },
+  { href: "/dashboard/admin/trial-classes", label: "Clases de prueba", Icon: Sparkles },
   { href: "/dashboard/admin/teacher-payments", label: "Pagos a profesores", Icon: Wallet },
   { href: "/dashboard/admin/finance", label: "Contabilidad", Icon: TrendingUp },
   { href: "/dashboard/messages", label: "Mensajes", Icon: MessageCircle },
@@ -114,17 +120,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
         <div className="px-5 py-5 border-b border-slate-100">
-          <div className="flex items-center gap-2.5">
-            <div className="relative flex-shrink-0">
-              <div className={clsx("w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-base shadow-md", logoColorClass)}>D</div>
-              <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-accent-500 rounded-full ring-2 ring-white" />
-            </div>
-            <div className="flex flex-col leading-none min-w-0">
-              <span className="text-base font-black tracking-tight text-slate-900">DORISMON</span>
-              <span className="text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-500 mt-0.5">
-                Language Institute
-              </span>
-            </div>
+          <div className="flex items-center justify-center">
+            {/* V2.6b: Logo real del instituto (shield + texto) */}
+            <Logo size="md" asLink={true} />
           </div>
           <p className="text-xs text-slate-500 capitalize mt-3 pl-1">
             {role === "student" ? `Nivel ${studentLevel}` : role === "super_admin" ? "Administrador" : "Profesor"}

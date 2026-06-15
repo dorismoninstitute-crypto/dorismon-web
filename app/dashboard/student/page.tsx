@@ -62,6 +62,35 @@ export default function StudentDashboard() {
 
   return (
     <div className="-m-3 md:-m-8 p-3 md:p-8 min-h-screen bg-slate-50">
+      {/* V2.6b: Banner CTA si NO tiene inscripciones activas */}
+      {enrollments.length === 0 && (
+        <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300 rounded-2xl p-5 mb-6 shadow-md">
+          <div className="flex items-start gap-3 flex-wrap md:flex-nowrap">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center flex-shrink-0">
+              <span className="text-2xl">🎯</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-black text-lg text-amber-900 mb-1">¡Casi listo para empezar! 🚀</h3>
+              <p className="text-sm text-amber-800 mb-3">
+                Reserva tu <strong>clase de prueba GRATIS</strong> o inscríbete a un plan para comenzar tus clases de inglés.
+              </p>
+              <div className="flex gap-2 flex-wrap">
+                <a href="/dashboard/student/trial">
+                  <button className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-sm rounded-lg transition">
+                    🎁 Reservar clase GRATIS
+                  </button>
+                </a>
+                <a href="/checkout">
+                  <button className="px-4 py-2 bg-white hover:bg-amber-50 text-amber-900 font-bold text-sm rounded-lg border-2 border-amber-300 transition">
+                    💎 Ver planes e inscribirme
+                  </button>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* V1.6.2: Hero premium con gradient slate + accent turquesa */}
       <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl md:rounded-3xl p-5 md:p-8 mb-6 shadow-lifted">
         <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
