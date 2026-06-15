@@ -119,7 +119,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         "fixed lg:sticky top-0 left-0 z-40 w-64 h-screen bg-white border-r border-slate-200 flex flex-col transition-transform",
         sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
-        <div className="px-5 py-5 border-b border-slate-100">
+        <div className="px-4 py-4 border-b border-slate-100">
           <div className="flex items-center justify-center">
             {/* V2.6b: Logo real del instituto (shield + texto) */}
             <Logo size="md" asLink={true} />
