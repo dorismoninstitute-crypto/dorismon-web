@@ -8,17 +8,19 @@ interface LogoProps {
   variant?: "default" | "white" | "compact";
   withTagline?: boolean;
   asLink?: boolean;
-  /** V2.6b: forzar usar solo escudo (sin texto). Útil para sidebar/header pequeño */
   shieldOnly?: boolean;
 }
 
 /**
- * V2.6b — Logo dinámico mejorado.
+ * V2.6.1 — Logo dinámico MÁS GRANDE.
+ *
+ * Tamaños aumentados significativamente para que el logo del instituto
+ * tenga el protagonismo visual de un título principal.
  *
  * Prioridad de logo:
- * 1. Logo del instituto (subido en admin/settings) → si existe, se muestra
- * 2. Logo del archivo `/logo-shield.png` (escudo Dorismon) → fallback
- * 3. Logo generado por código (gradiente azul + "D") → fallback final
+ * 1. Logo del instituto subido (admin/settings) — si existe, se muestra
+ * 2. /logo-full.png (escudo Dorismon completo) — fallback
+ * 3. /logo-shield.png (solo escudo, sin texto) — para sidebar
  */
 export default function Logo({
   size = "md",
@@ -32,8 +34,7 @@ export default function Logo({
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    // Cargar logo del instituto (cache session)
-    const cached = typeof window !== "undefined" ? sessionStorage.getItem("institute_logo_v2") : null;
+    const cached = typeof window !== "undefined" ? sessionStorage.getItem("institute_logo_v3") : null;
     const cachedName = typeof window !== "undefined" ? sessionStorage.getItem("institute_name") : null;
 
     if (cached !== null) {
@@ -47,7 +48,7 @@ export default function Logo({
       .then((s: any) => {
         const url = s.logo_url || "";
         if (typeof window !== "undefined") {
-          sessionStorage.setItem("institute_logo_v2", url);
+          sessionStorage.setItem("institute_logo_v3", url);
           sessionStorage.setItem("institute_name", s.name || "Dorismon Language Institute");
         }
         setLogoUrl(url || null);
@@ -57,36 +58,35 @@ export default function Logo({
       .catch(() => setLoaded(true));
   }, []);
 
-  // Tamaños — V2.6b: más generosos para que el logo se vea bien
+  // V2.6.1 — TAMAÑOS GRANDES como pidió Luis (logo del tamaño de un título)
   const sizes = {
-    sm: { img: "h-9 max-w-[120px]" },           // 36px
-    md: { img: "h-12 max-w-[160px]" },          // 48px (antes 36)
-    lg: { img: "h-16 max-w-[200px]" },          // 64px (antes 48)
-    xl: { img: "h-24 md:h-28 max-w-[280px] md:max-w-[320px]" },  // 96-112px (antes 64-80)
+    sm: { img: "h-12 max-w-[140px]" },               // 48px (antes 36)
+    md: { img: "h-20 max-w-[220px]" },               // 80px (antes 48) — sidebar/dashboard
+    lg: { img: "h-32 max-w-[320px]" },               // 128px (antes 64) — login/landing
+    xl: { img: "h-40 md:h-56 max-w-[440px] md:max-w-[600px]" },  // 160-224px (antes 96-112) — hero
   };
   const s = sizes[size];
 
-  // Determinar qué fuente de logo usar
-  // Prioridad: 1. Logo subido custom, 2. logo-shield.png (escudo Dorismon), 3. Fallback texto
+  // Decidir qué archivo de logo usar
+  // Si shieldOnly=true, usar solo el escudo (sin texto)
+  // Si no, usar logo completo
   const logoSrc = logoUrl || (shieldOnly ? "/logo-shield.png" : "/logo-full.png");
 
-  // Si todavía no cargó, mostrar placeholder
   if (!loaded) {
-    return <div className={`${s.img} bg-slate-200 rounded animate-pulse`} style={{ width: 120 }} />;
+    return <div className={`${s.img} bg-slate-100 rounded animate-pulse`} style={{ width: 220 }} />;
   }
 
   const content = (
-    <div className="inline-flex items-center gap-2">
+    <div className="inline-flex items-center justify-center">
       <img
         src={logoSrc}
         alt={instituteName}
         className={`${s.img} w-auto object-contain`}
         onError={(e) => {
-          // Si el logo subido falla, intentar con archivo local
           const img = e.target as HTMLImageElement;
+          // Si falla logo subido, intentar con local
           if (img.src.includes("/logo-full.png") || img.src.includes("/logo-shield.png")) {
-            // Ya estamos en fallback final, no hacer nada
-            return;
+            return;  // Ya en fallback final
           }
           img.src = shieldOnly ? "/logo-shield.png" : "/logo-full.png";
         }}
