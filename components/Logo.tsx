@@ -9,23 +9,12 @@ interface LogoProps {
   withTagline?: boolean;
   asLink?: boolean;
   shieldOnly?: boolean;
-  /** V2.7: Forzar layout horizontal (escudo + texto al lado) en lugar de vertical */
   horizontal?: boolean;
 }
 
 /**
- * V2.7 — Logo PROFESIONAL DEFINITIVO.
- *
- * Tienes 3 versiones del logo en /public/:
- * - logo-horizontal.png — escudo + texto al lado (RECOMENDADO para navbar, sidebar)
- * - logo-vertical.png   — escudo arriba, texto debajo (para login, landing, hero)
- * - logo-shield.png     — solo escudo (para favicons pequeños)
- *
- * Por defecto el componente decide la mejor versión según size:
- * - sm, md  → horizontal (navbar/sidebar)
- * - lg, xl  → vertical (login/landing/hero)
- *
- * Puedes forzar horizontal=true o shieldOnly=true si lo necesitas.
+ * V2.7.1 — Logo MUY GRANDE FINAL.
+ * Logos recortados sin espacio vacío + tamaños grandes garantizados.
  */
 export default function Logo({
   size = "md",
@@ -40,8 +29,8 @@ export default function Logo({
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    // V2.7: cache "v7" para forzar refresh definitivo
-    const cached = typeof window !== "undefined" ? sessionStorage.getItem("institute_logo_v7") : null;
+    // V2.7.1: cache "v8" para forzar refresh tras recorte de logos
+    const cached = typeof window !== "undefined" ? sessionStorage.getItem("institute_logo_v8") : null;
     const cachedName = typeof window !== "undefined" ? sessionStorage.getItem("institute_name") : null;
 
     if (cached !== null) {
@@ -55,11 +44,10 @@ export default function Logo({
       .then((s: any) => {
         const url = s.logo_url || "";
         if (typeof window !== "undefined") {
-          // Limpiar caches viejas
-          ["institute_logo", "institute_logo_v2", "institute_logo_v3", "institute_logo_v4", "institute_logo_v5", "institute_logo_v6"].forEach(k =>
-            sessionStorage.removeItem(k)
-          );
-          sessionStorage.setItem("institute_logo_v7", url);
+          for (let i = 1; i <= 7; i++) {
+            sessionStorage.removeItem(`institute_logo${i === 1 ? '' : '_v' + i}`);
+          }
+          sessionStorage.setItem("institute_logo_v8", url);
           sessionStorage.setItem("institute_name", s.name || "Dorismon Language Institute");
         }
         setLogoUrl(url || null);
@@ -69,26 +57,21 @@ export default function Logo({
       .catch(() => setLoaded(true));
   }, []);
 
-  // V2.7 — Decidir si usar horizontal o vertical según contexto
   const useHorizontal = horizontal !== undefined
     ? horizontal
-    : (size === "sm" || size === "md");  // Default: horizontal para sm/md
+    : (size === "sm" || size === "md");
 
-  // Tamaños finales — GRANDES y BIEN PROPORCIONADOS
-  // Logo horizontal (ratio ~2.15) → más ancho que alto
-  // Logo vertical (ratio ~0.74) → más alto que ancho
+  // V2.7.1 — TAMAÑOS GRANDES (logo horizontal ahora ratio 2.40, recortado al límite)
   const sizes = {
-    sm: useHorizontal ? "h-12" : "h-16",        // 48 / 64
-    md: useHorizontal ? "h-16" : "h-24",        // 64 / 96 (navbar, sidebar)
-    lg: useHorizontal ? "h-24" : "h-40",        // 96 / 160 (login)
-    xl: useHorizontal ? "h-32 md:h-40" : "h-56 md:h-72",  // 128-160 / 224-288 (hero)
+    sm: useHorizontal ? "h-14" : "h-20",        // 56 / 80
+    md: useHorizontal ? "h-20" : "h-28",        // 80 / 112 (navbar, sidebar)
+    lg: useHorizontal ? "h-28" : "h-44",        // 112 / 176 (login)
+    xl: useHorizontal ? "h-36 md:h-44" : "h-60 md:h-80",  // 144-176 / 240-320 (hero)
   };
   const heightClass = sizes[size];
 
-  // Decidir source del logo
   let logoSrc: string;
   if (logoUrl) {
-    // Custom subido por admin tiene prioridad
     logoSrc = logoUrl;
   } else if (shieldOnly) {
     logoSrc = "/logo-shield.png";
@@ -112,7 +95,6 @@ export default function Logo({
       className={`${heightClass} w-auto object-contain`}
       onError={(e) => {
         const img = e.target as HTMLImageElement;
-        // Cadena de fallbacks
         if (img.src.includes("/logo-horizontal.png")) {
           img.src = "/logo-full.png";
         } else if (img.src.includes("/logo-vertical.png")) {
@@ -120,7 +102,6 @@ export default function Logo({
         } else if (img.src.includes("/logo-shield.png")) {
           img.src = "/logo-full.png";
         }
-        // Si /logo-full.png también falla, dejar como está
       }}
     />
   );
