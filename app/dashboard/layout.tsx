@@ -93,7 +93,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           }).catch(() => {});
         }
       })
-      .catch(() => { auth.logout(); router.push("/login"); });
+      .catch(() => {
+        auth.logout();
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
+      });
   }, [router]);
 
   if (!loaded) return <LoadingScreen message="Cargando..." />;
@@ -166,7 +171,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </div>
           <button
-            onClick={() => { auth.logout(); router.push("/"); }}
+            onClick={() => {
+              auth.logout();
+              // V2.8: recarga forzada para garantizar limpieza total
+              if (typeof window !== "undefined") {
+                window.location.href = "/login";
+              }
+            }}
             className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-slate-600 hover:text-red-600 hover:bg-red-50 py-2 rounded-lg transition"
           >
             <LogOut size={16} />

@@ -50,7 +50,28 @@ export const auth = {
   login: (body: { email: string; password: string }) =>
     api("/auth/login", { method: "POST", body }),
   me: () => api("/auth/me", { auth: true }),
-  logout: () => clearToken(),
+  logout: () => {
+    // V2.8: limpieza TOTAL al cerrar sesión (seguridad)
+    clearToken();
+    if (typeof window !== "undefined") {
+      // Limpiar localStorage (excepto preferencias PWA)
+      const pwaInstall = localStorage.getItem("pwa-install-dismissed");
+      const pwaAccepted = localStorage.getItem("pwa-install-accepted");
+      localStorage.clear();
+      if (pwaInstall) localStorage.setItem("pwa-install-dismissed", pwaInstall);
+      if (pwaAccepted) localStorage.setItem("pwa-install-accepted", pwaAccepted);
+      // Limpiar TODO sessionStorage (incluye institute_logo, name, etc.)
+      sessionStorage.clear();
+      // Limpiar caches del Service Worker
+      if ("caches" in window) {
+        caches.keys().then((keys) => keys.forEach((k) => caches.delete(k)));
+      }
+      // Notificar al SW para que limpie su cache también
+      if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: "CLEAR_CACHE" });
+      }
+    }
+  },
   saveToken: setToken,
   getToken,
   isLoggedIn: () => !!getToken(),

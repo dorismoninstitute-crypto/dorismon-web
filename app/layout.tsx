@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   description: "Domina el inglés con Dorismon Language Institute. Cursos para niños, jóvenes y adultos con profesores certificados, certificados oficiales y metodología comunicativa en Santo Domingo.",
   keywords: ["inglés", "academia de inglés", "Santo Domingo", "República Dominicana", "Dorismon", "Language Institute", "cursos de inglés", "certificación inglés"],
   authors: [{ name: "Dorismon Language Institute" }],
-  manifest: "/manifest.json",  // V2.6 PWA
+  manifest: "/manifest.webmanifest",  // V2.6 PWA
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -50,7 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es">
       <head>
-        <link rel="manifest" href="/manifest.json" />
+        <link rel="manifest" href="/manifest.webmanifest" />
         <meta name="theme-color" content="#4361ee" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />

@@ -56,9 +56,18 @@ export default function StudentDashboard() {
   const enrollments = safeArray(d.enrollments);
   const firstName = (u.full_name || "Estudiante").split(" ")[0];
 
-  // Color del nivel
-  const levelCode = progressData?.level_code || enrollments[0]?.level_code || "B1";
-  const theme = getLevelTheme(levelCode);
+  // V2.8 FIX: Mostrar el nivel REAL del estudiante (del placement test),
+  // no el del enrollment (que puede ser distinto si admin lo inscribió en otro nivel)
+  // Prioridad:
+  // 1. progressData.level_code (nivel del progreso académico actual = donde está estudiando)
+  // 2. u.current_level_code (nivel real del placement test del student)
+  // 3. enrollments[0].level_code (último fallback)
+  // 4. null si no hay ninguno
+  const levelCode = progressData?.level_code
+    || (u as any)?.current_level_code
+    || enrollments[0]?.level_code
+    || null;
+  const theme = getLevelTheme(levelCode || "B1");
 
   return (
     <div className="-m-3 md:-m-8 p-3 md:p-8 min-h-screen bg-slate-50">
