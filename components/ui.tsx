@@ -150,6 +150,25 @@ export function EmptyState({ icon = "📭", title, description, action }: any) {
   );
 }
 
+// V2.9: Card de función bloqueada por plan
+export function PlanLockedCard({ title, message }: { title: string; message: string }) {
+  return (
+    <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-8 text-center max-w-lg mx-auto mt-6">
+      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
+        <span className="text-3xl">🔒</span>
+      </div>
+      <h3 className="mb-2 text-lg font-bold text-slate-900">{title}</h3>
+      <p className="mb-5 text-sm text-slate-600">{message}</p>
+      <a
+        href="/dashboard/student/checkout"
+        className="inline-block rounded-lg bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 transition"
+      >
+        Mejorar mi plan →
+      </a>
+    </div>
+  );
+}
+
 // ErrorBox
 export function ErrorBox({ message }: { message: string }) {
   return (

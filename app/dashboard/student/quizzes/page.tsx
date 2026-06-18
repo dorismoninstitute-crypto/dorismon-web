@@ -2,21 +2,40 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { studentApi, safeArray } from "@/lib/api";
-import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button } from "@/components/ui";
+import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, PlanLockedCard } from "@/components/ui";
 
 export default function StudentQuizzesPage() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
+  const [blockedByPlan, setBlockedByPlan] = useState(false);
 
   useEffect(() => {
     studentApi.quizzes()
-      .then(d => { setItems(safeArray(d)); setLoading(false); })
+      .then((d: any) => {
+        const list = Array.isArray(d) ? d : safeArray(d?.items);
+        setItems(list);
+        setBlockedByPlan(!!d?.blocked_by_plan);
+        setLoading(false);
+      })
       .catch(e => { setErr(e.message); setLoading(false); });
   }, []);
 
   if (loading) return <LoadingScreen />;
   if (err) return <ErrorBox message={err} />;
+
+  // V2.9: Si el plan no incluye quizzes
+  if (blockedByPlan) {
+    return (
+      <>
+        <PageHeader title="Quizzes" subtitle="Evaluá tu progreso" />
+        <PlanLockedCard
+          title="Los quizzes no están en tu plan"
+          message="Los quizzes evaluativos están disponibles a partir del plan Professional. Mejora tu plan para acceder."
+        />
+      </>
+    );
+  }
 
   return (
     <>

@@ -50,6 +50,12 @@ export const auth = {
   login: (body: { email: string; password: string }) =>
     api("/auth/login", { method: "POST", body }),
   me: () => api("/auth/me", { auth: true }),
+  // V2.9: feature gates
+  myFeatures: () => api("/auth/me/features", { auth: true }) as Promise<{
+    role: string;
+    has_all: boolean;
+    features: string[];
+  }>,
   logout: () => {
     // V2.8: limpieza TOTAL al cerrar sesión (seguridad)
     clearToken();
@@ -115,6 +121,13 @@ export const teacherApi = {
     api(`/teacher/sessions/${sessionId}/attendance`, { auth: true }),
   saveAttendance: (sessionId: string, body: any) =>
     api(`/teacher/sessions/${sessionId}/attendance`, { method: "POST", body, auth: true }),
+  // V2.9: Profe cancela su propia clase
+  cancelSession: (sessionId: string, reason: string) =>
+    api(`/teacher/sessions/${sessionId}/cancel`, {
+      method: "POST",
+      body: { reason },
+      auth: true,
+    }),
   assignments: () => api("/teacher/assignments", { auth: true }),
   createAssignment: (body: any) =>
     api("/teacher/assignments", { method: "POST", body, auth: true }),

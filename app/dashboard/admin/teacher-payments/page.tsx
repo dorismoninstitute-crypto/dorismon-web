@@ -121,6 +121,30 @@ export default function AdminTeacherPaymentsPage() {
     <>
       <PageHeader title="Pagos a profesores" subtitle="Calcula y registra los pagos del período" />
 
+      {/* V2.9: Banner explicativo - cómo funciona el sistema */}
+      <Card className="mb-4 border-2 border-blue-200 bg-blue-50">
+        <CardBody>
+          <div className="flex items-start gap-3 flex-wrap">
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">
+              <span className="text-white text-lg">💡</span>
+            </div>
+            <div className="flex-1 min-w-[200px]">
+              <p className="font-bold text-blue-900 mb-1">¿Cómo funciona?</p>
+              <p className="text-sm text-blue-800">
+                El sistema calcula automáticamente los pagos del mes en base a las clases <strong>completadas</strong> por
+                cada profesor (no las canceladas) y las tarifas configuradas. Marcas el pago una vez lo hayas hecho
+                por banco/efectivo — esto registra el gasto en <strong>Contabilidad</strong>.
+              </p>
+              <ul className="mt-2 text-xs text-blue-700 list-disc list-inside space-y-0.5">
+                <li><strong>Pendiente</strong>: aún no se ha pagado al profesor este mes</li>
+                <li><strong>Pagado</strong>: ya se registró el pago — aparece como gasto</li>
+                <li><strong>⚙️ Tarifas</strong>: configura cuánto cobra cada profesor por tipo de clase</li>
+              </ul>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+
       {/* Navegación mes */}
       <Card className="mb-5">
         <CardBody>

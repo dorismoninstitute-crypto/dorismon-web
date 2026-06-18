@@ -1,12 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
 import { studentApi, safeArray } from "@/lib/api";
-import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Textarea, SuccessBox } from "@/components/ui";
+import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Textarea, SuccessBox, PlanLockedCard } from "@/components/ui";
 
 export default function StudentAssignmentsPage() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
+  const [blockedByPlan, setBlockedByPlan] = useState(false);
   const [open, setOpen] = useState<number | null>(null);
   const [content, setContent] = useState("");
   const [msg, setMsg] = useState("");
@@ -14,7 +15,13 @@ export default function StudentAssignmentsPage() {
   const load = () => {
     setLoading(true);
     studentApi.assignments()
-      .then(d => { setItems(safeArray(d)); setLoading(false); })
+      .then((d: any) => {
+        // V2.9: el endpoint devuelve {items, blocked_by_plan}
+        const list = Array.isArray(d) ? d : safeArray(d?.items);
+        setItems(list);
+        setBlockedByPlan(!!d?.blocked_by_plan);
+        setLoading(false);
+      })
       .catch(e => { setErr(e.message); setLoading(false); });
   };
   useEffect(() => { load(); }, []);
@@ -31,6 +38,19 @@ export default function StudentAssignmentsPage() {
 
   if (loading) return <LoadingScreen />;
   if (err) return <ErrorBox message={err} />;
+
+  // V2.9: Si el plan no incluye tareas → mostrar candado
+  if (blockedByPlan) {
+    return (
+      <>
+        <PageHeader title="Mis tareas" subtitle="Tareas y ejercicios" />
+        <PlanLockedCard
+          title="Las tareas no están en tu plan"
+          message="Las tareas con feedback del profesor están disponibles a partir del plan Professional. Mejora tu plan para acceder."
+        />
+      </>
+    );
+  }
 
   return (
     <>

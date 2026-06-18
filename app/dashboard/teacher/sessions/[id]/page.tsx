@@ -14,6 +14,10 @@ const STATES = [
 export default function AttendancePage() {
   const params = useParams();
   const router = useRouter();
+  // V2.9: estado para cancelar clase
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelling, setCancelling] = useState(false);
   const sessionId = params?.id as string;
   const [data, setData] = useState<any>(null);
   const [students, setStudents] = useState<any[]>([]);
@@ -67,8 +71,35 @@ export default function AttendancePage() {
       <PageHeader
         title={session.title || "Asistencia"}
         subtitle={session.starts_at_utc && new Date(session.starts_at_utc).toLocaleString("es", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
-        action={<Button variant="outline" onClick={() => router.push("/dashboard/teacher/sessions")}>← Volver</Button>}
+        action={
+          <div className="flex gap-2 flex-wrap">
+            {session.status === "scheduled" && (
+              <Button
+                variant="outline"
+                onClick={() => setShowCancelModal(true)}
+                className="border-red-300 text-red-700 hover:bg-red-50"
+              >
+                🚫 Cancelar clase
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => router.push("/dashboard/teacher/sessions")}>← Volver</Button>
+          </div>
+        }
       />
+
+      {/* V2.9: Banner si la clase está cancelada */}
+      {session.status === "cancelled" && (
+        <Card className="mb-4 border-2 border-red-300 bg-red-50">
+          <CardBody>
+            <p className="font-bold text-red-900">🚫 Esta clase fue cancelada</p>
+            {session.cancellation_reason && (
+              <p className="text-sm text-red-800 mt-2">
+                <span className="font-semibold">Motivo:</span> {session.cancellation_reason}
+              </p>
+            )}
+          </CardBody>
+        </Card>
+      )}
 
       {/* Lista estudiantes */}
       <Card className="mb-4">
@@ -123,6 +154,59 @@ export default function AttendancePage() {
       <Button onClick={saveAll} className="w-full" size="lg" loading={saving}>
         Guardar asistencia y notas
       </Button>
+
+      {/* V2.9: Modal cancelar clase */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
+            <h3 className="text-xl font-bold mb-2 text-red-900">🚫 Cancelar clase</h3>
+            <p className="text-sm text-slate-600 mb-4">
+              Los estudiantes recibirán notificación + email. <strong>Mínimo 2 horas de anticipación.</strong>
+            </p>
+            <label className="block text-sm font-semibold mb-1">Motivo (mínimo 20 caracteres):</label>
+            <Textarea
+              value={cancelReason}
+              onChange={(e: any) => setCancelReason(e.target.value)}
+              placeholder="Ej: Tengo una cita médica urgente. La clase se reagendará en pocos días."
+              rows={4}
+              className="mb-2"
+            />
+            <p className="text-xs text-slate-500 mb-4">{cancelReason.length}/20 caracteres mínimos</p>
+            <div className="flex gap-3 flex-wrap">
+              <Button
+                variant="outline"
+                onClick={() => { setShowCancelModal(false); setCancelReason(""); }}
+                className="flex-1"
+                disabled={cancelling}
+              >
+                No cancelar
+              </Button>
+              <Button
+                onClick={async () => {
+                  if (cancelReason.trim().length < 20) {
+                    showToast("error", "El motivo debe tener al menos 20 caracteres");
+                    return;
+                  }
+                  setCancelling(true);
+                  try {
+                    const res: any = await teacherApi.cancelSession(sessionId, cancelReason.trim());
+                    showToast("success", `Clase cancelada. Se notificaron ${res.students_notified} estudiantes.`);
+                    setShowCancelModal(false);
+                    setTimeout(() => router.push("/dashboard/teacher/sessions"), 1500);
+                  } catch (e: any) {
+                    showToast("error", e?.message || "Error al cancelar");
+                    setCancelling(false);
+                  }
+                }}
+                loading={cancelling}
+                className="flex-1 bg-red-600 hover:bg-red-700"
+              >
+                Sí, cancelar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
