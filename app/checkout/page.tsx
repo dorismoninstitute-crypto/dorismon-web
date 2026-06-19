@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { studentPayments, adminPlans, safeArray } from "@/lib/api";
+import { studentPayments, catalog, safeArray } from "@/lib/api";
 import { LoadingScreen, ErrorBox, PageHeader, Card, CardBody, Badge, Button, Input, Select, Modal, showToast } from "@/components/ui";
 import { CreditCard, Upload, CheckCircle2, AlertCircle, Building2, Copy, Sparkles } from "lucide-react";
 import Link from "next/link";
@@ -39,7 +39,7 @@ function CheckoutInner() {
 
   useEffect(() => {
     Promise.all([
-      adminPlans.list().catch(() => []),
+      catalog.plans().catch(() => []),
       studentPayments.bankAccounts(),
     ])
       .then(([p, b]: any) => {

@@ -8,20 +8,55 @@ export default function TeacherSessionsPage() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
+  const [period, setPeriod] = useState<"upcoming" | "this_week" | "this_month" | "past">("this_month");
 
-  useEffect(() => {
-    teacherApi.sessions()
-      .then(d => { setItems(safeArray(d)); setLoading(false); })
+  const load = (p: string) => {
+    setLoading(true);
+    teacherApi.sessions(p)
+      .then((d: any) => {
+        // V2.9.1: respuesta {items, filter_period}
+        const list = Array.isArray(d) ? d : safeArray(d?.items);
+        setItems(list);
+        setLoading(false);
+      })
       .catch(e => { setErr(e.message); setLoading(false); });
-  }, []);
+  };
 
-  if (loading) return <LoadingScreen />;
+  useEffect(() => { load(period); }, [period]);
+
   if (err) return <ErrorBox message={err} />;
+
+  const PERIODS: { key: typeof period; label: string }[] = [
+    { key: "this_month", label: "Este mes" },
+    { key: "this_week", label: "Esta semana" },
+    { key: "upcoming", label: "Próximas" },
+    { key: "past", label: "Pasadas" },
+  ];
 
   return (
     <>
-      <PageHeader title="Mis clases" subtitle={`${items.length} sesiones`} />
-      {items.length === 0 ? <EmptyState icon="🗓" title="Sin sesiones asignadas" /> : (
+      <PageHeader title="Mis clases" subtitle={`${items.length} clases`} />
+
+      {/* V2.9.1: Tabs de filtro por período */}
+      <div className="flex gap-2 mb-4 flex-wrap">
+        {PERIODS.map(p => (
+          <button
+            key={p.key}
+            onClick={() => setPeriod(p.key)}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+              period === p.key
+                ? "bg-brand-600 text-white"
+                : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+
+      {loading ? <LoadingScreen /> : items.length === 0 ? (
+        <EmptyState icon="🗓" title="Sin clases en este período" description="Cambia el filtro para ver otras clases." />
+      ) : (
         <div className="space-y-2">
           {items.map((s: any) => (
             <Card key={s.id}>

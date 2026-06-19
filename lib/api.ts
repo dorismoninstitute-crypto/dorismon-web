@@ -88,6 +88,8 @@ export const catalog = {
   course: (id: number) => api(`/courses/${id}`),
   levelModules: (id: number) => api(`/levels/${id}/modules`),
   lesson: (id: number) => api(`/lessons/${id}`, { auth: true }),
+  // V2.9.1: planes públicos para checkout
+  plans: () => api("/plans"),
 };
 
 export const studentApi = {
@@ -116,7 +118,8 @@ export const studentApi = {
 
 export const teacherApi = {
   dashboard: () => api("/teacher/dashboard", { auth: true }),
-  sessions: () => api("/teacher/sessions", { auth: true }),
+  sessions: (period?: string) =>
+    api(`/teacher/sessions${period ? `?filter_period=${period}` : ""}`, { auth: true }),
   attendance: (sessionId: string) =>
     api(`/teacher/sessions/${sessionId}/attendance`, { auth: true }),
   saveAttendance: (sessionId: string, body: any) =>

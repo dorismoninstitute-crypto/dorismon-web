@@ -15,61 +15,94 @@ import {
   MessageCircle, HelpCircle, Inbox, TrendingUp, Sparkles,
 } from "lucide-react";
 
-// Iconos como componentes Lucide
-const studentItems = [
-  { href: "/dashboard/student", label: "Inicio", Icon: Home },
-  { href: "/dashboard/student/courses", label: "Mis cursos", Icon: BookOpen },
-  { href: "/dashboard/student/calendar", label: "Calendario", Icon: Calendar },
-  { href: "/dashboard/student/assignments", label: "Tareas", Icon: FileText },
-  { href: "/dashboard/student/quizzes", label: "Quizzes", Icon: CheckCircle2 },
-  { href: "/dashboard/student/events", label: "Eventos", Icon: Ticket },
-  { href: "/dashboard/student/library", label: "Biblioteca", Icon: Library },
-  { href: "/dashboard/student/my-placement", label: "Mi nivel", Icon: Target },
-  { href: "/dashboard/student/transcript", label: "Expediente", Icon: BarChart3 },
-  { href: "/dashboard/student/certificates", label: "Certificados", Icon: GraduationCap },
-  { href: "/dashboard/messages", label: "Mensajes", Icon: MessageCircle },
-  { href: "/dashboard/help", label: "Ayuda", Icon: HelpCircle },
-  { href: "/dashboard/student/notifications", label: "Notificaciones", Icon: Bell },
-  { href: "/dashboard/student/payments", label: "Mis pagos", Icon: CreditCard },
-  { href: "/dashboard/student/trial", label: "Clase de prueba 🎁", Icon: Sparkles },
-  { href: "/dashboard/student/profile", label: "Mi perfil completo", Icon: ClipboardList },
-  { href: "/dashboard/account", label: "Mi cuenta", Icon: Settings },
+// V2.9.1: Items agrupados por área con encabezados de sección
+// Estructura: { section: "Nombre", items: [...] }
+const studentGroups = [
+  { section: null, items: [
+    { href: "/dashboard/student", label: "Inicio", Icon: Home },
+  ]},
+  { section: "Aprendizaje", items: [
+    { href: "/dashboard/student/courses", label: "Mis cursos", Icon: BookOpen },
+    { href: "/dashboard/student/calendar", label: "Calendario", Icon: Calendar },
+    { href: "/dashboard/student/library", label: "Biblioteca", Icon: Library },
+    { href: "/dashboard/student/assignments", label: "Tareas", Icon: FileText },
+    { href: "/dashboard/student/quizzes", label: "Quizzes", Icon: CheckCircle2 },
+    { href: "/dashboard/student/events", label: "Eventos", Icon: Ticket },
+  ]},
+  { section: "Mi progreso", items: [
+    { href: "/dashboard/student/my-placement", label: "Mi nivel", Icon: Target },
+    { href: "/dashboard/student/transcript", label: "Expediente", Icon: BarChart3 },
+    { href: "/dashboard/student/certificates", label: "Certificados", Icon: GraduationCap },
+  ]},
+  { section: "Pagos", items: [
+    { href: "/dashboard/student/payments", label: "Mis pagos", Icon: CreditCard },
+    { href: "/dashboard/student/trial", label: "Clase de prueba 🎁", Icon: Sparkles },
+  ]},
+  { section: "Cuenta", items: [
+    { href: "/dashboard/messages", label: "Mensajes", Icon: MessageCircle },
+    { href: "/dashboard/student/notifications", label: "Notificaciones", Icon: Bell },
+    { href: "/dashboard/student/profile", label: "Mi perfil completo", Icon: ClipboardList },
+    { href: "/dashboard/account", label: "Mi cuenta", Icon: Settings },
+    { href: "/dashboard/help", label: "Ayuda", Icon: HelpCircle },
+  ]},
 ];
-const teacherItems = [
-  { href: "/dashboard/teacher", label: "Inicio", Icon: Home },
-  { href: "/dashboard/teacher/students", label: "Mis estudiantes", Icon: Users },
-  { href: "/dashboard/teacher/sessions", label: "Mis clases", Icon: Calendar },
-  { href: "/dashboard/teacher/assignments", label: "Tareas", Icon: FileText },
-  { href: "/dashboard/teacher/quizzes", label: "Quizzes", Icon: CheckCircle2 },
-  { href: "/dashboard/teacher/materials", label: "Materiales", Icon: BookMarked },
-  { href: "/dashboard/teacher/income", label: "Mis ingresos", Icon: Wallet },
-  { href: "/dashboard/messages", label: "Mensajes", Icon: MessageCircle },
-  { href: "/dashboard/account", label: "Mi cuenta", Icon: Settings },
+
+const teacherGroups = [
+  { section: null, items: [
+    { href: "/dashboard/teacher", label: "Inicio", Icon: Home },
+  ]},
+  { section: "Enseñanza", items: [
+    { href: "/dashboard/teacher/sessions", label: "Mis clases", Icon: Calendar },
+    { href: "/dashboard/teacher/students", label: "Mis estudiantes", Icon: Users },
+    { href: "/dashboard/teacher/assignments", label: "Tareas", Icon: FileText },
+    { href: "/dashboard/teacher/quizzes", label: "Quizzes", Icon: CheckCircle2 },
+    { href: "/dashboard/teacher/materials", label: "Materiales", Icon: BookMarked },
+  ]},
+  { section: "Finanzas", items: [
+    { href: "/dashboard/teacher/income", label: "Mis ingresos", Icon: Wallet },
+  ]},
+  { section: "Cuenta", items: [
+    { href: "/dashboard/messages", label: "Mensajes", Icon: MessageCircle },
+    { href: "/dashboard/account", label: "Mi cuenta", Icon: Settings },
+  ]},
 ];
-const adminItems = [
-  { href: "/dashboard/admin", label: "Dashboard", Icon: BarChart3 },
-  { href: "/dashboard/admin/users", label: "Usuarios", Icon: Users },
-  { href: "/dashboard/admin/placement-results", label: "Placement", Icon: Target },
-  { href: "/dashboard/admin/courses", label: "Cursos", Icon: BookOpen },
-  { href: "/dashboard/admin/content", label: "Contenido", Icon: Layers },
-  { href: "/dashboard/admin/sessions", label: "Clases", Icon: Calendar },
-  { href: "/dashboard/admin/events", label: "Eventos", Icon: Ticket },
-  { href: "/dashboard/admin/enrollments", label: "Inscripciones", Icon: ClipboardList },
-  { href: "/dashboard/admin/branches", label: "Sedes y aulas", Icon: MapPin },
-  { href: "/dashboard/admin/plans", label: "Planes", Icon: CreditCard },
-  { href: "/dashboard/admin/payments", label: "Pagos estudiantes", Icon: DollarSign },
-  { href: "/dashboard/admin/payment-proofs", label: "Verificar pagos", Icon: CheckCircle2 },
-  { href: "/dashboard/admin/bank-accounts", label: "Cuentas bancarias", Icon: CreditCard },
-  { href: "/dashboard/admin/trial-classes", label: "Clases de prueba", Icon: Sparkles },
-  { href: "/dashboard/admin/teacher-payments", label: "Pagos a profesores", Icon: Wallet },
-  { href: "/dashboard/admin/finance", label: "Contabilidad", Icon: TrendingUp },
-  { href: "/dashboard/messages", label: "Mensajes", Icon: MessageCircle },
-  { href: "/dashboard/admin/tickets", label: "Tickets soporte", Icon: Inbox },
-  { href: "/dashboard/admin/certificates", label: "Certificados", Icon: GraduationCap },
-  { href: "/dashboard/admin/certification-ready", label: "Listos certificar", Icon: Award },
-  { href: "/dashboard/admin/audit", label: "Auditoría", Icon: FileSearch },
-  { href: "/dashboard/admin/settings", label: "Configuración", Icon: Wrench },
-  { href: "/dashboard/account", label: "Mi cuenta", Icon: Settings },
+
+const adminGroups = [
+  { section: null, items: [
+    { href: "/dashboard/admin", label: "Dashboard", Icon: BarChart3 },
+  ]},
+  { section: "Académico", items: [
+    { href: "/dashboard/admin/courses", label: "Cursos", Icon: BookOpen },
+    { href: "/dashboard/admin/content", label: "Contenido", Icon: Layers },
+    { href: "/dashboard/admin/sessions", label: "Clases", Icon: Calendar },
+    { href: "/dashboard/admin/events", label: "Eventos", Icon: Ticket },
+    { href: "/dashboard/admin/branches", label: "Sedes y aulas", Icon: MapPin },
+  ]},
+  { section: "Estudiantes", items: [
+    { href: "/dashboard/admin/users", label: "Usuarios", Icon: Users },
+    { href: "/dashboard/admin/enrollments", label: "Inscripciones", Icon: ClipboardList },
+    { href: "/dashboard/admin/placement-results", label: "Placement", Icon: Target },
+    { href: "/dashboard/admin/trial-classes", label: "Clases de prueba", Icon: Sparkles },
+  ]},
+  { section: "Finanzas", items: [
+    { href: "/dashboard/admin/plans", label: "Planes", Icon: CreditCard },
+    { href: "/dashboard/admin/payments", label: "Pagos estudiantes", Icon: DollarSign },
+    { href: "/dashboard/admin/payment-proofs", label: "Verificar pagos", Icon: CheckCircle2 },
+    { href: "/dashboard/admin/bank-accounts", label: "Cuentas bancarias", Icon: CreditCard },
+    { href: "/dashboard/admin/teacher-payments", label: "Pagos a profesores", Icon: Wallet },
+    { href: "/dashboard/admin/finance", label: "Contabilidad", Icon: TrendingUp },
+  ]},
+  { section: "Certificación", items: [
+    { href: "/dashboard/admin/certificates", label: "Certificados", Icon: GraduationCap },
+    { href: "/dashboard/admin/certification-ready", label: "Listos certificar", Icon: Award },
+  ]},
+  { section: "Soporte y sistema", items: [
+    { href: "/dashboard/messages", label: "Mensajes", Icon: MessageCircle },
+    { href: "/dashboard/admin/tickets", label: "Tickets soporte", Icon: Inbox },
+    { href: "/dashboard/admin/audit", label: "Auditoría", Icon: FileSearch },
+    { href: "/dashboard/admin/settings", label: "Configuración", Icon: Wrench },
+    { href: "/dashboard/account", label: "Mi cuenta", Icon: Settings },
+  ]},
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -104,8 +137,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!loaded) return <LoadingScreen message="Cargando..." />;
   const u = safeObj(user, {}) as any;
   const role = u.role || "student";
-  const items = role === "super_admin" ? adminItems : role === "teacher" ? teacherItems : studentItems;
-  const sectionLabel = role === "super_admin" ? "Administración" : role === "teacher" ? "Profesor" : "Estudiante";
+  const groups = role === "super_admin" ? adminGroups : role === "teacher" ? teacherGroups : studentGroups;
 
   // Tema del sidebar: para estudiante usa colores por nivel, para admin/profe usa brand
   const theme = role === "student" ? getLevelTheme(studentLevel) : null;
@@ -135,31 +167,39 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         <nav className="flex-1 overflow-y-auto py-3">
-          <p className="px-5 mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">{sectionLabel}</p>
-          {items.map(n => {
-            const active = pathname === n.href || (
-              n.href !== "/dashboard/admin" &&
-              n.href !== "/dashboard/teacher" &&
-              n.href !== "/dashboard/student" &&
-              pathname.startsWith(n.href)
-            );
-            return (
-              <Link
-                key={n.href}
-                href={n.href}
-                onClick={() => setSidebarOpen(false)}
-                className={clsx(
-                  "flex items-center gap-3 px-5 py-2.5 text-sm transition-all border-l-2",
-                  active
-                    ? clsx(activeBgClass, activeTextClass, activeBorderClass, "font-semibold")
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 border-transparent"
-                )}
-              >
-                <n.Icon size={18} strokeWidth={2} className="flex-shrink-0" />
-                <span>{n.label}</span>
-              </Link>
-            );
-          })}
+          {groups.map((group, gi) => (
+            <div key={gi} className={gi > 0 ? "mt-4" : ""}>
+              {group.section && (
+                <p className="px-5 mb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  {group.section}
+                </p>
+              )}
+              {group.items.map(n => {
+                const active = pathname === n.href || (
+                  n.href !== "/dashboard/admin" &&
+                  n.href !== "/dashboard/teacher" &&
+                  n.href !== "/dashboard/student" &&
+                  pathname.startsWith(n.href)
+                );
+                return (
+                  <Link
+                    key={n.href}
+                    href={n.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className={clsx(
+                      "flex items-center gap-3 px-5 py-2.5 text-sm transition-all border-l-2",
+                      active
+                        ? clsx(activeBgClass, activeTextClass, activeBorderClass, "font-semibold")
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 border-transparent"
+                    )}
+                  >
+                    <n.Icon size={18} strokeWidth={2} className="flex-shrink-0" />
+                    <span>{n.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </nav>
 
         <div className="p-4 border-t border-slate-100">
