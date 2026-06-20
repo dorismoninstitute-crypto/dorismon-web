@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { studentApi, placement, progress, events, safeArray, safeObj, getLevelTheme } from "@/lib/api";
+import { studentApi, studentPayments, placement, progress, events, safeArray, safeObj, getLevelTheme } from "@/lib/api";
 import { LoadingScreen, ErrorBox, EmptyState, Card, CardBody, Badge, Button, showToast, CalendarButton, JoinClassButton } from "@/components/ui";
 import {
   Calendar, FileText, CheckCircle2, Target, Trophy, TrendingUp,
@@ -15,6 +15,7 @@ export default function StudentDashboard() {
   const [data, setData] = useState<any>(null);
   const [progressData, setProgressData] = useState<any>(null);
   const [openEvents, setOpenEvents] = useState<any[]>([]);
+  const [trialStatus, setTrialStatus] = useState<any>(null);
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(true);
   // V3.0: modal de avisar ausencia
@@ -56,13 +57,15 @@ export default function StudentDashboard() {
           studentApi.dashboard(),
           progress.myCourse().catch(() => null),
           events.list().catch(() => []),
+          studentPayments.trialStatus().catch(() => null),
         ]);
       })
-      .then(([d, p, ev]: any) => {
+      .then(([d, p, ev, trial]: any) => {
         if (d) {
           setData(d);
           setProgressData(p);
           setOpenEvents(safeArray(ev).slice(0, 3));
+          setTrialStatus(trial);
           setLoading(false);
         }
       })
@@ -85,6 +88,7 @@ export default function StudentDashboard() {
   // V3.0: cancelaciones recientes + clases donde ya avisé ausencia
   const recentCancelled = safeArray(d.recent_cancelled);
   const myAbsenceIds: string[] = safeArray(d.my_absence_session_ids);
+  const trialInfo = d.trial_info; // V3.0.1
 
   // V2.8 FIX: Mostrar el nivel REAL del estudiante (del placement test),
   // no el del enrollment (que puede ser distinto si admin lo inscribió en otro nivel)
@@ -129,8 +133,50 @@ export default function StudentDashboard() {
         </div>
       )}
 
-      {/* V2.6b: Banner CTA si NO tiene inscripciones activas */}
-      {enrollments.length === 0 && (
+      {/* V3.0.1: Si tiene clase de prueba AGENDADA, mostrar tarjeta de confirmación */}
+      {enrollments.length === 0 && trialInfo?.status === "scheduled" && (
+        <div className="bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-300 rounded-2xl p-5 mb-6 shadow-md">
+          <div className="flex items-start gap-3 flex-wrap md:flex-nowrap">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center flex-shrink-0">
+              <span className="text-2xl">🎁</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-black text-lg text-emerald-900 mb-1">¡Tu clase de prueba está agendada! ✅</h3>
+              <div className="text-sm text-emerald-800 space-y-0.5 mb-3">
+                {trialInfo.teacher_name && <p><strong>👨‍🏫 Profesor:</strong> {trialInfo.teacher_name}</p>}
+                {trialInfo.scheduled_at && (
+                  <p><strong>📅 Fecha:</strong> {new Date(trialInfo.scheduled_at).toLocaleString("es", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}</p>
+                )}
+                {trialInfo.modality && <p><strong>📍 Modalidad:</strong> {trialInfo.modality}</p>}
+              </div>
+              <a href="/dashboard/student/calendar">
+                <button className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-lg transition">
+                  Ver en mi calendario →
+                </button>
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* V3.0.1: Si solicitó prueba pero aún no se la agendan */}
+      {enrollments.length === 0 && trialInfo?.status === "requested" && (
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-2xl p-5 mb-6 shadow-md">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl flex-shrink-0">⏳</span>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-black text-lg text-blue-900 mb-1">Tu clase de prueba está en proceso</h3>
+              <p className="text-sm text-blue-800">
+                Ya recibimos tu solicitud. En las próximas horas te asignaremos un profesor y te
+                confirmaremos por email la fecha de tu clase de prueba gratis. 🎁
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* V2.6b: Banner CTA solo si NO tiene inscripciones NI clase de prueba */}
+      {enrollments.length === 0 && !trialInfo && (
         <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300 rounded-2xl p-5 mb-6 shadow-md">
           <div className="flex items-start gap-3 flex-wrap md:flex-nowrap">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center flex-shrink-0">

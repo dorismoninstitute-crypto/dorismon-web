@@ -233,6 +233,8 @@ export const adminHelpers = {
     api("/admin/maintenance/clean-operational-data", { method: "POST", body: { dry_run: false, confirm: "BORRAR DATOS DE PRUEBA" }, auth: true }),
   reactivateUser: (userId: string) =>
     api(`/admin/users/${userId}/reactivate`, { method: "POST", auth: true }),
+  // V3.0.1: agenda de profesores
+  teachersSchedule: () => api("/admin/teachers-schedule", { auth: true }),
 };
 
 
