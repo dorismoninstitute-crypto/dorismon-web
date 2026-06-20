@@ -17,6 +17,33 @@ export default function StudentDashboard() {
   const [openEvents, setOpenEvents] = useState<any[]>([]);
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(true);
+  // V3.0: modal de avisar ausencia
+  const [absenceModal, setAbsenceModal] = useState<any>(null);
+  const [absenceReason, setAbsenceReason] = useState("");
+  const [absenceSaving, setAbsenceSaving] = useState(false);
+
+  const reload = () => {
+    studentApi.dashboard().then((d: any) => d && setData(d)).catch(() => {});
+  };
+
+  const submitAbsence = async () => {
+    if (absenceReason.trim().length < 5) {
+      showToast("error", "Escribe un motivo (mínimo 5 caracteres)");
+      return;
+    }
+    setAbsenceSaving(true);
+    try {
+      await studentApi.notifyAbsence(absenceModal.id, absenceReason.trim());
+      showToast("success", "Avisaste que faltarás. Tu profesor fue notificado.");
+      setAbsenceModal(null);
+      setAbsenceReason("");
+      reload();
+    } catch (e: any) {
+      showToast("error", e?.message || "No se pudo enviar el aviso");
+    } finally {
+      setAbsenceSaving(false);
+    }
+  };
 
   useEffect(() => {
     placement.status()
@@ -55,6 +82,9 @@ export default function StudentDashboard() {
   const next_classes = safeArray(d.next_classes);
   const enrollments = safeArray(d.enrollments);
   const firstName = (u.full_name || "Estudiante").split(" ")[0];
+  // V3.0: cancelaciones recientes + clases donde ya avisé ausencia
+  const recentCancelled = safeArray(d.recent_cancelled);
+  const myAbsenceIds: string[] = safeArray(d.my_absence_session_ids);
 
   // V2.8 FIX: Mostrar el nivel REAL del estudiante (del placement test),
   // no el del enrollment (que puede ser distinto si admin lo inscribió en otro nivel)
@@ -71,6 +101,34 @@ export default function StudentDashboard() {
 
   return (
     <div className="-m-3 md:-m-8 p-3 md:p-8 min-h-screen bg-slate-50">
+      {/* V3.0: Aviso de clases canceladas recientemente */}
+      {recentCancelled.length > 0 && (
+        <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-4 mb-6">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl flex-shrink-0">⚠️</span>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-bold text-red-900 mb-1">
+                {recentCancelled.length === 1 ? "Una de tus clases fue cancelada" : `${recentCancelled.length} de tus clases fueron canceladas`}
+              </h3>
+              <div className="space-y-2 mt-2">
+                {recentCancelled.map((c: any) => (
+                  <div key={c.id} className="text-sm bg-white/60 rounded-lg p-2.5">
+                    <p className="font-semibold text-red-900">{c.title}</p>
+                    <p className="text-xs text-red-700">
+                      {c.starts_at_utc && new Date(c.starts_at_utc).toLocaleString("es", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                    {c.reason && <p className="text-xs text-slate-600 mt-1">Motivo: {c.reason}</p>}
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-red-600 mt-2">
+                Tu profesor o coordinador reagendará la clase. Si tienes dudas, escríbeles por Mensajes.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* V2.6b: Banner CTA si NO tiene inscripciones activas */}
       {enrollments.length === 0 && (
         <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300 rounded-2xl p-5 mb-6 shadow-md">
@@ -433,18 +491,38 @@ export default function StudentDashboard() {
               <EmptyState icon="📅" title="Sin clases programadas" description="Tu profesor pronto agendará clases." />
             ) : (
               <div className="space-y-2">
-                {next_classes.slice(0, 4).map((c: any) => (
-                  <div key={c.id} className="p-3 bg-slate-50 rounded-xl flex items-center gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-sm">{c.title}</p>
-                      <p className="text-xs text-slate-500">
-                        {c.starts_at_utc && new Date(c.starts_at_utc).toLocaleString("es", { weekday: "short", day: "numeric", month: "short", hour: "2-digit" })}
-                        {" · "}{c.teacher_name}
-                      </p>
+                {next_classes.slice(0, 4).map((c: any) => {
+                  const alreadyNotified = myAbsenceIds.includes(c.id);
+                  return (
+                  <div key={c.id} className="p-3 bg-slate-50 rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm">{c.title}</p>
+                        <p className="text-xs text-slate-500">
+                          {c.starts_at_utc && new Date(c.starts_at_utc).toLocaleString("es", { weekday: "short", day: "numeric", month: "short", hour: "2-digit" })}
+                          {" · "}{c.teacher_name}
+                        </p>
+                      </div>
+                      <Badge variant={c.modality === "online" ? "brand" : c.modality === "presencial" ? "accent" : "info"}>{c.modality}</Badge>
                     </div>
-                    <Badge variant={c.modality === "online" ? "brand" : c.modality === "presencial" ? "accent" : "info"}>{c.modality}</Badge>
+                    {/* V3.0: avisar ausencia */}
+                    <div className="mt-2 flex justify-end">
+                      {alreadyNotified ? (
+                        <span className="text-xs text-amber-700 font-semibold flex items-center gap-1">
+                          ✓ Avisaste que faltarás
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => { setAbsenceModal(c); setAbsenceReason(""); }}
+                          className="text-xs text-slate-500 hover:text-red-600 font-semibold"
+                        >
+                          No podré asistir
+                        </button>
+                      )}
+                    </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardBody>
@@ -497,6 +575,35 @@ export default function StudentDashboard() {
           </Card>
         )}
       </div>
+
+      {/* V3.0: Modal avisar ausencia */}
+      {absenceModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
+            <h3 className="text-xl font-bold mb-1 text-slate-900">¿No podrás asistir?</h3>
+            <p className="text-sm text-slate-600 mb-1">{absenceModal.title}</p>
+            <p className="text-xs text-slate-400 mb-4">
+              {absenceModal.starts_at_utc && new Date(absenceModal.starts_at_utc).toLocaleString("es", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
+            </p>
+            <label className="block text-sm font-semibold mb-1">Cuéntale a tu profesor por qué:</label>
+            <textarea
+              value={absenceReason}
+              onChange={(e) => setAbsenceReason(e.target.value)}
+              placeholder="Ej: Tengo una cita médica ese día."
+              rows={3}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm mb-4"
+            />
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => { setAbsenceModal(null); setAbsenceReason(""); }} className="flex-1" disabled={absenceSaving}>
+                Cancelar
+              </Button>
+              <Button onClick={submitAbsence} loading={absenceSaving} className="flex-1">
+                Enviar aviso
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

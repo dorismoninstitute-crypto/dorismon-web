@@ -110,24 +110,35 @@ export default function AttendancePage() {
           ) : (
             <div className="space-y-2">
               {students.map((s: any) => (
-                <div key={s.student_id} className="p-3 bg-slate-50 rounded-lg flex items-center gap-3 flex-wrap">
-                  <div className="w-8 h-8 rounded-full bg-brand-500 text-white flex items-center justify-center font-bold text-xs">
-                    {(s.full_name || "?").split(" ").map((w: string) => w[0]).join("").slice(0, 2)}
+                <div key={s.student_id} className="p-3 bg-slate-50 rounded-lg flex flex-col gap-2">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className="w-8 h-8 rounded-full bg-brand-500 text-white flex items-center justify-center font-bold text-xs">
+                      {(s.full_name || "?").split(" ").map((w: string) => w[0]).join("").slice(0, 2)}
+                    </div>
+                    <p className="flex-1 font-medium text-sm">{s.full_name}</p>
+                    <div className="flex gap-1 flex-wrap">
+                      {STATES.map(st => (
+                        <button
+                          key={st.v}
+                          onClick={() => setState(s.student_id, st.v)}
+                          className={`px-2 py-1 rounded-md text-xs font-semibold transition ${
+                            s.state === st.v ? `${st.color} text-white shadow` : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                          }`}
+                        >
+                          {st.emoji} {st.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <p className="flex-1 font-medium text-sm">{s.full_name}</p>
-                  <div className="flex gap-1 flex-wrap">
-                    {STATES.map(st => (
-                      <button
-                        key={st.v}
-                        onClick={() => setState(s.student_id, st.v)}
-                        className={`px-2 py-1 rounded-md text-xs font-semibold transition ${
-                          s.state === st.v ? `${st.color} text-white shadow` : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
-                        }`}
-                      >
-                        {st.emoji} {st.label}
-                      </button>
-                    ))}
-                  </div>
+                  {/* V3.0: aviso de ausencia del estudiante */}
+                  {s.absence_notice && (
+                    <div className="ml-11 text-xs bg-amber-50 border border-amber-200 rounded-lg p-2">
+                      <span className="font-semibold text-amber-900">
+                        🙋 Avisó que faltará {s.absence_notice.in_advance ? "(con tiempo)" : "(a último momento)"}:
+                      </span>{" "}
+                      <span className="text-amber-800">{s.absence_notice.reason}</span>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

@@ -101,6 +101,7 @@ const adminGroups = [
     { href: "/dashboard/admin/tickets", label: "Tickets soporte", Icon: Inbox },
     { href: "/dashboard/admin/audit", label: "Auditoría", Icon: FileSearch },
     { href: "/dashboard/admin/settings", label: "Configuración", Icon: Wrench },
+    { href: "/dashboard/admin/maintenance", label: "Mantenimiento", Icon: Wrench },
     { href: "/dashboard/account", label: "Mi cuenta", Icon: Settings },
   ]},
 ];

@@ -95,6 +95,11 @@ export const catalog = {
 export const studentApi = {
   dashboard: () => api("/student/dashboard", { auth: true }),
   courses: () => api("/student/courses", { auth: true }),
+  // V3.0: avisar ausencia
+  notifyAbsence: (sessionId: string, reason: string) =>
+    api(`/student/sessions/${sessionId}/notify-absence`, { method: "POST", body: { reason }, auth: true }),
+  cancelAbsence: (sessionId: string) =>
+    api(`/student/sessions/${sessionId}/notify-absence`, { method: "DELETE", auth: true }),
   assignments: () => api("/student/assignments", { auth: true }),
   submitAssignment: (id: number, body: any) =>
     api(`/student/assignments/${id}/submit`, { method: "POST", body, auth: true }),
@@ -221,6 +226,13 @@ export const adminHelpers = {
   studentsSimple: () => api("/admin/students-simple", { auth: true }),
   levelsByCourse: (courseId: number) =>
     api(`/admin/levels-by-course/${courseId}`, { auth: true }),
+  // V2.9.2: mantenimiento + reactivar usuario
+  cleanDataDryRun: () =>
+    api("/admin/maintenance/clean-operational-data", { method: "POST", body: { dry_run: true }, auth: true }),
+  cleanDataExecute: () =>
+    api("/admin/maintenance/clean-operational-data", { method: "POST", body: { dry_run: false, confirm: "BORRAR DATOS DE PRUEBA" }, auth: true }),
+  reactivateUser: (userId: string) =>
+    api(`/admin/users/${userId}/reactivate`, { method: "POST", auth: true }),
 };
 
 

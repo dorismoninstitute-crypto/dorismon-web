@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { adminApi, adminEdit, adminPause, adminTeacherLevels, safeArray, safeObj, getLevelTheme } from "@/lib/api";
+import { adminApi, adminEdit, adminPause, adminTeacherLevels, adminHelpers, safeArray, safeObj, getLevelTheme } from "@/lib/api";
 import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Input, Select, Modal, ConfirmModal, showToast } from "@/components/ui";
 
 export default function AdminUsersPage() {
@@ -82,6 +82,15 @@ export default function AdminUsersPage() {
       await adminPause.resume(userId);
       showToast("success", "Estudiante reactivado");
       setConfirmResume(null);
+      load();
+    } catch (e: any) { showToast("error", e.message); }
+  };
+
+  // V2.9.2: reactivar cualquier usuario inactivo (profe, admin, estudiante)
+  const doReactivate = async (u: any) => {
+    try {
+      const r: any = await adminHelpers.reactivateUser(u.id);
+      showToast("success", `${u.full_name} reactivado (${r.email})`);
       load();
     } catch (e: any) { showToast("error", e.message); }
   };
@@ -179,7 +188,13 @@ export default function AdminUsersPage() {
                     {u.role === "teacher" && (
                       <Button size="sm" variant="outline" onClick={() => openLevels(u)}>🎯 Niveles</Button>
                     )}
-                    {u.role === "student" && (
+                    {/* V2.9.2: Reactivar cualquier usuario inactivo */}
+                    {!u.is_active && (
+                      <Button size="sm" variant="primary" onClick={() => doReactivate(u)}>
+                        ▶ Reactivar usuario
+                      </Button>
+                    )}
+                    {u.role === "student" && u.is_active && (
                       u.is_paused ? (
                         <Button size="sm" variant="primary" onClick={() => setConfirmResume(u)}>Reactivar</Button>
                       ) : (
