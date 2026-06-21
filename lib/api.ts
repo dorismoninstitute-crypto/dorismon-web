@@ -100,6 +100,9 @@ export const studentApi = {
     api(`/student/sessions/${sessionId}/notify-absence`, { method: "POST", body: { reason }, auth: true }),
   cancelAbsence: (sessionId: string) =>
     api(`/student/sessions/${sessionId}/notify-absence`, { method: "DELETE", auth: true }),
+  // V3.0.2: reagendar clase de prueba
+  rescheduleTrial: () =>
+    api("/student/trial-class/reschedule", { method: "POST", auth: true }),
   assignments: () => api("/student/assignments", { auth: true }),
   submitAssignment: (id: number, body: any) =>
     api(`/student/assignments/${id}/submit`, { method: "POST", body, auth: true }),
@@ -529,7 +532,7 @@ export const adminPaymentProofs = {
 
 export const adminTrialClasses = {
   list: (status?: string) => api(`/admin/trial-classes${status ? "?status=" + status : ""}`, { auth: true }),
-  schedule: (id: string, body: { teacher_id: string; scheduled_at: string }) =>
+  schedule: (id: string, body: { teacher_id: string; scheduled_at: string; meeting_url?: string }) =>
     api(`/admin/trial-classes/${id}/schedule`, { method: "POST", body, auth: true }),
 };
 

@@ -175,6 +175,74 @@ export default function StudentDashboard() {
         </div>
       )}
 
+      {/* V3.0.2: Clase de prueba COMPLETADA (asistió) → invitar a inscribirse */}
+      {enrollments.length === 0 && trialInfo?.status === "completed" && (
+        <div className="bg-gradient-to-br from-violet-50 to-purple-50 border-2 border-violet-300 rounded-2xl p-5 mb-6 shadow-md">
+          <div className="flex items-start gap-3 flex-wrap md:flex-nowrap">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center flex-shrink-0">
+              <span className="text-2xl">🎉</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-black text-lg text-violet-900 mb-1">¿Qué te pareció tu clase de prueba?</h3>
+              <p className="text-sm text-violet-800 mb-3">
+                Esperamos que la hayas disfrutado. ¡Da el siguiente paso y comienza tu camino con el inglés!
+              </p>
+              <a href="/checkout">
+                <button className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white font-bold text-sm rounded-lg transition">
+                  💎 Ver planes e inscribirme →
+                </button>
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* V3.0.2: Clase de prueba NO_SHOW (no asistió) → reagendar o inscribirse */}
+      {enrollments.length === 0 && trialInfo?.status === "no_show" && (
+        <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300 rounded-2xl p-5 mb-6 shadow-md">
+          <div className="flex items-start gap-3 flex-wrap md:flex-nowrap">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center flex-shrink-0">
+              <span className="text-2xl">😔</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-black text-lg text-amber-900 mb-1">Tu clase de prueba ya pasó</h3>
+              {trialInfo.reschedule_requested ? (
+                <p className="text-sm text-amber-800">
+                  Ya pediste reagendar. Te contactaremos pronto para coordinar la nueva fecha. 📅
+                </p>
+              ) : (
+                <>
+                  <p className="text-sm text-amber-800 mb-3">
+                    No pudimos verte esta vez. ¿Querés intentarlo de nuevo o ya estás listo para empezar?
+                  </p>
+                  <div className="flex gap-2 flex-wrap">
+                    {trialInfo.can_reschedule && (
+                      <button
+                        onClick={async () => {
+                          try {
+                            await studentApi.rescheduleTrial();
+                            showToast("success", "Solicitud enviada. Te contactaremos para la nueva fecha.");
+                            reload();
+                          } catch (e: any) { showToast("error", e?.message || "Error"); }
+                        }}
+                        className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-sm rounded-lg transition"
+                      >
+                        🔄 Reagendar mi clase
+                      </button>
+                    )}
+                    <a href="/checkout">
+                      <button className="px-4 py-2 bg-white hover:bg-amber-50 text-amber-900 font-bold text-sm rounded-lg border-2 border-amber-300 transition">
+                        💎 Inscribirme a un plan
+                      </button>
+                    </a>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* V2.6b: Banner CTA solo si NO tiene inscripciones NI clase de prueba */}
       {enrollments.length === 0 && !trialInfo && (
         <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300 rounded-2xl p-5 mb-6 shadow-md">

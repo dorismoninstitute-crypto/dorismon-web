@@ -10,7 +10,7 @@ export default function AdminTrialClassesPage() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [scheduling, setScheduling] = useState<any>(null);
-  const [form, setForm] = useState({ teacher_id: "", date: "", time: "" });
+  const [form, setForm] = useState({ teacher_id: "", date: "", time: "", meeting_url: "" });
 
   const load = () => {
     setLoading(true);
@@ -38,10 +38,11 @@ export default function AdminTrialClassesPage() {
       await adminTrialClasses.schedule(scheduling.id, {
         teacher_id: form.teacher_id,
         scheduled_at: isoStr,
+        meeting_url: form.meeting_url || undefined,
       });
       showToast("success", "✓ Clase de prueba agendada");
       setScheduling(null);
-      setForm({ teacher_id: "", date: "", time: "" });
+      setForm({ teacher_id: "", date: "", time: "", meeting_url: "" });
       load();
     } catch (e: any) { showToast("error", e.message); }
   };
@@ -117,7 +118,7 @@ export default function AdminTrialClassesPage() {
                     )}
 
                     {t.status === "requested" && (
-                      <Button size="sm" onClick={() => { setScheduling(t); setForm({ teacher_id: "", date: "", time: "" }); }}>
+                      <Button size="sm" onClick={() => { setScheduling(t); setForm({ teacher_id: "", date: "", time: "", meeting_url: "" }); }}>
                         <Calendar size={14} className="mr-1" /> Agendar clase
                       </Button>
                     )}
@@ -169,6 +170,17 @@ export default function AdminTrialClassesPage() {
               value={form.time}
               onChange={(e: any) => setForm({ ...form, time: e.target.value })}
             />
+
+            <Input
+              type="url"
+              label="Link de la clase (Zoom/Meet)"
+              placeholder="https://meet.google.com/..."
+              value={form.meeting_url}
+              onChange={(e: any) => setForm({ ...form, meeting_url: e.target.value })}
+            />
+            <p className="text-xs text-slate-500 -mt-2 mb-2">
+              💡 Para clases online, pega aquí el enlace. El estudiante lo verá en su calendario y recibirá por email.
+            </p>
 
             <Button onClick={schedule} className="w-full" size="lg">
               <Calendar size={16} className="mr-2" />
