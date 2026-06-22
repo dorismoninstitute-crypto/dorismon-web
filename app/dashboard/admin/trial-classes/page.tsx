@@ -12,6 +12,7 @@ export default function AdminTrialClassesPage() {
   const [scheduling, setScheduling] = useState<any>(null);
   const [form, setForm] = useState({ teacher_id: "", date: "", time: "", meeting_url: "" });
   const [filter, setFilter] = useState<"pending" | "all">("pending");
+  const [saving, setSaving] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -36,6 +37,8 @@ export default function AdminTrialClassesPage() {
       showToast("error", "Completa profesor, fecha y hora");
       return;
     }
+    if (saving) return;  // V3.0.5: evitar doble click
+    setSaving(true);
     try {
       const isoStr = `${form.date}T${form.time}:00-04:00`;  // RD timezone UTC-4
       await adminTrialClasses.schedule(scheduling.id, {
@@ -48,6 +51,7 @@ export default function AdminTrialClassesPage() {
       setForm({ teacher_id: "", date: "", time: "", meeting_url: "" });
       load();
     } catch (e: any) { showToast("error", e.message); }
+    finally { setSaving(false); }
   };
 
   if (err) return <ErrorBox message={err} />;
@@ -216,9 +220,9 @@ export default function AdminTrialClassesPage() {
               💡 Para clases online, pega aquí el enlace. El estudiante lo verá en su calendario y recibirá por email.
             </p>
 
-            <Button onClick={schedule} className="w-full" size="lg">
+            <Button onClick={schedule} className="w-full" size="lg" loading={saving} disabled={saving}>
               <Calendar size={16} className="mr-2" />
-              Agendar clase
+              {saving ? "Agendando..." : "Agendar clase"}
             </Button>
           </div>
         )}
