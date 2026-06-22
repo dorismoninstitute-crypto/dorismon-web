@@ -406,6 +406,54 @@ export function CalendarButton({ sessionId }: { sessionId: string }) {
 
 
 // V1.4 — Pantalla intermedia "Entrar a la clase" — V1.4.1: detecta plataforma
+// V3.0.3: Ubicación de clase presencial/híbrida — dirección + botones mapa/teléfono
+export function ClassLocation({ location, compact = false }: { location: any; compact?: boolean }) {
+  if (!location) return null;
+  const { branch_name, address, phone, classroom_name, maps_url } = location;
+  if (!branch_name && !address && !classroom_name) return null;
+
+  const mapsUrl = maps_url || (address
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
+    : null);
+
+  if (compact) {
+    return (
+      <p className="text-xs text-slate-600">
+        📍 {branch_name}{classroom_name ? ` · ${classroom_name}` : ""}
+      </p>
+    );
+  }
+
+  return (
+    <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 mt-2">
+      <div className="flex items-start gap-2">
+        <span className="text-lg flex-shrink-0">📍</span>
+        <div className="flex-1 min-w-0">
+          {branch_name && <p className="font-semibold text-sm text-slate-900">{branch_name}</p>}
+          {classroom_name && <p className="text-xs text-slate-600">Aula: {classroom_name}</p>}
+          {address && <p className="text-xs text-slate-500 mt-0.5">{address}</p>}
+          <div className="flex gap-2 mt-2 flex-wrap">
+            {mapsUrl && (
+              <a href={mapsUrl} target="_blank" rel="noopener noreferrer">
+                <button className="px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold rounded-lg transition flex items-center gap-1">
+                  🗺️ Cómo llegar
+                </button>
+              </a>
+            )}
+            {phone && (
+              <a href={`tel:${phone}`}>
+                <button className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg border border-slate-300 transition flex items-center gap-1">
+                  📞 Llamar a la sede
+                </button>
+              </a>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function JoinClassButton({ session }: { session: any }) {
   const [showModal, setShowModal] = React.useState(false);
 

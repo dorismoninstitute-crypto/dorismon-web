@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { studentApi, studentPayments, placement, progress, events, safeArray, safeObj, getLevelTheme } from "@/lib/api";
-import { LoadingScreen, ErrorBox, EmptyState, Card, CardBody, Badge, Button, showToast, CalendarButton, JoinClassButton } from "@/components/ui";
+import { LoadingScreen, ErrorBox, EmptyState, Card, CardBody, Badge, Button, showToast, CalendarButton, JoinClassButton, ClassLocation } from "@/components/ui";
 import {
   Calendar, FileText, CheckCircle2, Target, Trophy, TrendingUp,
   Sparkles, GraduationCap, Clock, BookOpen, Award, ChevronRight,
@@ -583,6 +583,10 @@ export default function StudentDashboard() {
                 )}
                 <CalendarButton sessionId={progressData.next_session.id} />
               </div>
+              {/* V3.0.3: ubicación si es presencial/híbrida */}
+              {progressData.next_session.location && (
+                <ClassLocation location={progressData.next_session.location} />
+              )}
               {progressData.next_session.teacher_notes && (
                 <div className="mt-4 p-3 bg-white/10 backdrop-blur-sm rounded-lg border border-white/10">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-accent-200 mb-1">📌 Nota del profesor</p>
@@ -619,6 +623,15 @@ export default function StudentDashboard() {
                       </div>
                       <Badge variant={c.modality === "online" ? "brand" : c.modality === "presencial" ? "accent" : "info"}>{c.modality}</Badge>
                     </div>
+                    {/* V3.0.3: ubicación si es presencial */}
+                    {c.location && (c.modality === "presencial" || c.modality === "hibrida") && (
+                      <div className="mt-1">
+                        <ClassLocation location={c.location} compact />
+                      </div>
+                    )}
+                    {!c.location && (c.modality === "presencial" || c.modality === "hibrida") && (
+                      <p className="text-xs text-amber-600 mt-1">📍 Ubicación por confirmar — consulta con el instituto</p>
+                    )}
                     {/* V3.0: avisar ausencia */}
                     <div className="mt-2 flex justify-end">
                       {alreadyNotified ? (

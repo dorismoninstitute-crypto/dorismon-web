@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { studentApi, safeArray } from "@/lib/api";
-import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, CalendarButton, JoinClassButton } from "@/components/ui";
+import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, CalendarButton, JoinClassButton, ClassLocation } from "@/components/ui";
 
 export default function CalendarPage() {
   const [events, setEvents] = useState<any[]>([]);
@@ -51,6 +51,8 @@ export default function CalendarPage() {
                         <p className="text-xs text-slate-500">
                           {e.starts_at && new Date(e.starts_at).toLocaleString("es", { hour: "2-digit", minute: "2-digit" })}
                         </p>
+                        {/* V3.0.3: ubicación presencial */}
+                        {e.location && <div className="mt-1"><ClassLocation location={e.location} /></div>}
                       </div>
                       {e.type === "class" && (
                         <div className="flex flex-col gap-2">

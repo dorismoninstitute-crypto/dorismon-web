@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { teacherApi, teacherNotes, safeArray, safeObj } from "@/lib/api";
-import { LoadingScreen, ErrorBox, PageHeader, Card, CardBody, Badge, Button, Textarea, showToast } from "@/components/ui";
+import { LoadingScreen, ErrorBox, PageHeader, Card, CardBody, Badge, Button, Textarea, showToast, ClassLocation } from "@/components/ui";
 
 const STATES = [
   { v: "present", label: "Presente", color: "bg-emerald-600", emoji: "✅" },
@@ -97,6 +97,27 @@ export default function AttendancePage() {
                 <span className="font-semibold">Motivo:</span> {session.cancellation_reason}
               </p>
             )}
+          </CardBody>
+        </Card>
+      )}
+
+      {/* V3.0.3: Ubicación de la clase (presencial) o link (online) */}
+      {session.location && (session.modality === "presencial" || session.modality === "hibrida") && (
+        <Card className="mb-4">
+          <CardBody>
+            <h3 className="font-bold mb-2 text-sm">📍 Dónde das esta clase</h3>
+            <ClassLocation location={session.location} />
+          </CardBody>
+        </Card>
+      )}
+      {session.meeting_url && (session.modality === "online" || session.modality === "hibrida") && (
+        <Card className="mb-4">
+          <CardBody>
+            <h3 className="font-bold mb-2 text-sm">💻 Link de la clase online</h3>
+            <a href={session.meeting_url} target="_blank" rel="noopener noreferrer"
+               className="text-brand-600 hover:underline text-sm break-all">
+              {session.meeting_url}
+            </a>
           </CardBody>
         </Card>
       )}
