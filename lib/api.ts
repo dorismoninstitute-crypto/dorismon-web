@@ -532,6 +532,7 @@ export const adminPaymentProofs = {
 
 export const adminTrialClasses = {
   list: (status?: string) => api(`/admin/trial-classes${status ? "?status=" + status : ""}`, { auth: true }),
+  listAll: () => api("/admin/trial-classes?status=all", { auth: true }),
   schedule: (id: string, body: { teacher_id: string; scheduled_at: string; meeting_url?: string }) =>
     api(`/admin/trial-classes/${id}/schedule`, { method: "POST", body, auth: true }),
 };

@@ -11,11 +11,14 @@ export default function AdminTrialClassesPage() {
   const [err, setErr] = useState("");
   const [scheduling, setScheduling] = useState<any>(null);
   const [form, setForm] = useState({ teacher_id: "", date: "", time: "", meeting_url: "" });
+  const [filter, setFilter] = useState<"pending" | "all">("pending");
 
   const load = () => {
     setLoading(true);
+    // V3.0.4: 'all' trae el historial completo; 'pending' (default) solo lo accionable
+    const listCall = filter === "all" ? adminTrialClasses.listAll() : adminTrialClasses.list();
     Promise.all([
-      adminTrialClasses.list(),
+      listCall,
       adminApi.users({ role: "teacher" }),
     ])
       .then(([t, u]: any) => {
@@ -26,7 +29,7 @@ export default function AdminTrialClassesPage() {
       })
       .catch((e: any) => { setErr(e.message); setLoading(false); });
   };
-  useEffect(load, []);
+  useEffect(load, [filter]);
 
   const schedule = async () => {
     if (!form.teacher_id || !form.date || !form.time) {
@@ -47,7 +50,6 @@ export default function AdminTrialClassesPage() {
     } catch (e: any) { showToast("error", e.message); }
   };
 
-  if (loading) return <LoadingScreen />;
   if (err) return <ErrorBox message={err} />;
 
   return (
@@ -57,12 +59,32 @@ export default function AdminTrialClassesPage() {
         subtitle="Estudiantes que pidieron su clase gratis. Asigna profesor y hora."
       />
 
-      {trials.length === 0 ? (
+      {/* V3.0.4: Filtro pendientes / historial */}
+      <div className="flex gap-2 mb-4">
+        <button
+          onClick={() => setFilter("pending")}
+          className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+            filter === "pending" ? "bg-brand-600 text-white" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+          }`}
+        >
+          Por atender
+        </button>
+        <button
+          onClick={() => setFilter("all")}
+          className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+            filter === "all" ? "bg-brand-600 text-white" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+          }`}
+        >
+          Ver todas (historial)
+        </button>
+      </div>
+
+      {loading ? <LoadingScreen /> : trials.length === 0 ? (
         <Card>
           <CardBody>
             <div className="text-center py-12">
               <Gift size={48} className="text-slate-300 mx-auto mb-3" />
-              <p className="font-bold text-slate-700">No hay clases de prueba pendientes</p>
+              <p className="font-bold text-slate-700">{filter === "all" ? "No hay clases de prueba registradas" : "No hay clases de prueba por atender"}</p>
               <p className="text-sm text-slate-500 mt-1">Cuando un estudiante reserve, aparecerá aquí.</p>
             </div>
           </CardBody>
@@ -86,6 +108,8 @@ export default function AdminTrialClassesPage() {
                       {t.status === "scheduled" && <Badge variant="success">Agendada</Badge>}
                       {t.status === "completed" && <Badge variant="info">Completada</Badge>}
                       {t.status === "cancelled" && <Badge variant="danger">Cancelada</Badge>}
+                      {t.status === "no_show" && t.reschedule_requested && <Badge variant="warning">🔄 Pidió reagendar</Badge>}
+                      {t.status === "no_show" && !t.reschedule_requested && <Badge variant="danger">No asistió</Badge>}
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-x-3 gap-y-1 text-xs mb-2">
@@ -121,6 +145,16 @@ export default function AdminTrialClassesPage() {
                       <Button size="sm" onClick={() => { setScheduling(t); setForm({ teacher_id: "", date: "", time: "", meeting_url: "" }); }}>
                         <Calendar size={14} className="mr-1" /> Agendar clase
                       </Button>
+                    )}
+                    {t.status === "no_show" && t.reschedule_requested && (
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-2 mt-1">
+                        <p className="text-xs text-amber-800 mb-2">
+                          🔄 Este estudiante no asistió y pidió reagendar su clase de prueba.
+                        </p>
+                        <Button size="sm" onClick={() => { setScheduling(t); setForm({ teacher_id: "", date: "", time: "", meeting_url: "" }); }}>
+                          <Calendar size={14} className="mr-1" /> Reagendar clase
+                        </Button>
+                      </div>
                     )}
                     {t.status === "scheduled" && (
                       <p className="text-xs text-slate-700">
