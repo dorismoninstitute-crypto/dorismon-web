@@ -6,6 +6,7 @@ import { auth, safeObj, progress, getLevelTheme } from "@/lib/api";
 import { LoadingScreen } from "@/components/ui";
 import Avatar from "@/components/Avatar";
 import Logo from "@/components/Logo";
+import { NotificationCenter } from "@/components/NotificationCenter";
 import clsx from "clsx";
 import {
   Home, BookOpen, Calendar, FileText, CheckCircle2, Ticket, Library,
@@ -243,7 +244,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <span className="text-[8px] font-semibold uppercase tracking-[0.14em] text-slate-500 mt-0.5">Language Institute</span>
             </div>
           </div>
-          <div />
+          <NotificationCenter />
+        </header>
+
+        {/* V3.1: Header de escritorio con centro de avisos */}
+        <header className="hidden lg:flex bg-white border-b border-slate-200 px-8 py-3 items-center justify-end sticky top-0 z-20">
+          <NotificationCenter />
         </header>
 
         {/* V2.4: Banner de verificación de email REMOVIDO.
