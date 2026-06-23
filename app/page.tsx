@@ -221,7 +221,7 @@ export default function Home() {
       </section>
 
       {/* === BENEFICIOS QUE ATRAEN (V3.3) === */}
-      <section className="py-16 md:py-24 bg-gradient-to-b from-white to-brand-50/40">
+      <section id="metodologia" className="py-16 md:py-24 bg-gradient-to-b from-white to-brand-50/40">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <FadeIn className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900 mb-3">

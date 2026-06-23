@@ -198,7 +198,7 @@ export default function StudentDashboard() {
       )}
 
       {/* V3.0.2: Clase de prueba NO_SHOW (no asistió) → reagendar o inscribirse */}
-      {enrollments.length === 0 && trialInfo?.status === "no_show" && (
+      {enrollments.length === 0 && (trialInfo?.status === "no_show" || trialInfo?.status === "cancelled") && (
         <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300 rounded-2xl p-5 mb-6 shadow-md">
           <div className="flex items-start gap-3 flex-wrap md:flex-nowrap">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center flex-shrink-0">

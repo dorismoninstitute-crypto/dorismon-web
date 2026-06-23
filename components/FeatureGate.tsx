@@ -49,7 +49,7 @@ export default function FeatureGate({
       <h3 className="mb-2 text-lg font-bold text-slate-900">{lockedTitle}</h3>
       <p className="mb-4 text-sm text-slate-600">{lockedMessage}</p>
       <button
-        onClick={() => router.push("/dashboard/student/checkout")}
+        onClick={() => router.push("/checkout")}
         className="rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
       >
         Mejorar plan →

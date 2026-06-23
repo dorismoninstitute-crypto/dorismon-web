@@ -160,7 +160,7 @@ export function PlanLockedCard({ title, message }: { title: string; message: str
       <h3 className="mb-2 text-lg font-bold text-slate-900">{title}</h3>
       <p className="mb-5 text-sm text-slate-600">{message}</p>
       <a
-        href="/dashboard/student/checkout"
+        href="/checkout"
         className="inline-block rounded-lg bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 transition"
       >
         Mejorar mi plan →

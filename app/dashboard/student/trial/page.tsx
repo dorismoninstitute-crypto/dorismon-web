@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { studentPayments } from "@/lib/api";
+import { studentPayments, studentApi } from "@/lib/api";
 import { LoadingScreen, ErrorBox, PageHeader, Card, CardBody, Badge, Button, Input, Select, showToast } from "@/components/ui";
 import { Gift, Calendar, CheckCircle2, Clock, User as UserIcon, Sparkles } from "lucide-react";
 
@@ -10,6 +10,7 @@ export default function StudentTrialPage() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [rescheduling, setRescheduling] = useState(false);
 
   const [form, setForm] = useState({
     modality: "online",
@@ -89,6 +90,43 @@ export default function StudentTrialPage() {
                   <Link href="/checkout">
                     <Button size="lg">Ver planes e inscribirme →</Button>
                   </Link>
+                </>
+              )}
+              {(trial.status === "no_show" || trial.status === "cancelled") && (
+                <>
+                  <div className="text-5xl mb-3">😔</div>
+                  <h2 className="font-black text-xl mb-2">Tu clase de prueba ya pasó</h2>
+                  <p className="text-slate-600 mb-5">
+                    No pudimos verte esta vez. ¿Quieres intentarlo de nuevo o ya estás listo para empezar?
+                  </p>
+                  <div className="flex gap-3 justify-center flex-wrap">
+                    {trial.can_reschedule && (
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        loading={rescheduling}
+                        onClick={async () => {
+                          setRescheduling(true);
+                          try {
+                            await studentApi.rescheduleTrial();
+                            showToast("success", "Solicitud enviada. Te contactaremos para la nueva fecha.");
+                            load();
+                          } catch (e: any) { showToast("error", e?.message || "Error"); }
+                          finally { setRescheduling(false); }
+                        }}
+                      >
+                        🔄 Reagendar mi clase
+                      </Button>
+                    )}
+                    <Link href="/checkout">
+                      <Button size="lg">💎 Inscribirme a un plan</Button>
+                    </Link>
+                  </div>
+                  {trial.reschedule_requested && (
+                    <p className="text-sm text-amber-700 mt-4">
+                      Ya pediste reagendar. Te contactaremos pronto para coordinar la nueva fecha. 📅
+                    </p>
+                  )}
                 </>
               )}
             </div>
