@@ -5,13 +5,17 @@ import PWAInstaller from "@/components/PWAInstaller";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://dorismon.com"),
   title: {
-    default: "Dorismon Language Institute — Cursos de inglés online y presencial",
+    default: "Clases de Inglés en Santo Domingo | Dorismon Language Institute",
     template: "%s · Dorismon Language Institute",
   },
-  description: "Domina el inglés con Dorismon Language Institute. Cursos para niños, jóvenes y adultos con profesores certificados, certificados oficiales y metodología comunicativa en Santo Domingo.",
-  keywords: ["inglés", "academia de inglés", "Santo Domingo", "República Dominicana", "Dorismon", "Language Institute", "cursos de inglés", "certificación inglés"],
+  description: "Aprende inglés en Santo Domingo con Dorismon Language Institute. Clases online y presenciales para niños, jóvenes y adultos. Profesores certificados, certificación CEFR. Reserva tu clase de prueba gratis.",
+  keywords: ["clases de inglés Santo Domingo", "inglés República Dominicana", "academia de inglés", "curso de inglés online", "inglés presencial Santo Domingo", "Dorismon", "Language Institute", "certificación inglés CEFR", "clase de prueba gratis inglés"],
   authors: [{ name: "Dorismon Language Institute" }],
+  alternates: {
+    canonical: "https://dorismon.com",
+  },
   manifest: "/manifest.webmanifest",  // V2.6 PWA
   appleWebApp: {
     capable: true,
@@ -24,10 +28,12 @@ export const metadata: Metadata = {
     shortcut: "/icons/icon-192.png",
   },
   openGraph: {
-    title: "Dorismon Language Institute",
-    description: "Academia premium de inglés en República Dominicana",
+    title: "Clases de Inglés en Santo Domingo | Dorismon Language Institute",
+    description: "Clases online y presenciales con profesores certificados. Reserva tu clase de prueba gratis.",
     type: "website",
     locale: "es_DO",
+    url: "https://dorismon.com",
+    siteName: "Dorismon Language Institute",
     images: [
       {
         url: "/icons/icon-512.png",
@@ -36,6 +42,16 @@ export const metadata: Metadata = {
         alt: "Dorismon Language Institute",
       },
     ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Clases de Inglés en Santo Domingo | Dorismon",
+    description: "Clases online y presenciales con profesores certificados. Reserva tu clase de prueba gratis.",
+    images: ["/icons/icon-512.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 
