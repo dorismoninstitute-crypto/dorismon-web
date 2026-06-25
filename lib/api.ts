@@ -15,8 +15,15 @@ function getToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem("access_token");
 }
+function getRefreshToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("refresh_token");
+}
 function setToken(t: string) {
   if (typeof window !== "undefined") localStorage.setItem("access_token", t);
+}
+function setRefreshToken(t: string) {
+  if (typeof window !== "undefined") localStorage.setItem("refresh_token", t);
 }
 function clearToken() {
   if (typeof window !== "undefined") {
@@ -25,16 +32,66 @@ function clearToken() {
   }
 }
 
+// V3.7: Renovación automática del token.
+// Si el token de acceso (15 min) expira mientras el usuario trabaja (ej: haciendo
+// el test de nivel, escribiendo una tarea larga), se renueva solo con el refresh
+// token (7 días) y se reintenta la petición. El usuario NUNCA pierde su trabajo.
+// Se usa una sola promesa compartida para no renovar varias veces en paralelo.
+let refreshPromise: Promise<string | null> | null = null;
+
+async function refreshAccessToken(): Promise<string | null> {
+  const rt = getRefreshToken();
+  if (!rt) return null;
+  // Si ya hay una renovación en curso, esperar esa misma (evita renovar en paralelo)
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = (async () => {
+    try {
+      const res = await fetch(`${API_URL}/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: rt }),
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (data?.access_token) {
+        setToken(data.access_token);
+        if (data.refresh_token) setRefreshToken(data.refresh_token);
+        return data.access_token;
+      }
+      return null;
+    } catch {
+      return null;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
 export async function api(path: string, opts: ApiOptions = {}) {
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (opts.auth) {
-    const t = getToken();
-    if (t) headers["Authorization"] = `Bearer ${t}`;
+  const doFetch = async (token: string | null) => {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (opts.auth && token) headers["Authorization"] = `Bearer ${token}`;
+    return fetch(`${API_URL}${path}`, {
+      method: opts.method || "GET",
+      headers,
+      body: opts.body ? JSON.stringify(opts.body) : undefined,
+    });
+  };
+
+  let res = await doFetch(opts.auth ? getToken() : null);
+
+  // V3.7: Si falla por token expirado (401) y es una petición autenticada,
+  // renovar el token automáticamente y reintentar UNA vez.
+  if (res.status === 401 && opts.auth && getRefreshToken()) {
+    const newToken = await refreshAccessToken();
+    if (newToken) {
+      res = await doFetch(newToken);
+    }
   }
-  const res = await fetch(`${API_URL}${path}`, {
-    method: opts.method || "GET", headers,
-    body: opts.body ? JSON.stringify(opts.body) : undefined,
-  });
+
   const text = await res.text();
   let data: any = null;
   if (text) { try { data = JSON.parse(text); } catch { data = text; } }

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { adminApi, adminEdit, adminPause, adminTeacherLevels, adminHelpers, safeArray, safeObj, getLevelTheme } from "@/lib/api";
+import { api, adminApi, adminEdit, adminPause, adminTeacherLevels, adminHelpers, safeArray, safeObj, getLevelTheme } from "@/lib/api";
 import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Input, Select, Modal, ConfirmModal, showToast } from "@/components/ui";
 
 export default function AdminUsersPage() {
@@ -18,6 +18,9 @@ export default function AdminUsersPage() {
   const [levelsEditing, setLevelsEditing] = useState<any>(null);
   const [teacherLevels, setTeacherLevels] = useState<string[]>([]);
   const [confirmResume, setConfirmResume] = useState<any>(null);
+  const [convertToTeacher, setConvertToTeacher] = useState<any>(null);
+  const [converting, setConverting] = useState(false);
+  const [convertToStudent, setConvertToStudent] = useState<any>(null);
 
   const [form, setForm] = useState({ email: "", password: "", full_name: "", phone: "", role: "student" });
   const [editForm, setEditForm] = useState({ full_name: "", phone: "", is_active: true });
@@ -93,6 +96,46 @@ export default function AdminUsersPage() {
       showToast("success", `${u.full_name} reactivado (${r.email})`);
       load();
     } catch (e: any) { showToast("error", e.message); }
+  };
+
+  // V3.8: Convertir un estudiante en profesor (mismo correo, misma cuenta)
+  const doConvertToTeacher = async () => {
+    if (!convertToTeacher) return;
+    setConverting(true);
+    try {
+      await api(`/admin/users/${convertToTeacher.id}/change-role`, {
+        method: "POST",
+        auth: true,
+        body: { new_role: "teacher", modalities: "online" },
+      });
+      showToast("success", `${convertToTeacher.full_name} ahora es profesor/a. Ya puedes asignarle clases.`);
+      setConvertToTeacher(null);
+      load();
+    } catch (e: any) {
+      showToast("error", e.message || "No se pudo convertir");
+    } finally {
+      setConverting(false);
+    }
+  };
+
+  // V3.9.1: Revertir un profesor a estudiante (deshacer una conversión)
+  const doConvertToStudent = async () => {
+    if (!convertToStudent) return;
+    setConverting(true);
+    try {
+      await api(`/admin/users/${convertToStudent.id}/change-role`, {
+        method: "POST",
+        auth: true,
+        body: { new_role: "student" },
+      });
+      showToast("success", `${convertToStudent.full_name} volvió a ser estudiante.`);
+      setConvertToStudent(null);
+      load();
+    } catch (e: any) {
+      showToast("error", e.message || "No se pudo revertir");
+    } finally {
+      setConverting(false);
+    }
   };
 
   // V1.5.1
@@ -188,6 +231,21 @@ export default function AdminUsersPage() {
                     {u.role === "teacher" && (
                       <Button size="sm" variant="outline" onClick={() => openLevels(u)}>🎯 Niveles</Button>
                     )}
+                    {/* V3.9.1: Revertir profesor a estudiante (deshacer conversión) */}
+                    {u.role === "teacher" && u.is_active && (
+                      <Button size="sm" variant="outline" onClick={() => setConvertToStudent(u)}>↩️ Volver a estudiante</Button>
+                    )}
+                    {/* V3.8/3.9.2: Convertir estudiante en profesor — solo si NO tiene historial de clases */}
+                    {u.role === "student" && u.is_active && !u.has_enrollments && (
+                      <Button size="sm" variant="outline" onClick={() => setConvertToTeacher(u)}>
+                        🎓 Hacer profesor/a
+                      </Button>
+                    )}
+                    {u.role === "student" && u.is_active && u.has_enrollments && (
+                      <span className="text-xs text-slate-400 italic self-center" title="Solo se pueden convertir cuentas sin clases registradas">
+                        (tiene clases — no convertible)
+                      </span>
+                    )}
                     {/* V2.9.2: Reactivar cualquier usuario inactivo */}
                     {!u.is_active && (
                       <Button size="sm" variant="primary" onClick={() => doReactivate(u)}>
@@ -262,6 +320,28 @@ export default function AdminUsersPage() {
         title="¿Reactivar estudiante?"
         message={`Vas a reactivar a ${confirmResume?.full_name}. Volverá a su progreso donde lo dejó.`}
         confirmLabel="Sí, reactivar"
+        confirmVariant="primary"
+      />
+
+      {/* V3.8: Modal convertir estudiante en profesor */}
+      <ConfirmModal
+        open={!!convertToTeacher}
+        onClose={() => setConvertToTeacher(null)}
+        onConfirm={doConvertToTeacher}
+        title="¿Convertir en profesor/a?"
+        message={`Vas a convertir a ${convertToTeacher?.full_name} (${convertToTeacher?.email}) en profesor/a. Usará la misma cuenta y correo. Después podrás asignarle clases y configurar sus niveles y tarifas. Sus datos anteriores se conservan.`}
+        confirmLabel={converting ? "Convirtiendo..." : "Sí, hacer profesor/a"}
+        confirmVariant="primary"
+      />
+
+      {/* V3.9.1: Modal revertir profesor a estudiante */}
+      <ConfirmModal
+        open={!!convertToStudent}
+        onClose={() => setConvertToStudent(null)}
+        onConfirm={doConvertToStudent}
+        title="¿Volver a estudiante?"
+        message={`Vas a convertir a ${convertToStudent?.full_name} (${convertToStudent?.email}) de nuevo en estudiante. Recuperará su perfil de estudiante con los datos que tenía antes. Su perfil de profesor se conserva por si lo necesitas después.`}
+        confirmLabel={converting ? "Revirtiendo..." : "Sí, volver a estudiante"}
         confirmVariant="primary"
       />
 
