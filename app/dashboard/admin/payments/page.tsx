@@ -12,7 +12,7 @@ export default function AdminPaymentsPage() {
   const [students, setStudents] = useState<any[]>([]);
   const [plans, setPlans] = useState<any[]>([]);
   const [form, setForm] = useState({
-    student_id: "", plan_id: "", amount: 0, currency: "USD",
+    student_id: "", plan_id: "", amount: 0, currency: "DOP",
     method: "cash", reference: "",
   });
 
@@ -32,7 +32,7 @@ export default function AdminPaymentsPage() {
       ]);
       setStudents(safeArray(s));
       setPlans(safeArray(p));
-      setForm({ student_id: "", plan_id: "", amount: 0, currency: "USD", method: "cash", reference: "" });
+      setForm({ student_id: "", plan_id: "", amount: 0, currency: "DOP", method: "cash", reference: "" });
       setShowCreate(true);
     } catch (e: any) { showToast("error", e.message); }
   };
@@ -99,7 +99,7 @@ export default function AdminPaymentsPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="font-bold text-lg">${parseFloat(p.amount).toFixed(2)} {p.currency}</span>
+                    <span className="font-bold text-lg">{p.currency === "DOP" ? "RD$ " : "$"}{parseFloat(p.amount).toFixed(2)}{p.currency !== "DOP" ? ` ${p.currency}` : ""}</span>
                     <Badge variant={
                       p.status === "paid" ? "success" :
                       p.status === "pending" ? "warning" :
@@ -131,8 +131,8 @@ export default function AdminPaymentsPage() {
           <div className="grid grid-cols-2 gap-3">
             <Input label="Monto *" type="number" step="0.01" value={form.amount} onChange={(e: any) => setForm({ ...form, amount: parseFloat(e.target.value) })} />
             <Select label="Moneda" value={form.currency} onChange={(e: any) => setForm({ ...form, currency: e.target.value })}>
-              <option value="USD">USD</option>
-              <option value="DOP">DOP</option>
+              <option value="DOP">RD$ (Peso dominicano)</option>
+              <option value="USD">USD (Dólar)</option>
             </Select>
           </div>
           <Select label="Método de pago" value={form.method} onChange={(e: any) => setForm({ ...form, method: e.target.value })}>

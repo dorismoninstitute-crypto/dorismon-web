@@ -7,8 +7,16 @@ import { CreditCard, Upload, CheckCircle2, AlertCircle, Building2, Copy, Sparkle
 import Link from "next/link";
 
 const BANKS_RD = [
-  "BHD León", "Banreservas", "Popular", "Scotiabank", "Banco Santa Cruz",
-  "Banco Vimenca", "Banco Caribe", "Banesco", "Citibank", "APAP", "Otro",
+  // Bancos tradicionales principales
+  "Banreservas", "Banco Popular", "Banco BHD", "Scotiabank", "Banco Santa Cruz",
+  "Banco Caribe", "Banco Promerica", "Banco BDI", "Banco Vimenca", "Banco Ademi",
+  "Banco López de Haro", "Banesco", "Citibank", "JMMB Bank",
+  // Banco digital / neobanco
+  "Qik Banco Digital",
+  // Asociaciones de ahorro y préstamo
+  "APAP", "Asociación Cibao", "Asociación La Nacional", "Alaver", "Asociación Mocana",
+  // Escape
+  "Otro",
 ];
 
 function CheckoutInner() {

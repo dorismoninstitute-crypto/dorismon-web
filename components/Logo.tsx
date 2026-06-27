@@ -13,33 +13,35 @@ interface LogoProps {
 }
 
 /**
- * V2.7.4 — Logo SIMPLE: solo muestra el logo subido por admin.
- * Si admin NO ha subido logo, muestra fallback "DORISMON" en texto.
+ * V3.9.5 — Logo con SVG integrado por defecto (aparece AL INSTANTE).
+ * Usa el logo SVG que vive en /public/logo-dorismon.svg como valor por defecto,
+ * así no hay que esperar al servidor ni que el admin lo suba. Si el admin SÍ
+ * subió un logo personalizado, ese tiene prioridad (se carga en segundo plano).
  */
+const DEFAULT_LOGO = "/logo-dorismon.svg";
+
 export default function Logo({
   size = "md",
   variant = "default",
   asLink = true,
 }: LogoProps) {
-  // V3.9.3: Leer el logo del caché persistente INMEDIATAMENTE (antes del primer render)
-  // para que aparezca al instante sin esperar al servidor (que puede tardar por cold start).
-  const getInitialLogo = (): string | null => {
+  // El logo personalizado del admin (si existe) se lee del caché para que aparezca
+  // al instante en visitas siguientes.
+  const getInitialCustomLogo = (): string | null => {
     if (typeof window === "undefined") return null;
-    try { return localStorage.getItem("institute_logo_v12"); } catch { return null; }
+    try { return localStorage.getItem("institute_logo_v12") || null; } catch { return null; }
   };
   const getInitialName = (): string => {
     if (typeof window === "undefined") return "Dorismon Language Institute";
     try { return localStorage.getItem("institute_name") || "Dorismon Language Institute"; } catch { return "Dorismon Language Institute"; }
   };
 
-  const [logoUrl, setLogoUrl] = useState<string | null>(getInitialLogo());
+  // Empieza con el logo del admin (si está en caché) o con el SVG integrado por defecto.
+  const [customLogo, setCustomLogo] = useState<string | null>(getInitialCustomLogo());
   const [instituteName, setInstituteName] = useState<string>(getInitialName());
-  // Si ya teníamos algo en caché, arrancamos "cargados" (no mostramos el spinner gris)
-  const [loaded, setLoaded] = useState<boolean>(() => getInitialLogo() !== null);
 
   useEffect(() => {
-    // Siempre refrescamos del servidor en segundo plano (por si el admin cambió el logo),
-    // pero sin bloquear: ya mostramos el del caché o el texto.
+    // Refrescamos del servidor en segundo plano por si el admin cambió el logo.
     publicApi.instituteSettings()
       .then((s: any) => {
         const url = s.logo_url || "";
@@ -49,11 +51,10 @@ export default function Logo({
             localStorage.setItem("institute_name", s.name || "Dorismon Language Institute");
           } catch {}
         }
-        setLogoUrl(url || null);
+        setCustomLogo(url || null);
         setInstituteName(s.name || "Dorismon Language Institute");
-        setLoaded(true);
       })
-      .catch(() => setLoaded(true));
+      .catch(() => {});
   }, []);
 
   // Tamaños del logo
@@ -65,40 +66,12 @@ export default function Logo({
   };
   const heightClass = sizes[size];
 
-  // Color del texto fallback según variant
-  const textColor = variant === "white" ? "text-white" : "text-slate-900";
+  // El logo a mostrar: el del admin si lo subió, si no el SVG integrado (instantáneo)
+  const logoSrc = customLogo || DEFAULT_LOGO;
 
-  // Texto "DORISMON" reutilizable (fallback instantáneo)
-  const textLogo = (
-    <div className={`${heightClass} flex items-center font-black tracking-tight ${textColor}`}>
-      <span className={size === "xl" ? "text-3xl md:text-4xl" : size === "lg" ? "text-2xl" : size === "md" ? "text-xl" : "text-lg"}>
-        DORISMON
-      </span>
-    </div>
-  );
-
-  // V3.9.4: Mientras carga por primera vez (sin caché), mostramos un espacio
-  // reservado INVISIBLE del tamaño correcto — NO el texto "DORISMON" (que
-  // parpadeaba feo antes de aparecer el logo real). La página no salta y no se
-  // ve texto temporal. Si resulta que no hay logo subido, el efecto siguiente
-  // (abajo) muestra el texto como respaldo permanente.
-  if (!loaded && !logoUrl) {
-    const placeholder = <div className={heightClass} style={{ width: 140 }} aria-hidden="true" />;
-    return asLink ? <Link href="/" className="inline-block">{placeholder}</Link> : placeholder;
-  }
-
-  // Si NO hay logo subido → fallback texto (respaldo permanente, correcto)
-  if (!logoUrl) {
-    if (asLink) {
-      return <Link href="/" className="inline-block">{textLogo}</Link>;
-    }
-    return textLogo;
-  }
-
-  // Logo subido por admin
   const content = (
     <img
-      src={logoUrl}
+      src={logoSrc}
       alt={instituteName}
       className={`${heightClass} w-auto object-contain max-w-full`}
     />

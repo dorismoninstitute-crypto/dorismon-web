@@ -128,7 +128,7 @@ export default function AdminPlansPage() {
                   </div>
 
                   <div className="mb-3">
-                    <p className="text-3xl font-extrabold text-brand-600">${parseFloat(p.price).toFixed(2)}</p>
+                    <p className="text-3xl font-extrabold text-brand-600">RD$ {parseFloat(p.price).toFixed(2)}</p>
                     <p className="text-xs text-slate-500">por {p.billing_cycle === "monthly" ? "mes" : p.billing_cycle}</p>
                   </div>
 
@@ -175,7 +175,7 @@ export default function AdminPlansPage() {
         <div className="space-y-3">
           <Input label="Código (interno) *" value={form.code} onChange={(e: any) => setForm({ ...form, code: e.target.value })} placeholder="ej: starter" disabled={!!editing} />
           <Input label="Nombre *" value={form.name} onChange={(e: any) => setForm({ ...form, name: e.target.value })} placeholder="ej: Starter" />
-          <Input label="Precio (USD) *" type="number" step="0.01" value={form.price} onChange={(e: any) => setForm({ ...form, price: parseFloat(e.target.value) })} />
+          <Input label="Precio (RD$) *" type="number" step="0.01" value={form.price} onChange={(e: any) => setForm({ ...form, price: parseFloat(e.target.value) })} />
           <Textarea label="Descripción" value={form.description} onChange={(e: any) => setForm({ ...form, description: e.target.value })} />
           <p className="text-xs text-slate-500">Las features se editan directamente en cada tarjeta una vez creado el plan.</p>
           <Button onClick={save} className="w-full" size="lg" disabled={!form.code || !form.name}>
