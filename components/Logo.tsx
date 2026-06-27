@@ -21,31 +21,33 @@ export default function Logo({
   variant = "default",
   asLink = true,
 }: LogoProps) {
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const [instituteName, setInstituteName] = useState<string>("Dorismon Language Institute");
-  const [loaded, setLoaded] = useState(false);
+  // V3.9.3: Leer el logo del caché persistente INMEDIATAMENTE (antes del primer render)
+  // para que aparezca al instante sin esperar al servidor (que puede tardar por cold start).
+  const getInitialLogo = (): string | null => {
+    if (typeof window === "undefined") return null;
+    try { return localStorage.getItem("institute_logo_v12"); } catch { return null; }
+  };
+  const getInitialName = (): string => {
+    if (typeof window === "undefined") return "Dorismon Language Institute";
+    try { return localStorage.getItem("institute_name") || "Dorismon Language Institute"; } catch { return "Dorismon Language Institute"; }
+  };
+
+  const [logoUrl, setLogoUrl] = useState<string | null>(getInitialLogo());
+  const [instituteName, setInstituteName] = useState<string>(getInitialName());
+  // Si ya teníamos algo en caché, arrancamos "cargados" (no mostramos el spinner gris)
+  const [loaded, setLoaded] = useState<boolean>(() => getInitialLogo() !== null);
 
   useEffect(() => {
-    // V2.7.4: cache v11
-    const cached = typeof window !== "undefined" ? sessionStorage.getItem("institute_logo_v11") : null;
-    const cachedName = typeof window !== "undefined" ? sessionStorage.getItem("institute_name") : null;
-
-    if (cached !== null) {
-      setLogoUrl(cached || null);
-      if (cachedName) setInstituteName(cachedName);
-      setLoaded(true);
-      return;
-    }
-
+    // Siempre refrescamos del servidor en segundo plano (por si el admin cambió el logo),
+    // pero sin bloquear: ya mostramos el del caché o el texto.
     publicApi.instituteSettings()
       .then((s: any) => {
         const url = s.logo_url || "";
         if (typeof window !== "undefined") {
-          for (let i = 1; i <= 10; i++) {
-            sessionStorage.removeItem(i === 1 ? "institute_logo" : `institute_logo_v${i}`);
-          }
-          sessionStorage.setItem("institute_logo_v11", url);
-          sessionStorage.setItem("institute_name", s.name || "Dorismon Language Institute");
+          try {
+            localStorage.setItem("institute_logo_v12", url);
+            localStorage.setItem("institute_name", s.name || "Dorismon Language Institute");
+          } catch {}
         }
         setLogoUrl(url || null);
         setInstituteName(s.name || "Dorismon Language Institute");
@@ -66,23 +68,31 @@ export default function Logo({
   // Color del texto fallback según variant
   const textColor = variant === "white" ? "text-white" : "text-slate-900";
 
-  if (!loaded) {
-    return <div className={`${heightClass} bg-slate-100 rounded animate-pulse`} style={{ width: 120 }} />;
+  // Texto "DORISMON" reutilizable (fallback instantáneo)
+  const textLogo = (
+    <div className={`${heightClass} flex items-center font-black tracking-tight ${textColor}`}>
+      <span className={size === "xl" ? "text-3xl md:text-4xl" : size === "lg" ? "text-2xl" : size === "md" ? "text-xl" : "text-lg"}>
+        DORISMON
+      </span>
+    </div>
+  );
+
+  // V3.9.4: Mientras carga por primera vez (sin caché), mostramos un espacio
+  // reservado INVISIBLE del tamaño correcto — NO el texto "DORISMON" (que
+  // parpadeaba feo antes de aparecer el logo real). La página no salta y no se
+  // ve texto temporal. Si resulta que no hay logo subido, el efecto siguiente
+  // (abajo) muestra el texto como respaldo permanente.
+  if (!loaded && !logoUrl) {
+    const placeholder = <div className={heightClass} style={{ width: 140 }} aria-hidden="true" />;
+    return asLink ? <Link href="/" className="inline-block">{placeholder}</Link> : placeholder;
   }
 
-  // Si NO hay logo subido → fallback texto
+  // Si NO hay logo subido → fallback texto (respaldo permanente, correcto)
   if (!logoUrl) {
-    const fallback = (
-      <div className={`${heightClass} flex items-center font-black tracking-tight ${textColor}`}>
-        <span className={size === "xl" ? "text-3xl md:text-4xl" : size === "lg" ? "text-2xl" : size === "md" ? "text-xl" : "text-lg"}>
-          DORISMON
-        </span>
-      </div>
-    );
     if (asLink) {
-      return <Link href="/" className="inline-block">{fallback}</Link>;
+      return <Link href="/" className="inline-block">{textLogo}</Link>;
     }
-    return fallback;
+    return textLogo;
   }
 
   // Logo subido por admin
