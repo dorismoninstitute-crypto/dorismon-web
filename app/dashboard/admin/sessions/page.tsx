@@ -14,6 +14,10 @@ export default function AdminSessionsPage() {
   const [showSeries, setShowSeries] = useState(false);  // V1.7
   const [showPrivate, setShowPrivate] = useState(false);  // V1.7
   const [seriesList, setSeriesList] = useState<any[]>([]);  // V1.7
+  // V3.9.8: Reprogramar serie a futuro
+  const [reschedSeries, setReschedSeries] = useState<any>(null);
+  const [reschedForm, setReschedForm] = useState<any>({ days_of_week: [], start_time_hhmm: "", duration_min: 90, teacher_id: "", modality: "" });
+  const [reschedSaving, setReschedSaving] = useState(false);
   const [studentsList, setStudentsList] = useState<any[]>([]);  // V1.7 para privadas
   const [seriesForm, setSeriesForm] = useState<any>({
     name: "", course_id: "", level_id: "", teacher_id: "",
@@ -60,6 +64,51 @@ export default function AdminSessionsPage() {
       teacher_id: s.teacher_id || "",
       modality: s.modality || "online",
     });
+  };
+
+  // V3.9.8: Reprogramar serie a futuro (hora, días, profesor)
+  const DOW = [
+    { key: "mon", label: "Lun" }, { key: "tue", label: "Mar" }, { key: "wed", label: "Mié" },
+    { key: "thu", label: "Jue" }, { key: "fri", label: "Vie" }, { key: "sat", label: "Sáb" }, { key: "sun", label: "Dom" },
+  ];
+  const openReschedule = (s: any) => {
+    setReschedSeries(s);
+    setReschedForm({
+      days_of_week: (s.days_of_week || "").split(",").filter(Boolean),
+      start_time_hhmm: s.start_time_hhmm || "",
+      duration_min: s.duration_min || 90,
+      teacher_id: "",  // vacío = no cambiar
+      modality: "",    // vacío = no cambiar
+    });
+  };
+  const toggleReschedDay = (day: string) => {
+    setReschedForm((f: any) => ({
+      ...f,
+      days_of_week: f.days_of_week.includes(day) ? f.days_of_week.filter((d: string) => d !== day) : [...f.days_of_week, day],
+    }));
+  };
+  const doReschedule = async () => {
+    if (!reschedSeries) return;
+    if (reschedForm.days_of_week.length === 0) { showToast("error", "Selecciona al menos un día"); return; }
+    if (!reschedForm.start_time_hhmm) { showToast("error", "Indica la hora"); return; }
+    setReschedSaving(true);
+    try {
+      const body: any = {
+        days_of_week: reschedForm.days_of_week.join(","),
+        start_time_hhmm: reschedForm.start_time_hhmm,
+        duration_min: reschedForm.duration_min,
+      };
+      if (reschedForm.teacher_id) body.teacher_id = reschedForm.teacher_id;
+      if (reschedForm.modality) body.modality = reschedForm.modality;
+      const r: any = await adminClassSeries.reschedule(reschedSeries.id, body);
+      showToast("success", `Serie reprogramada: ${r.regenerated_classes} clases futuras actualizadas (${r.kept_past_classes} pasadas intactas)`);
+      setReschedSeries(null);
+      load();
+    } catch (e: any) {
+      showToast("error", e.message || "No se pudo reprogramar");
+    } finally {
+      setReschedSaving(false);
+    }
   };
 
   const saveEdit = async () => {
@@ -469,9 +518,15 @@ export default function AdminSessionsPage() {
                       <strong>{s.total_classes}</strong> clases ({s.past_classes} pasadas, {s.future_classes} futuras)
                     </p>
                   </div>
-                  <Button size="sm" variant="outline" onClick={() => setConfirmDeleteSeries(s)} className="text-red-600 border-red-200 hover:bg-red-50">
-                    <X size={12} className="inline mr-1" /> Cancelar serie
-                  </Button>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    {/* V3.9.8: Reprogramar horario/profesor de toda la serie a futuro */}
+                    <Button size="sm" variant="outline" onClick={() => openReschedule(s)} className="text-brand-600 border-brand-200 hover:bg-brand-50">
+                      <Repeat size={12} className="inline mr-1" /> Reprogramar
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setConfirmDeleteSeries(s)} className="text-red-600 border-red-200 hover:bg-red-50">
+                      <X size={12} className="inline mr-1" /> Cancelar serie
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -646,6 +701,52 @@ export default function AdminSessionsPage() {
           )}
           <Textarea label="Notas del profesor (post-clase)" value={editForm.teacher_notes} onChange={(e: any) => setEditForm({ ...editForm, teacher_notes: e.target.value })} placeholder="Repasen el verbo X. Próxima clase traer..." />
           <Button onClick={saveEdit} className="w-full" size="lg">Guardar cambios</Button>
+        </div>
+      </Modal>
+
+      {/* V3.9.8: Modal reprogramar serie a futuro */}
+      <Modal open={!!reschedSeries} onClose={() => setReschedSeries(null)} title={`Reprogramar: ${reschedSeries?.name || ""}`}>
+        <div className="space-y-3">
+          <div className="bg-brand-50 border border-brand-200 rounded-lg p-3 text-sm text-brand-800">
+            ↻ Esto cambia el horario de las clases <strong>futuras</strong> de esta serie. Las clases que ya pasaron quedan intactas.
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Días de la semana</label>
+            <div className="flex flex-wrap gap-1.5">
+              {DOW.map((d) => (
+                <button
+                  key={d.key}
+                  type="button"
+                  onClick={() => toggleReschedDay(d.key)}
+                  className={`px-3 py-1.5 rounded-lg text-sm border ${reschedForm.days_of_week.includes(d.key) ? "bg-brand-600 text-white border-brand-600" : "bg-white text-slate-600 border-slate-200"}`}
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <Input label="Hora de inicio" type="time" value={reschedForm.start_time_hhmm} onChange={(e: any) => setReschedForm({ ...reschedForm, start_time_hhmm: e.target.value })} />
+            <Input label="Duración (min)" type="number" value={reschedForm.duration_min} onChange={(e: any) => setReschedForm({ ...reschedForm, duration_min: parseInt(e.target.value) || 90 })} />
+          </div>
+
+          <Select label="Cambiar profesor (opcional)" value={reschedForm.teacher_id} onChange={(e: any) => setReschedForm({ ...reschedForm, teacher_id: e.target.value })}>
+            <option value="">— Mantener el actual —</option>
+            {teachers.map((t: any) => <option key={t.id} value={t.id}>{t.full_name}</option>)}
+          </Select>
+
+          <Select label="Cambiar modalidad (opcional)" value={reschedForm.modality} onChange={(e: any) => setReschedForm({ ...reschedForm, modality: e.target.value })}>
+            <option value="">— Mantener la actual —</option>
+            <option value="online">Online</option>
+            <option value="presencial">Presencial</option>
+            <option value="hibrida">Híbrida</option>
+          </Select>
+
+          <Button onClick={doReschedule} className="w-full" size="lg" disabled={reschedSaving}>
+            {reschedSaving ? "Reprogramando..." : "Reprogramar clases futuras"}
+          </Button>
         </div>
       </Modal>
 

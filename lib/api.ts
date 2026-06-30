@@ -469,6 +469,8 @@ export const adminClassSeries = {
   create: (body: any) => api("/admin/class-series", { method: "POST", body, auth: true }),
   delete: (seriesId: string, futureOnly = true) =>
     api(`/admin/class-series/${seriesId}?future_only=${futureOnly}`, { method: "DELETE", auth: true }),
+  reschedule: (seriesId: string, body: any) =>
+    api(`/admin/class-series/${seriesId}/reschedule`, { method: "PATCH", body, auth: true }),
 };
 export const adminPrivateClasses = {
   create: (body: any) => api("/admin/private-classes", { method: "POST", body, auth: true }),
