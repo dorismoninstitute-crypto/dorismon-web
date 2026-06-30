@@ -602,6 +602,9 @@ export const adminTrialClasses = {
   listAll: () => api("/admin/trial-classes?status=all", { auth: true }),
   schedule: (id: string, body: { teacher_id: string; scheduled_at: string; meeting_url?: string }) =>
     api(`/admin/trial-classes/${id}/schedule`, { method: "POST", body, auth: true }),
+  // V3.9.10: cerrar la prueba marcando el resultado (asistió/no asistió)
+  setResult: (id: string, attended: boolean, notes?: string) =>
+    api(`/admin/trial-classes/${id}/result`, { method: "POST", body: { attended, notes }, auth: true }),
 };
 
 export const studentPayments = {

@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { adminTrialClasses, adminApi, safeArray } from "@/lib/api";
 import { LoadingScreen, ErrorBox, PageHeader, Card, CardBody, Badge, Button, Modal, Input, Select, showToast } from "@/components/ui";
 import { Gift, Calendar, User as UserIcon, GraduationCap } from "lucide-react";
@@ -31,6 +32,15 @@ export default function AdminTrialClassesPage() {
       .catch((e: any) => { setErr(e.message); setLoading(false); });
   };
   useEffect(load, [filter]);
+
+  // V3.9.10: marcar el resultado de una prueba (asistió/no asistió)
+  const markResult = async (trialId: string, attended: boolean) => {
+    try {
+      const r: any = await adminTrialClasses.setResult(trialId, attended);
+      showToast("success", r.next_step_label || "Resultado guardado");
+      load();
+    } catch (e: any) { showToast("error", e.message); }
+  };
 
   const schedule = async () => {
     if (!form.teacher_id || !form.date || !form.time) {
@@ -161,10 +171,37 @@ export default function AdminTrialClassesPage() {
                       </div>
                     )}
                     {t.status === "scheduled" && (
-                      <p className="text-xs text-slate-700">
-                        <Calendar size={12} className="inline mr-1" />
-                        Programada: {new Date(t.scheduled_at).toLocaleString("es-DO")}
-                      </p>
+                      <div className="space-y-2">
+                        <p className="text-xs text-slate-700">
+                          <Calendar size={12} className="inline mr-1" />
+                          Programada: {new Date(t.scheduled_at).toLocaleString("es-DO")}
+                        </p>
+                        {/* V3.9.10: cerrar la prueba marcando si asistió */}
+                        <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5">
+                          <p className="text-xs text-slate-600 mb-2">¿Cómo terminó la clase de prueba?</p>
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => markResult(t.id, true)} className="bg-green-600 hover:bg-green-700">
+                              ✅ Asistió
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => markResult(t.id, false)} className="text-red-600 border-red-200 hover:bg-red-50">
+                              ✕ No asistió
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {/* V3.9.10: prueba completada → siguiente paso: inscribir */}
+                    {t.status === "completed" && (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-2.5 mt-1">
+                        <p className="text-xs text-green-800 mb-2">
+                          ✅ Asistió a su prueba. Siguiente paso: inscribirlo en un plan.
+                        </p>
+                        <Link href={`/dashboard/admin/students/${t.student_id}/profile`}>
+                          <Button size="sm">
+                            <GraduationCap size={14} className="mr-1" /> Ver perfil / inscribir
+                          </Button>
+                        </Link>
+                      </div>
                     )}
                   </div>
                 </div>
