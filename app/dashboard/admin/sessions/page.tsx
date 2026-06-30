@@ -29,25 +29,68 @@ export default function AdminSessionsPage() {
   const [confirmDeleteSeries, setConfirmDeleteSeries] = useState<any>(null);
   const [msg, setMsg] = useState("");
   const [editing, setEditing] = useState<any>(null);
-  const [editForm, setEditForm] = useState({ title: "", description: "", meeting_url: "", teacher_notes: "" });
+  const [editForm, setEditForm] = useState({ title: "", description: "", meeting_url: "", teacher_notes: "", starts_at: "", duration_min: 60, teacher_id: "", modality: "" });
   const [isEditPast, setIsEditPast] = useState(false);
+
+  // Convierte una fecha ISO (UTC) al formato datetime-local en hora local (YYYY-MM-DDTHH:mm)
+  const toLocalInput = (iso: string) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    // Ajustar a hora local restando el offset, para que el input muestre la hora local correcta
+    const off = d.getTimezoneOffset() * 60000;
+    return new Date(d.getTime() - off).toISOString().slice(0, 16);
+  };
 
   const openEdit = (s: any) => {
     setEditing(s);
     const sStart = new Date(s.starts_at_utc);
     setIsEditPast(sStart < new Date());
+    // Calcular duración en minutos a partir de inicio y fin
+    let dur = 60;
+    if (s.starts_at_utc && s.ends_at_utc) {
+      dur = Math.round((new Date(s.ends_at_utc).getTime() - new Date(s.starts_at_utc).getTime()) / 60000);
+    }
     setEditForm({
       title: s.title || "",
       description: s.description || "",
       meeting_url: s.meeting_url || "",
       teacher_notes: s.teacher_notes || "",
+      starts_at: toLocalInput(s.starts_at_utc),
+      duration_min: dur,
+      teacher_id: s.teacher_id || "",
+      modality: s.modality || "online",
     });
   };
 
   const saveEdit = async () => {
     if (!editing) return;
     try {
-      await adminEdit.updateSession(editing.id, editForm);
+      // Para clases pasadas, solo enviamos los campos permitidos (título/desc/notas)
+      let body: any;
+      if (isEditPast) {
+        body = {
+          title: editForm.title,
+          description: editForm.description,
+          teacher_notes: editForm.teacher_notes,
+        };
+      } else {
+        body = {
+          title: editForm.title,
+          description: editForm.description,
+          meeting_url: editForm.meeting_url,
+          teacher_notes: editForm.teacher_notes,
+          teacher_id: editForm.teacher_id || undefined,
+          modality: editForm.modality || undefined,
+        };
+        // Solo enviar fecha/hora si el admin puso una fecha válida
+        if (editForm.starts_at) {
+          const start = new Date(editForm.starts_at);
+          const end = new Date(start.getTime() + (editForm.duration_min || 60) * 60000);
+          body.starts_at_utc = start.toISOString();
+          body.ends_at_utc = end.toISOString();
+        }
+      }
+      await adminEdit.updateSession(editing.id, body);
       showToast("success", "Clase actualizada");
       setEditing(null);
       load();
@@ -583,7 +626,23 @@ export default function AdminSessionsPage() {
           <Input label="Título" value={editForm.title} onChange={(e: any) => setEditForm({ ...editForm, title: e.target.value })} />
           <Textarea label="Descripción" value={editForm.description} onChange={(e: any) => setEditForm({ ...editForm, description: e.target.value })} />
           {!isEditPast && (
-            <MeetingUrlInput label="URL meeting" value={editForm.meeting_url} onChange={(v: string) => setEditForm({ ...editForm, meeting_url: v })} />
+            <>
+              {/* V3.9.7: Editar fecha/hora, profesor y modalidad de una clase futura */}
+              <div className="grid grid-cols-2 gap-2">
+                <Input label="Fecha y hora *" type="datetime-local" value={editForm.starts_at} onChange={(e: any) => setEditForm({ ...editForm, starts_at: e.target.value })} />
+                <Input label="Duración (min) *" type="number" value={editForm.duration_min} onChange={(e: any) => setEditForm({ ...editForm, duration_min: parseInt(e.target.value) || 60 })} />
+              </div>
+              <Select label="Profesor" value={editForm.teacher_id} onChange={(e: any) => setEditForm({ ...editForm, teacher_id: e.target.value })}>
+                <option value="">— Sin cambiar —</option>
+                {teachers.map((t: any) => <option key={t.id} value={t.id}>{t.full_name}</option>)}
+              </Select>
+              <Select label="Modalidad" value={editForm.modality} onChange={(e: any) => setEditForm({ ...editForm, modality: e.target.value })}>
+                <option value="online">Online</option>
+                <option value="presencial">Presencial</option>
+                <option value="hibrida">Híbrida</option>
+              </Select>
+              <MeetingUrlInput label="URL meeting" value={editForm.meeting_url} onChange={(v: string) => setEditForm({ ...editForm, meeting_url: v })} />
+            </>
           )}
           <Textarea label="Notas del profesor (post-clase)" value={editForm.teacher_notes} onChange={(e: any) => setEditForm({ ...editForm, teacher_notes: e.target.value })} placeholder="Repasen el verbo X. Próxima clase traer..." />
           <Button onClick={saveEdit} className="w-full" size="lg">Guardar cambios</Button>
