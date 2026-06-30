@@ -546,6 +546,14 @@ export const adminStudentProfileApi = {
   get: (studentId: string) => api(`/admin/students/${studentId}/profile`, { auth: true }),
   update: (studentId: string, body: any) =>
     api(`/admin/students/${studentId}/profile`, { method: "PATCH", body, auth: true }),
+  // V3.9.9: cambiar el nivel del estudiante (ej: empezar de cero)
+  changeLevel: (studentId: string, levelId: number, reason?: string) =>
+    api(`/admin/students/${studentId}/level`, { method: "PATCH", body: { level_id: levelId, reason }, auth: true }),
+};
+
+// V3.9.9: estudiantes agrupados por profesor
+export const adminStudentsByTeacher = {
+  list: () => api("/admin/students-by-teacher", { auth: true }),
 };
 
 

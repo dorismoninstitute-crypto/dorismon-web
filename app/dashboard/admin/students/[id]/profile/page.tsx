@@ -32,6 +32,12 @@ export default function AdminStudentProfilePage() {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
   const [form, setForm] = useState<any>({});
+  // V3.9.9: cambio de nivel
+  const [levels, setLevels] = useState<any[]>([]);
+  const [showLevelChange, setShowLevelChange] = useState(false);
+  const [newLevelId, setNewLevelId] = useState<string>("");
+  const [levelReason, setLevelReason] = useState("");
+  const [changingLevel, setChangingLevel] = useState(false);
 
   const load = () => {
     adminStudentProfileApi.get(studentId)
@@ -62,6 +68,41 @@ export default function AdminStudentProfilePage() {
       .catch((e: any) => { setErr(e.message); setLoading(false); });
   };
   useEffect(load, [studentId]);
+
+  // V3.9.9: cargar niveles disponibles para el cambio de nivel
+  useEffect(() => {
+    import("@/lib/api").then(({ adminApi }) => {
+      adminApi.courses().then((cs: any) => {
+        const courses = Array.isArray(cs) ? cs : (cs.items || []);
+        if (courses[0]) {
+          import("@/lib/api").then(({ api }) => {
+            api(`/admin/levels-by-course/${courses[0].id}`, { auth: true }).then((lv: any) => {
+              setLevels(Array.isArray(lv) ? lv : (lv.items || []));
+            }).catch(() => {});
+          });
+        }
+      }).catch(() => {});
+    });
+  }, []);
+
+  // V3.9.9: cambiar el nivel del estudiante
+  const doChangeLevel = async () => {
+    if (!newLevelId) { showToast("error", "Selecciona un nivel"); return; }
+    setChangingLevel(true);
+    try {
+      const { adminStudentProfileApi: apiSP } = await import("@/lib/api");
+      const r: any = await apiSP.changeLevel(studentId, parseInt(newLevelId), levelReason);
+      showToast("success", `Nivel cambiado: ${r.old_level} → ${r.new_level}`);
+      setShowLevelChange(false);
+      setLevelReason("");
+      setNewLevelId("");
+      load();
+    } catch (e: any) {
+      showToast("error", e.message || "No se pudo cambiar el nivel");
+    } finally {
+      setChangingLevel(false);
+    }
+  };
 
   const save = async () => {
     setSaving(true);
@@ -129,6 +170,45 @@ export default function AdminStudentProfilePage() {
               </p>
             </div>
           </div>
+        </CardBody>
+      </Card>
+
+      {/* V3.9.9: NIVEL ACTUAL + cambiar */}
+      <Card className="mb-4">
+        <CardBody>
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <p className="text-xs text-slate-500 uppercase font-bold mb-1">Nivel actual</p>
+              <p className="font-semibold text-lg">
+                {profile?.current_level_code ? (
+                  <Badge variant="brand">{profile.current_level_code}</Badge>
+                ) : (
+                  <span className="text-slate-400">Sin nivel asignado</span>
+                )}
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => { setShowLevelChange(!showLevelChange); setNewLevelId(profile?.current_level_id ? String(profile.current_level_id) : ""); }}>
+              📚 Cambiar nivel
+            </Button>
+          </div>
+          {showLevelChange && (
+            <div className="mt-4 pt-4 border-t border-slate-100 space-y-3">
+              <p className="text-sm text-slate-600">Cambia el nivel del estudiante (ej: si quiere empezar de cero, o por decisión pedagógica). Esto no afecta sus pagos ni inscripciones.</p>
+              <Select label="Nuevo nivel" value={newLevelId} onChange={(e: any) => setNewLevelId(e.target.value)}>
+                <option value="">— Selecciona un nivel —</option>
+                {levels.map((l: any) => (
+                  <option key={l.id} value={l.id}>{l.code} — {l.name}</option>
+                ))}
+              </Select>
+              <Input label="Motivo (opcional)" value={levelReason} onChange={(e: any) => setLevelReason(e.target.value)} placeholder="Ej: Quiere empezar de cero" />
+              <div className="flex gap-2">
+                <Button onClick={doChangeLevel} disabled={changingLevel} size="sm">
+                  {changingLevel ? "Cambiando..." : "Confirmar cambio"}
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowLevelChange(false)}>Cancelar</Button>
+              </div>
+            </div>
+          )}
         </CardBody>
       </Card>
 

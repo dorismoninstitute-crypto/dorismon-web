@@ -77,6 +77,7 @@ const adminGroups = [
     { href: "/dashboard/admin/content", label: "Contenido", Icon: Layers },
     { href: "/dashboard/admin/sessions", label: "Clases", Icon: Calendar },
     { href: "/dashboard/admin/teachers-schedule", label: "Agenda de profesores", Icon: Clock },
+    { href: "/dashboard/admin/students-by-teacher", label: "Estudiantes por profesor", Icon: Users },
     { href: "/dashboard/admin/events", label: "Eventos", Icon: Ticket },
     { href: "/dashboard/admin/branches", label: "Sedes y aulas", Icon: MapPin },
   ]},
