@@ -92,7 +92,10 @@ export default function AdminStudentProfilePage() {
     try {
       const { adminStudentProfileApi: apiSP } = await import("@/lib/api");
       const r: any = await apiSP.changeLevel(studentId, parseInt(newLevelId), levelReason);
-      showToast("success", `Nivel cambiado: ${r.old_level} → ${r.new_level}`);
+      const enrollMsg = r.enrollments_updated > 0
+        ? ` (${r.enrollments_updated} inscripción actualizada — el estudiante verá el nuevo nivel)`
+        : " (⚠️ sin inscripción activa que actualizar — el estudiante debe estar inscrito para ver el cambio en sus clases)";
+      showToast("success", `Nivel cambiado: ${r.old_level} → ${r.new_level}${enrollMsg}`);
       setShowLevelChange(false);
       setLevelReason("");
       setNewLevelId("");
