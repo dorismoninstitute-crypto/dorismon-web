@@ -22,6 +22,13 @@ export default function StudentDashboard() {
   const [absenceModal, setAbsenceModal] = useState<any>(null);
   const [absenceReason, setAbsenceReason] = useState("");
   const [absenceSaving, setAbsenceSaving] = useState(false);
+  // V3.9.12: avisos de "faltaste a clase" ya descartados (para ocultarlos al instante)
+  const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
+
+  const dismissMissedAlert = async (notifId: string) => {
+    setDismissedAlerts((prev) => [...prev, notifId]);  // ocultar de inmediato
+    try { await studentApi.markRead(notifId); } catch {}
+  };
 
   const reload = () => {
     studentApi.dashboard().then((d: any) => d && setData(d)).catch(() => {});
@@ -89,6 +96,8 @@ export default function StudentDashboard() {
   const recentCancelled = safeArray(d.recent_cancelled);
   const myAbsenceIds: string[] = safeArray(d.my_absence_session_ids);
   const trialInfo = d.trial_info; // V3.0.1
+  // V3.9.12: avisos de "faltaste a clase" (excluyendo los ya descartados en esta sesión)
+  const missedAlerts = safeArray(d.missed_class_alerts).filter((a: any) => !dismissedAlerts.includes(a.notification_id));
 
   // V2.8 FIX: Mostrar el nivel REAL del estudiante (del placement test),
   // no el del enrollment (que puede ser distinto si admin lo inscribió en otro nivel)
@@ -130,6 +139,29 @@ export default function StudentDashboard() {
               </p>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* V3.9.12: Aviso de "faltaste a clase" (informativo, desaparece al leer) */}
+      {missedAlerts.length > 0 && (
+        <div className="space-y-3 mb-6">
+          {missedAlerts.map((alert: any) => (
+            <div key={alert.notification_id} className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl flex-shrink-0">📌</span>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-amber-900 mb-1">{alert.title}</h3>
+                  <p className="text-sm text-amber-800">{alert.body}</p>
+                  <button
+                    onClick={() => dismissMissedAlert(alert.notification_id)}
+                    className="mt-3 text-sm font-semibold text-amber-900 bg-amber-100 hover:bg-amber-200 rounded-lg px-4 py-1.5 transition"
+                  >
+                    Entendido
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
