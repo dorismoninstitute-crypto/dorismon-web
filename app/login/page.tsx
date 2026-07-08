@@ -23,7 +23,13 @@ export default function LoginPage() {
         localStorage.setItem("refresh_token", res.refresh_token);
       }
       const me = await auth.me();
-      if (me.role === "super_admin") router.push("/dashboard/admin");
+      // V3.9.13: la primera vez de la sesión, mostrar la pantalla de bienvenida.
+      // Las siguientes, ir directo al dashboard.
+      const yaVioBienvenida = typeof window !== "undefined" && sessionStorage.getItem("welcome_shown");
+      if (!yaVioBienvenida) {
+        if (typeof window !== "undefined") sessionStorage.setItem("welcome_shown", "1");
+        router.push("/welcome");
+      } else if (me.role === "super_admin") router.push("/dashboard/admin");
       else if (me.role === "teacher") router.push("/dashboard/teacher");
       else router.push("/dashboard/student");
     } catch (e: any) {
