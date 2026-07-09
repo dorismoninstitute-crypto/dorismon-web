@@ -378,19 +378,8 @@ export default function StudentDashboard() {
         </Card>
       )}
 
-      {/* V1.6.2: Stats premium con iconos Lucide */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-soft hover:shadow-card transition p-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className={`w-10 h-10 rounded-xl ${theme.bgSoft} ${theme.text} flex items-center justify-center`}>
-              <Target size={20} />
-            </div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Nivel</span>
-          </div>
-          <p className={`text-3xl font-black ${theme.text}`}>{levelCode}</p>
-          <p className="text-xs text-slate-500 mt-1">{progressData?.level_name || "Tu nivel"}</p>
-        </div>
-
+      {/* V3.9.14: Stats — 3 tarjetas (el Nivel ya está en el hero, se quitó de aquí) */}
+      <div className="grid grid-cols-3 gap-3 mb-6">
         <div className="bg-white rounded-2xl border border-slate-100 shadow-soft hover:shadow-card transition p-4">
           <div className="flex items-center justify-between mb-2">
             <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center">
@@ -423,6 +412,77 @@ export default function StudentDashboard() {
           <p className="text-3xl font-black text-slate-900">{stats.attendance_rate ?? 0}<span className="text-xl">%</span></p>
           <p className="text-xs text-slate-500 mt-1">promedio</p>
         </div>
+      </div>
+
+      {/* V3.9.14: Próxima clase SUBIDA aquí (visible sin scroll) */}
+      <div className="mb-6">
+        {/* V3.9.14: Si NO hay próxima clase, mostrar un mensaje amistoso en su lugar */}
+        {progressData?.enrolled && !progressData?.next_session && (
+          <div className="bg-gradient-to-br from-brand-600 via-brand-700 to-brand-800 rounded-2xl p-5 md:p-6 text-white shadow-lifted">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-accent-200 mb-1">Tu próxima clase</p>
+            <h3 className="font-black text-lg md:text-xl mb-1">Aún no tienes clases programadas</h3>
+            <p className="text-sm text-brand-100">Tu profesor pronto agendará tus próximas clases. Te avisaremos.</p>
+          </div>
+        )}
+        {/* V1.6.2 + V1.6.4: Próxima clase como hero gigante destacado, con estado EN CURSO */}
+        {progressData?.next_session && (() => {
+          const now = new Date();
+          const startsAt = progressData.next_session.starts_at_utc ? new Date(progressData.next_session.starts_at_utc) : null;
+          const endsAt = progressData.next_session.ends_at_utc ? new Date(progressData.next_session.ends_at_utc) : null;
+          const isInProgress = startsAt && endsAt && now >= startsAt && now <= endsAt;
+          const heroBg = isInProgress
+            ? "bg-gradient-to-br from-red-600 via-red-700 to-red-800"
+            : "bg-gradient-to-br from-brand-600 via-brand-700 to-brand-800";
+          const labelColor = isInProgress ? "text-red-100" : "text-accent-200";
+          const labelText = isInProgress ? "🔴 EN CURSO AHORA" : "Tu próxima clase";
+
+          return (
+          <div className={`lg:col-span-2 ${heroBg} rounded-2xl p-5 md:p-7 text-white shadow-lifted relative overflow-hidden`}>
+            <div className="absolute top-0 right-0 w-48 h-48 bg-accent-500/20 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
+            <div className="relative">
+              <div className="flex items-center gap-4 flex-wrap mb-4">
+                <div className={`w-14 h-14 bg-white/15 backdrop-blur-sm rounded-2xl flex items-center justify-center flex-shrink-0 ${isInProgress ? "animate-pulse-soft" : ""}`}>
+                  <Clock size={24} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-[10px] font-bold uppercase tracking-widest ${labelColor} mb-1`}>{labelText}</p>
+                  <h3 className="font-black text-xl md:text-2xl mb-1">
+                    {progressData.next_session.is_private && (
+                      <span className="inline-block px-2 py-0.5 rounded-md text-xs font-bold bg-violet-500/30 text-white mr-2 align-middle">
+                        👤 Privada
+                      </span>
+                    )}
+                    {progressData.next_session.title}
+                  </h3>
+                  <p className="text-sm text-brand-100">
+                    <Calendar size={14} className="inline mr-1.5 -mt-0.5" />
+                    {progressData.next_session.starts_at_utc && new Date(progressData.next_session.starts_at_utc).toLocaleString("es", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                  <p className="text-xs text-brand-200 mt-1">
+                    👨‍🏫 {progressData.next_session.teacher_name}
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2 flex-wrap mt-4">
+                {progressData.next_session.meeting_url && (
+                  <JoinClassButton session={progressData.next_session} />
+                )}
+                <CalendarButton sessionId={progressData.next_session.id} />
+              </div>
+              {/* V3.0.3: ubicación si es presencial/híbrida */}
+              {progressData.next_session.location && (
+                <ClassLocation location={progressData.next_session.location} />
+              )}
+              {progressData.next_session.teacher_notes && (
+                <div className="mt-4 p-3 bg-white/10 backdrop-blur-sm rounded-lg border border-white/10">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-accent-200 mb-1">📌 Nota del profesor</p>
+                  <p className="text-sm text-white/90">{progressData.next_session.teacher_notes}</p>
+                </div>
+              )}
+            </div>
+          </div>
+          );
+        })()}
       </div>
 
       {/* V1.6.2: Banner eventos premium */}
@@ -570,65 +630,6 @@ export default function StudentDashboard() {
           </Card>
         )}
 
-        {/* V1.6.2 + V1.6.4: Próxima clase como hero gigante destacado, con estado EN CURSO */}
-        {progressData?.next_session && (() => {
-          const now = new Date();
-          const startsAt = progressData.next_session.starts_at_utc ? new Date(progressData.next_session.starts_at_utc) : null;
-          const endsAt = progressData.next_session.ends_at_utc ? new Date(progressData.next_session.ends_at_utc) : null;
-          const isInProgress = startsAt && endsAt && now >= startsAt && now <= endsAt;
-          const heroBg = isInProgress
-            ? "bg-gradient-to-br from-red-600 via-red-700 to-red-800"
-            : "bg-gradient-to-br from-brand-600 via-brand-700 to-brand-800";
-          const labelColor = isInProgress ? "text-red-100" : "text-accent-200";
-          const labelText = isInProgress ? "🔴 EN CURSO AHORA" : "Tu próxima clase";
-
-          return (
-          <div className={`lg:col-span-2 ${heroBg} rounded-2xl p-5 md:p-7 text-white shadow-lifted relative overflow-hidden`}>
-            <div className="absolute top-0 right-0 w-48 h-48 bg-accent-500/20 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
-            <div className="relative">
-              <div className="flex items-center gap-4 flex-wrap mb-4">
-                <div className={`w-14 h-14 bg-white/15 backdrop-blur-sm rounded-2xl flex items-center justify-center flex-shrink-0 ${isInProgress ? "animate-pulse-soft" : ""}`}>
-                  <Clock size={24} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className={`text-[10px] font-bold uppercase tracking-widest ${labelColor} mb-1`}>{labelText}</p>
-                  <h3 className="font-black text-xl md:text-2xl mb-1">
-                    {progressData.next_session.is_private && (
-                      <span className="inline-block px-2 py-0.5 rounded-md text-xs font-bold bg-violet-500/30 text-white mr-2 align-middle">
-                        👤 Privada
-                      </span>
-                    )}
-                    {progressData.next_session.title}
-                  </h3>
-                  <p className="text-sm text-brand-100">
-                    <Calendar size={14} className="inline mr-1.5 -mt-0.5" />
-                    {progressData.next_session.starts_at_utc && new Date(progressData.next_session.starts_at_utc).toLocaleString("es", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
-                  </p>
-                  <p className="text-xs text-brand-200 mt-1">
-                    👨‍🏫 {progressData.next_session.teacher_name}
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-2 flex-wrap mt-4">
-                {progressData.next_session.meeting_url && (
-                  <JoinClassButton session={progressData.next_session} />
-                )}
-                <CalendarButton sessionId={progressData.next_session.id} />
-              </div>
-              {/* V3.0.3: ubicación si es presencial/híbrida */}
-              {progressData.next_session.location && (
-                <ClassLocation location={progressData.next_session.location} />
-              )}
-              {progressData.next_session.teacher_notes && (
-                <div className="mt-4 p-3 bg-white/10 backdrop-blur-sm rounded-lg border border-white/10">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-accent-200 mb-1">📌 Nota del profesor</p>
-                  <p className="text-sm text-white/90">{progressData.next_session.teacher_notes}</p>
-                </div>
-              )}
-            </div>
-          </div>
-          );
-        })()}
 
         {/* Próximas clases (lista) */}
         <Card>
