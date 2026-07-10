@@ -128,7 +128,7 @@ export default function StudentDashboard() {
                   <div key={c.id} className="text-sm bg-white/60 rounded-lg p-2.5">
                     <p className="font-semibold text-red-900">{c.title}</p>
                     <p className="text-xs text-red-700">
-                      {c.starts_at_utc && new Date(c.starts_at_utc).toLocaleString("es", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
+                      {c.starts_at_utc && new Date(c.starts_at_utc).toLocaleString("es", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", hour12: true })}
                     </p>
                     {c.reason && <p className="text-xs text-slate-600 mt-1">Motivo: {c.reason}</p>}
                   </div>
@@ -177,7 +177,7 @@ export default function StudentDashboard() {
               <div className="text-sm text-emerald-800 space-y-0.5 mb-3">
                 {trialInfo.teacher_name && <p><strong>👨‍🏫 Profesor:</strong> {trialInfo.teacher_name}</p>}
                 {trialInfo.scheduled_at && (
-                  <p><strong>📅 Fecha:</strong> {new Date(trialInfo.scheduled_at).toLocaleString("es", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}</p>
+                  <p><strong>📅 Fecha:</strong> {new Date(trialInfo.scheduled_at).toLocaleString("es", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", hour12: true })}</p>
                 )}
                 {trialInfo.modality && <p><strong>📍 Modalidad:</strong> {trialInfo.modality}</p>}
               </div>
@@ -456,7 +456,7 @@ export default function StudentDashboard() {
                   </h3>
                   <p className="text-sm text-brand-100">
                     <Calendar size={14} className="inline mr-1.5 -mt-0.5" />
-                    {progressData.next_session.starts_at_utc && new Date(progressData.next_session.starts_at_utc).toLocaleString("es", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
+                    {progressData.next_session.starts_at_utc && new Date(progressData.next_session.starts_at_utc).toLocaleString("es", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", hour12: true })}
                   </p>
                   <p className="text-xs text-brand-200 mt-1">
                     👨‍🏫 {progressData.next_session.teacher_name}
@@ -509,7 +509,7 @@ export default function StudentDashboard() {
                 <p className="font-bold text-sm mb-1 line-clamp-2 text-slate-900">{e.title}</p>
                 <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-2">
                   <Clock size={12} />
-                  {e.starts_at_utc && new Date(e.starts_at_utc).toLocaleString("es", { weekday: "short", day: "numeric", month: "short", hour: "2-digit" })}
+                  {e.starts_at_utc && new Date(e.starts_at_utc).toLocaleString("es", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: true })}
                 </div>
                 <p className="text-xs text-slate-600 mb-2 truncate">👨‍🏫 {e.teacher_name}</p>
                 {e.i_am_registered ? (
@@ -650,7 +650,7 @@ export default function StudentDashboard() {
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-sm">{c.title}</p>
                         <p className="text-xs text-slate-500">
-                          {c.starts_at_utc && new Date(c.starts_at_utc).toLocaleString("es", { weekday: "short", day: "numeric", month: "short", hour: "2-digit" })}
+                          {c.starts_at_utc && new Date(c.starts_at_utc).toLocaleString("es", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: true })}
                           {" · "}{c.teacher_name}
                         </p>
                       </div>
@@ -743,7 +743,7 @@ export default function StudentDashboard() {
             <h3 className="text-xl font-bold mb-1 text-slate-900">¿No podrás asistir?</h3>
             <p className="text-sm text-slate-600 mb-1">{absenceModal.title}</p>
             <p className="text-xs text-slate-400 mb-4">
-              {absenceModal.starts_at_utc && new Date(absenceModal.starts_at_utc).toLocaleString("es", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
+              {absenceModal.starts_at_utc && new Date(absenceModal.starts_at_utc).toLocaleString("es", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", hour12: true })}
             </p>
             <label className="block text-sm font-semibold mb-1">Cuéntale a tu profesor por qué:</label>
             <textarea

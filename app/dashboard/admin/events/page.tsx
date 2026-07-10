@@ -54,7 +54,7 @@ export default function AdminEventsPage() {
                   <h3 className="font-bold mb-1">{e.title}</h3>
                   {e.description && <p className="text-sm text-slate-600 mb-3">{e.description}</p>}
                   <div className="text-xs text-slate-500 space-y-1 mb-3">
-                    <p>📅 {new Date(e.starts_at_utc).toLocaleString("es", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
+                    <p>📅 {new Date(e.starts_at_utc).toLocaleString("es", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: true })}</p>
                     <p>👨‍🏫 {e.teacher_name}</p>
                   </div>
                   <div>

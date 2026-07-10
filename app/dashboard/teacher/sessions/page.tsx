@@ -63,7 +63,7 @@ export default function TeacherSessionsPage() {
               <CardBody className="flex items-center gap-3">
                 <div className="text-center min-w-[60px]">
                   <p className="font-bold">{s.starts_at_utc && new Date(s.starts_at_utc).toLocaleString("es", { weekday: "short", day: "numeric" })}</p>
-                  <p className="text-xs text-slate-500">{s.starts_at_utc && new Date(s.starts_at_utc).toLocaleString("es", { hour: "2-digit", minute: "2-digit" })}</p>
+                  <p className="text-xs text-slate-500">{s.starts_at_utc && new Date(s.starts_at_utc).toLocaleString("es", { hour: "2-digit", minute: "2-digit", hour12: true })}</p>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">

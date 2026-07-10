@@ -156,7 +156,7 @@ export default function TeacherDashboard() {
                             </div>
                             <p className="text-xs text-slate-500 flex items-center gap-1.5">
                               <Clock size={11} />
-                              {s.starts_at_utc && new Date(s.starts_at_utc).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}
+                              {s.starts_at_utc && new Date(s.starts_at_utc).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit", hour12: true })}
                               <span className="mx-1">·</span>
                               {s.modality}
                             </p>
@@ -204,7 +204,7 @@ export default function TeacherDashboard() {
                             )}
                           </p>
                           <p className="text-xs text-slate-500">
-                            {s.starts_at_utc && new Date(s.starts_at_utc).toLocaleString("es", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                            {s.starts_at_utc && new Date(s.starts_at_utc).toLocaleString("es", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: true })}
                           </p>
                         </div>
                       </div>

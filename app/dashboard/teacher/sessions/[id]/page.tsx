@@ -70,7 +70,7 @@ export default function AttendancePage() {
     <>
       <PageHeader
         title={session.title || "Asistencia"}
-        subtitle={session.starts_at_utc && new Date(session.starts_at_utc).toLocaleString("es", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
+        subtitle={session.starts_at_utc && new Date(session.starts_at_utc).toLocaleString("es", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", hour12: true })}
         action={
           <div className="flex gap-2 flex-wrap">
             {session.status === "scheduled" && (

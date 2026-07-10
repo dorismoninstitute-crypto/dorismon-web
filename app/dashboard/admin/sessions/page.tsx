@@ -604,7 +604,7 @@ export default function AdminSessionsPage() {
                     </div>
                     <p className="font-semibold">{s.title}</p>
                     <p className="text-xs text-slate-500">
-                      {s.starts_at_utc && new Date(s.starts_at_utc).toLocaleString("es", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      {s.starts_at_utc && new Date(s.starts_at_utc).toLocaleString("es", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: true })}
                       {" · "}{s.teacher_name}{" · "}{s.course_name}
                     </p>
                   </div>

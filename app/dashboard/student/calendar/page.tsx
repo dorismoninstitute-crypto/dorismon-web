@@ -49,7 +49,7 @@ export default function CalendarPage() {
                         </div>
                         <p className="font-semibold">{e.title}</p>
                         <p className="text-xs text-slate-500">
-                          {e.starts_at && new Date(e.starts_at).toLocaleString("es", { hour: "2-digit", minute: "2-digit" })}
+                          {e.starts_at && new Date(e.starts_at).toLocaleString("es", { hour: "2-digit", minute: "2-digit", hour12: true })}
                         </p>
                         {/* V3.0.3: ubicación presencial */}
                         {e.location && <div className="mt-1"><ClassLocation location={e.location} /></div>}

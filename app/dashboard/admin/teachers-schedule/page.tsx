@@ -29,7 +29,7 @@ export default function TeachersSchedulePage() {
   if (err) return <ErrorBox message={err} />;
 
   const fmt = (iso: string) =>
-    new Date(iso).toLocaleString("es", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+    new Date(iso).toLocaleString("es", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: true });
 
   return (
     <>

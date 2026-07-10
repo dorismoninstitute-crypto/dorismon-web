@@ -89,7 +89,7 @@ export default function StudentEventsPage() {
 
                   <div className="text-xs text-slate-500 space-y-1 mb-3">
                     <p>
-                      📅 {date.toLocaleString("es", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
+                      📅 {date.toLocaleString("es", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", hour12: true })}
                     </p>
                     <p>👨‍🏫 {e.teacher_name}</p>
                   </div>

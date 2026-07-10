@@ -172,7 +172,7 @@ export default function TeacherIncomePage() {
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm truncate">{c.title}</p>
                     <p className="text-xs text-slate-500">
-                      {c.starts_at_utc && new Date(c.starts_at_utc).toLocaleDateString("es", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      {c.starts_at_utc && new Date(c.starts_at_utc).toLocaleDateString("es", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: true })}
                       {" · "}
                       <Badge variant={c.type === "private" ? "info" : c.type === "event" ? "warning" : "brand"}>
                         {c.type === "group" ? "Grupal" : c.type === "private" ? "Privada" : "Evento"}
