@@ -243,6 +243,9 @@ export const adminApi = {
   sessions: (page = 1) => api(`/admin/sessions?page=${page}`, { auth: true }),
   createSession: (body: any) =>
     api("/admin/sessions", { method: "POST", body, auth: true }),
+  // V3.9.15: crear evento abierto (webinar, club — puede ser híbrido)
+  createEvent: (body: any) =>
+    api("/admin/events", { method: "POST", body, auth: true }),
   cancelSession: (id: string) =>
     api(`/admin/sessions/${id}`, { method: "DELETE", auth: true }),
   enrollments: (studentId?: string) =>

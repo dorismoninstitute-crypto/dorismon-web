@@ -126,6 +126,46 @@ export function Select({ label, error, children, className, ...props }: any) {
 
 // LoadingState
 export function LoadingScreen({ message = "Cargando..." }: { message?: string }) {
+  // V3.9.15: si la carga tarda (cold start del servidor ~30-50s), mostrar un
+  // hero motivacional tipo landing en vez del spinner aburrido. Aparece a los
+  // 4 segundos — las cargas normales (rápidas) nunca lo ven.
+  const [slow, setSlow] = React.useState(false);
+  const [phraseIdx] = React.useState(() => Math.floor(Math.random() * 5));
+  React.useEffect(() => {
+    const t = setTimeout(() => setSlow(true), 4000);
+    return () => clearTimeout(t);
+  }, []);
+
+  const phrases = [
+    { en: "Every day is a new chance to learn.", es: "Cada día es una nueva oportunidad para aprender." },
+    { en: "Practice makes progress.", es: "La práctica hace el progreso." },
+    { en: "Your English journey continues here.", es: "Tu camino en inglés continúa aquí." },
+    { en: "Small steps every day lead to big results.", es: "Pequeños pasos cada día llevan a grandes resultados." },
+    { en: "The best time to learn is now.", es: "El mejor momento para aprender es ahora." },
+  ];
+  const phrase = phrases[phraseIdx];
+
+  if (slow) {
+    return (
+      <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 text-white px-6 text-center overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-accent-500/10 rounded-full blur-3xl -translate-y-1/3 translate-x-1/3" />
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-brand-400/10 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3" />
+        <div className="relative flex flex-col items-center">
+          <div className="bg-white rounded-2xl px-5 py-4 mb-8 shadow-xl">
+            <img src="/logo-dorismon.svg" alt="Dorismon Language Institute" className="h-14 w-auto" />
+          </div>
+          <p className="text-xl md:text-2xl font-black mb-2 max-w-md">"{phrase.en}"</p>
+          <p className="text-sm text-brand-200 mb-10 max-w-md">{phrase.es}</p>
+          <div className="flex items-center gap-3 text-brand-100">
+            <div className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+            <p className="text-sm">Preparando tu espacio de aprendizaje...</p>
+          </div>
+          <p className="absolute -bottom-24 text-xs text-brand-300/60">Dorismon Language Institute · Santo Domingo, RD 🇩🇴</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-500">
       <div className="w-10 h-10 rounded-full border-4 border-slate-200 border-t-brand-600 animate-spin mb-3" />

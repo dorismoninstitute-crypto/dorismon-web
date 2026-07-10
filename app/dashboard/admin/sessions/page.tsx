@@ -13,6 +13,13 @@ export default function AdminSessionsPage() {
   const [showMenu, setShowMenu] = useState(false);  // V1.7: menú 3 opciones
   const [showSeries, setShowSeries] = useState(false);  // V1.7
   const [showPrivate, setShowPrivate] = useState(false);  // V1.7
+  // V3.9.15: Evento abierto (webinar, club, taller — puede ser híbrido)
+  const [showEvent, setShowEvent] = useState(false);
+  const [eventForm, setEventForm] = useState<any>({
+    title: "", description: "", date: "", time: "", duration_min: 90,
+    modality: "hibrida", teacher_id: "", meeting_url: "", branch_id: "", capacity: 30,
+  });
+  const [eventSaving, setEventSaving] = useState(false);
   const [seriesList, setSeriesList] = useState<any[]>([]);  // V1.7
   // V3.9.8: Reprogramar serie a futuro
   const [reschedSeries, setReschedSeries] = useState<any>(null);
@@ -71,6 +78,40 @@ export default function AdminSessionsPage() {
     { key: "mon", label: "Lun" }, { key: "tue", label: "Mar" }, { key: "wed", label: "Mié" },
     { key: "thu", label: "Jue" }, { key: "fri", label: "Vie" }, { key: "sat", label: "Sáb" }, { key: "sun", label: "Dom" },
   ];
+  // V3.9.15: crear evento abierto (con soporte híbrido)
+  const createEvent = async () => {
+    if (!eventForm.title || !eventForm.date || !eventForm.time || !eventForm.teacher_id) {
+      showToast("error", "Completa título, fecha, hora y anfitrión"); return;
+    }
+    const needsLink = eventForm.modality === "online" || eventForm.modality === "hibrida";
+    const needsBranch = eventForm.modality === "presencial" || eventForm.modality === "hibrida";
+    if (needsLink && !eventForm.meeting_url) { showToast("error", "Un evento online o híbrido necesita el link"); return; }
+    if (needsBranch && !eventForm.branch_id) { showToast("error", "Un evento presencial o híbrido necesita la sede"); return; }
+    if (eventSaving) return;
+    setEventSaving(true);
+    try {
+      const startIso = `${eventForm.date}T${eventForm.time}:00-04:00`;  // RD timezone
+      const start = new Date(startIso);
+      const end = new Date(start.getTime() + (eventForm.duration_min || 90) * 60000);
+      await adminApi.createEvent({
+        title: eventForm.title,
+        description: eventForm.description || undefined,
+        starts_at_utc: start.toISOString(),
+        ends_at_utc: end.toISOString(),
+        modality: eventForm.modality,
+        teacher_id: eventForm.teacher_id,
+        meeting_url: needsLink ? eventForm.meeting_url : undefined,
+        branch_id: needsBranch ? parseInt(eventForm.branch_id) : undefined,
+        capacity: eventForm.capacity || 30,
+      });
+      showToast("success", "🎉 Evento creado — visible para todos los estudiantes");
+      setShowEvent(false);
+      setEventForm({ title: "", description: "", date: "", time: "", duration_min: 90, modality: "hibrida", teacher_id: "", meeting_url: "", branch_id: "", capacity: 30 });
+      load();
+    } catch (e: any) { showToast("error", e.message); }
+    finally { setEventSaving(false); }
+  };
+
   const openReschedule = (s: any) => {
     setReschedSeries(s);
     setReschedForm({
@@ -488,6 +529,17 @@ export default function AdminSessionsPage() {
                   <p className="text-xs text-slate-500">Asignada a un estudiante específico</p>
                 </div>
               </button>
+              {/* V3.9.15: Evento abierto (webinar, club, taller) */}
+              <button
+                onClick={() => { setShowMenu(false); setShowEvent(true); }}
+                className="w-full text-left p-3 rounded-xl hover:bg-slate-50 border border-slate-100 flex items-start gap-3 transition"
+              >
+                <div className="w-10 h-10 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center flex-shrink-0 text-xl">🎉</div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-sm">Evento abierto</p>
+                  <p className="text-xs text-slate-500">Webinar, club de conversación o taller — lo ven TODOS los estudiantes. Puede ser híbrido</p>
+                </div>
+              </button>
             </div>
           </div>
         </div>
@@ -746,6 +798,53 @@ export default function AdminSessionsPage() {
 
           <Button onClick={doReschedule} className="w-full" size="lg" disabled={reschedSaving}>
             {reschedSaving ? "Reprogramando..." : "Reprogramar clases futuras"}
+          </Button>
+        </div>
+      </Modal>
+
+      {/* V3.9.15: Modal crear evento abierto (soporta híbrido) */}
+      <Modal open={showEvent} onClose={() => setShowEvent(false)} title="🎉 Crear evento abierto">
+        <div className="space-y-3">
+          <div className="bg-violet-50 border border-violet-200 rounded-lg p-3 text-sm text-violet-800">
+            Un evento abierto lo ven <strong>todos los estudiantes</strong> sin importar su nivel (webinar, club de conversación, taller). Pueden apuntarse hasta llenar los cupos.
+          </div>
+
+          <Input label="Título del evento *" value={eventForm.title} onChange={(e: any) => setEventForm({ ...eventForm, title: e.target.value })} placeholder="Ej: Club de Conversación — Viajes" />
+          <Textarea label="Descripción (opcional)" value={eventForm.description} onChange={(e: any) => setEventForm({ ...eventForm, description: e.target.value })} placeholder="De qué trata el evento..." />
+
+          <div className="grid grid-cols-2 gap-2">
+            <Input label="Fecha *" type="date" value={eventForm.date} onChange={(e: any) => setEventForm({ ...eventForm, date: e.target.value })} />
+            <Input label="Hora *" type="time" value={eventForm.time} onChange={(e: any) => setEventForm({ ...eventForm, time: e.target.value })} />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Input label="Duración (min)" type="number" value={eventForm.duration_min} onChange={(e: any) => setEventForm({ ...eventForm, duration_min: parseInt(e.target.value) || 90 })} />
+            <Input label="Cupos" type="number" value={eventForm.capacity} onChange={(e: any) => setEventForm({ ...eventForm, capacity: parseInt(e.target.value) || 30 })} />
+          </div>
+
+          <Select label="Anfitrión (profesor) *" value={eventForm.teacher_id} onChange={(e: any) => setEventForm({ ...eventForm, teacher_id: e.target.value })}>
+            <option value="">— Selecciona —</option>
+            {teachers.map((t: any) => <option key={t.id} value={t.id}>{t.full_name}</option>)}
+          </Select>
+
+          <Select label="Modalidad *" value={eventForm.modality} onChange={(e: any) => setEventForm({ ...eventForm, modality: e.target.value })}>
+            <option value="hibrida">🌐🏫 Híbrida (online + presencial)</option>
+            <option value="online">🌐 Online</option>
+            <option value="presencial">🏫 Presencial</option>
+          </Select>
+
+          {(eventForm.modality === "online" || eventForm.modality === "hibrida") && (
+            <MeetingUrlInput label="Link del evento (para los online) *" value={eventForm.meeting_url} onChange={(v: string) => setEventForm({ ...eventForm, meeting_url: v })} />
+          )}
+
+          {(eventForm.modality === "presencial" || eventForm.modality === "hibrida") && (
+            <Select label="Sede (para los presenciales) *" value={eventForm.branch_id} onChange={(e: any) => setEventForm({ ...eventForm, branch_id: e.target.value })}>
+              <option value="">— Selecciona la sede —</option>
+              {branches.map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}
+            </Select>
+          )}
+
+          <Button onClick={createEvent} className="w-full" size="lg" disabled={eventSaving}>
+            {eventSaving ? "Creando..." : "🎉 Crear evento"}
           </Button>
         </div>
       </Modal>
