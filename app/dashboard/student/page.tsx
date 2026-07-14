@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { studentApi, studentPayments, placement, progress, events, safeArray, safeObj, getLevelTheme } from "@/lib/api";
+import { studentApi, studentPayments, placement, progress, events, publicApi, safeArray, safeObj, getLevelTheme } from "@/lib/api";
 import { LoadingScreen, ErrorBox, EmptyState, Card, CardBody, Badge, Button, showToast, CalendarButton, JoinClassButton, ClassLocation } from "@/components/ui";
 import {
   Calendar, FileText, CheckCircle2, Target, Trophy, TrendingUp,
@@ -24,6 +24,16 @@ export default function StudentDashboard() {
   const [absenceSaving, setAbsenceSaving] = useState(false);
   // V3.9.12: avisos de "faltaste a clase" ya descartados (para ocultarlos al instante)
   const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
+  // V3.9.17: WhatsApp del coordinador (de la configuración del instituto)
+  const [waPhone, setWaPhone] = useState<string>("");
+  useEffect(() => {
+    publicApi.instituteSettings()
+      .then((s: any) => {
+        const raw = (s.contact_phone || "").replace(/[^0-9]/g, "");
+        if (raw) setWaPhone(raw.length === 10 ? `1${raw}` : raw);
+      })
+      .catch(() => {});
+  }, []);
 
   const dismissMissedAlert = async (notifId: string) => {
     setDismissedAlerts((prev) => [...prev, notifId]);  // ocultar de inmediato
@@ -763,6 +773,18 @@ export default function StudentDashboard() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* V3.9.17: Botón flotante — hablar con el coordinador por WhatsApp */}
+      {waPhone && (
+        <a
+          href={`https://wa.me/${waPhone}?text=${encodeURIComponent("¡Hola! Soy estudiante de Dorismon y tengo una pregunta. 😊")}`}
+          target="_blank" rel="noopener noreferrer"
+          className="fixed bottom-5 right-5 z-50 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-xl hover:shadow-2xl transition-all px-5 py-3.5 flex items-center gap-2 font-bold text-sm"
+          title="Hablar con el coordinador"
+        >
+          💬 <span className="hidden sm:inline">Coordinador</span>
+        </a>
       )}
     </div>
   );

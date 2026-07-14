@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { placement, auth, safeArray } from "@/lib/api";
+import { placement, auth, publicApi, safeArray } from "@/lib/api";
 import { LoadingScreen, ErrorBox, Button, Card, CardBody, PageHeader } from "@/components/ui";
 
 export default function PlacementTestPage() {
@@ -14,6 +14,17 @@ export default function PlacementTestPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState("");
+  // V3.9.17: teléfono WhatsApp del instituto (de la configuración, solo dígitos)
+  const [waPhone, setWaPhone] = useState<string>("");
+
+  useEffect(() => {
+    publicApi.instituteSettings()
+      .then((s: any) => {
+        const raw = (s.contact_phone || "").replace(/[^0-9]/g, "");
+        if (raw) setWaPhone(raw.length === 10 ? `1${raw}` : raw);  // RD: +1
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!auth.isLoggedIn()) { router.push("/login"); return; }
@@ -182,6 +193,17 @@ export default function PlacementTestPage() {
                 Te contactaremos en las próximas 24-48 horas.
               </p>
             </div>
+
+            {/* V3.9.17: WhatsApp directo — el estudiante nos escribe YA, sin esperar */}
+            {waPhone && (
+              <a
+                href={`https://wa.me/${waPhone}?text=${encodeURIComponent(`¡Hola! Acabo de completar el test de nivel en Dorismon y mi nivel es ${code}. Quiero información sobre las clases. 😊`)}`}
+                target="_blank" rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-xl mb-3 transition"
+              >
+                💬 Escríbenos por WhatsApp ahora
+              </a>
+            )}
 
             <Button onClick={() => router.push("/dashboard/student")} size="lg" className="w-full">
               Ir a mi dashboard →
