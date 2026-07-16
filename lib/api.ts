@@ -189,6 +189,9 @@ export const teacherApi = {
     api(`/teacher/sessions/${sessionId}/attendance`, { auth: true }),
   saveAttendance: (sessionId: string, body: any) =>
     api(`/teacher/sessions/${sessionId}/attendance`, { method: "POST", body, auth: true }),
+  // V3.9.19: Finalizar clase manualmente (marca completada, corta el EN CURSO)
+  finalizeSession: (sessionId: string) =>
+    api(`/teacher/sessions/${sessionId}/finalize`, { method: "POST", auth: true }),
   // V2.9: Profe cancela su propia clase
   cancelSession: (sessionId: string, reason: string) =>
     api(`/teacher/sessions/${sessionId}/cancel`, {

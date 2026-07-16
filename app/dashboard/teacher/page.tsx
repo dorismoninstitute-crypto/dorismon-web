@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { teacherApi, safeArray, safeObj, getLevelTheme } from "@/lib/api";
-import { LoadingScreen, ErrorBox, PageHeader, Card, CardBody, Button, JoinClassButton, CalendarButton } from "@/components/ui";
+import { LoadingScreen, ErrorBox, PageHeader, Card, CardBody, Button, JoinClassButton, CalendarButton, showToast } from "@/components/ui";
 import Avatar from "@/components/Avatar";
 import {
   Calendar, FileText, Users, TrendingUp, Clock, BookOpen,
@@ -15,11 +15,26 @@ export default function TeacherDashboard() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
-  useEffect(() => {
+  const load = () => {
     teacherApi.dashboard()
       .then((d: any) => { setData(d); setLoading(false); })
       .catch((e: any) => { setErr(e.message); setLoading(false); });
-  }, []);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  // V3.9.19: finalizar clase manualmente (con recordatorio de asistencia)
+  const finalizeClass = async (sessionId: string) => {
+    try {
+      const r: any = await teacherApi.finalizeSession(sessionId);
+      if (r.attendance_taken) {
+        showToast("success", "✅ Clase finalizada");
+      } else {
+        showToast("success", "✅ Clase finalizada — recuerda pasar la asistencia cuando puedas");
+      }
+      load();
+    } catch (e: any) { showToast("error", e.message); }
+  };
 
   if (loading) return <LoadingScreen />;
   if (err) return <ErrorBox message={err} />;
@@ -153,6 +168,9 @@ export default function TeacherDashboard() {
                               {s.is_private && (
                                 <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-violet-100 text-violet-700">👤 Privada</span>
                               )}
+                              {s.is_open_event && (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-700">🎉 Evento</span>
+                              )}
                             </div>
                             <p className="text-xs text-slate-500 flex items-center gap-1.5">
                               <Clock size={11} />
@@ -167,6 +185,15 @@ export default function TeacherDashboard() {
                             <JoinClassButton session={s} />
                             <CalendarButton sessionId={s.id} />
                           </div>
+                        )}
+                        {/* V3.9.19: Finalizar clase (en curso o pasada, aún no completada) */}
+                        {s.status !== "completed" && s.status !== "cancelled" && s.starts_at_utc && new Date(s.starts_at_utc) <= new Date() && (
+                          <button
+                            onClick={() => finalizeClass(s.id)}
+                            className="mt-2 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg px-3 py-1.5 transition"
+                          >
+                            ✅ Finalizar clase
+                          </button>
                         )}
                       </div>
                     );

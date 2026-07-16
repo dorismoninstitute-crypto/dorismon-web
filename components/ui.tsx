@@ -552,8 +552,10 @@ export function JoinClassButton({ session }: { session: any }) {
   // Estados temporales
   const isUpcomingFar = minsUntilStart !== null && minsUntilStart > 15;
   const isReadyToJoin = minsUntilStart !== null && minsUntilStart <= 15 && minsUntilStart > 0;
-  const isInProgress = startsAt && endsAt && now >= startsAt && now <= endsAt;
-  const isFinished = endsAt && now > endsAt;
+  // V3.9.19: si la clase fue FINALIZADA manualmente (status completed), ya no está en curso
+  const wasFinalized = session?.status === "completed";
+  const isInProgress = !wasFinalized && startsAt && endsAt && now >= startsAt && now <= endsAt;
+  const isFinished = wasFinalized || (endsAt && now > endsAt);
 
   // Render del botón según estado temporal
   let btnLabel: string;
