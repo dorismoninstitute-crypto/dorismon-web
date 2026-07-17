@@ -169,6 +169,9 @@ export const studentApi = {
     api(`/student/quizzes/${id}/submit`, { method: "POST", body, auth: true }),
   calendar: () => api("/student/calendar", { auth: true }),
   attendance: () => api("/student/attendance", { auth: true }),
+  // V3.9.21: confirmar asistencia a una clase próxima
+  confirmSession: (sessionId: string) =>
+    api(`/student/sessions/${sessionId}/confirm`, { method: "POST", auth: true }),
   certificates: () => api("/student/certificates", { auth: true }),
   notifications: (unreadOnly = false) =>
     api(`/student/notifications${unreadOnly ? '?unread_only=true' : ''}`, { auth: true }),

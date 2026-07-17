@@ -137,6 +137,10 @@ export default function AttendancePage() {
                       {(s.full_name || "?").split(" ").map((w: string) => w[0]).join("").slice(0, 2)}
                     </div>
                     <p className="flex-1 font-medium text-sm">{s.full_name}</p>
+                    {/* V3.9.21: confirmó que asistirá */}
+                    {s.confirmed && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 mr-2">✔️ Confirmó</span>
+                    )}
                     <div className="flex gap-1 flex-wrap">
                       {STATES.map(st => (
                         <button

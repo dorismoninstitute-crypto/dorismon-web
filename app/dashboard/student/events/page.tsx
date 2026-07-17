@@ -67,6 +67,10 @@ export default function StudentEventsPage() {
             const isFull = e.is_full;
             const registered = e.i_am_registered;
             const fillPct = Math.min(100, Math.round((e.registered_count / e.capacity) * 100));
+            // V3.9.21: ¿el evento está sucediendo AHORA?
+            const nowT = new Date();
+            const endT = e.ends_at_utc ? new Date(e.ends_at_utc) : null;
+            const inProgress = date <= nowT && endT && nowT <= endT;
             return (
               <Card key={e.id} className="overflow-hidden hover:shadow-md transition">
                 <div className={`h-2 ${
@@ -76,6 +80,7 @@ export default function StudentEventsPage() {
                 }`} />
                 <CardBody>
                   <div className="flex items-center gap-2 mb-3 flex-wrap">
+                    {inProgress && <Badge variant="danger">🔴 En curso — ¡aún puedes entrar!</Badge>}
                     <Badge variant={e.modality === "online" ? "brand" : e.modality === "presencial" ? "accent" : "info"}>
                       {e.modality}
                     </Badge>

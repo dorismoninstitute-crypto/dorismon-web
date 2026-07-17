@@ -171,6 +171,9 @@ export default function TeacherDashboard() {
                               {s.is_open_event && (
                                 <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-700">🎉 Evento</span>
                               )}
+                              {s.is_trial && (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-700">🎯 Clase de prueba</span>
+                              )}
                             </div>
                             <p className="text-xs text-slate-500 flex items-center gap-1.5">
                               <Clock size={11} />

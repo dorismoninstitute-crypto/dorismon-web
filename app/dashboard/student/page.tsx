@@ -24,6 +24,20 @@ export default function StudentDashboard() {
   const [absenceSaving, setAbsenceSaving] = useState(false);
   // V3.9.12: avisos de "faltaste a clase" ya descartados (para ocultarlos al instante)
   const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
+  // V3.9.21: confirmación de asistencia a la próxima clase
+  const [confirmedClass, setConfirmedClass] = useState(false);
+  const [confirmingClass, setConfirmingClass] = useState(false);
+  const confirmAttendance = async () => {
+    const ns = (progressData as any)?.next_session;
+    if (!ns?.id || confirmingClass) return;
+    setConfirmingClass(true);
+    try {
+      await studentApi.confirmSession(ns.id);
+      setConfirmedClass(true);
+      showToast("success", "✔️ ¡Asistencia confirmada! Tu profesor lo verá.");
+    } catch (e: any) { showToast("error", e.message); }
+    finally { setConfirmingClass(false); }
+  };
   // V3.9.17: WhatsApp del coordinador (de la configuración del instituto)
   const [waPhone, setWaPhone] = useState<string>("");
   useEffect(() => {
@@ -478,6 +492,20 @@ export default function StudentDashboard() {
                   <JoinClassButton session={progressData.next_session} />
                 )}
                 <CalendarButton sessionId={progressData.next_session.id} />
+                {/* V3.9.21: confirmar asistencia */}
+                {confirmedClass || progressData.next_session.my_confirmed ? (
+                  <span className="inline-flex items-center gap-1.5 bg-emerald-500/20 text-emerald-100 border border-emerald-300/40 font-bold text-sm px-4 py-2 rounded-xl">
+                    ✔️ Asistencia confirmada
+                  </span>
+                ) : (
+                  <button
+                    onClick={confirmAttendance}
+                    disabled={confirmingClass}
+                    className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white font-bold text-sm px-4 py-2 rounded-xl border border-white/30 transition"
+                  >
+                    {confirmingClass ? "Confirmando..." : "✔️ Confirmar asistencia"}
+                  </button>
+                )}
               </div>
               {/* V3.0.3: ubicación si es presencial/híbrida */}
               {progressData.next_session.location && (
