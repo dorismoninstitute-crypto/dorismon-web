@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { teacherApi, safeArray } from "@/lib/api";
 import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button } from "@/components/ui";
+import PendingAttendance from "@/components/PendingAttendance";
 
 export default function TeacherSessionsPage() {
   const [items, setItems] = useState<any[]>([]);
@@ -36,6 +37,9 @@ export default function TeacherSessionsPage() {
   return (
     <>
       <PageHeader title="Mis clases" subtitle={`${items.length} clases`} />
+
+      {/* V3.9.22: clases sin asistencia */}
+      <PendingAttendance />
 
       {/* V2.9.1: Tabs de filtro por período */}
       <div className="flex gap-2 mb-4 flex-wrap">

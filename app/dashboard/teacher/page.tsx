@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { teacherApi, safeArray, safeObj, getLevelTheme } from "@/lib/api";
 import { LoadingScreen, ErrorBox, PageHeader, Card, CardBody, Button, JoinClassButton, CalendarButton, showToast } from "@/components/ui";
+import PendingAttendance from "@/components/PendingAttendance";
 import Avatar from "@/components/Avatar";
 import {
   Calendar, FileText, Users, TrendingUp, Clock, BookOpen,
@@ -79,6 +80,9 @@ export default function TeacherDashboard() {
       </div>
 
       {/* Stats premium */}
+      {/* V3.9.22: clases sin asistencia (acceso directo para pasar lista) */}
+      <PendingAttendance />
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <div className="bg-white rounded-2xl border border-slate-100 shadow-soft hover:shadow-card transition p-4">
           <div className="flex items-center justify-between mb-2">
