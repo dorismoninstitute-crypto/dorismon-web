@@ -14,6 +14,7 @@ import {
   Users, Briefcase, MapPin, CreditCard, DollarSign, FileSearch, Wrench,
   ClipboardList, FolderKanban, FileEdit, BookMarked, Layers, Wallet,
   MessageCircle, HelpCircle, Inbox, TrendingUp, Sparkles, Clock,
+  Image as ImageIcon, Quote,
 } from "lucide-react";
 
 // V2.9.1: Items agrupados por área con encabezados de sección
@@ -98,6 +99,10 @@ const adminGroups = [
   { section: "Certificación", items: [
     { href: "/dashboard/admin/certificates", label: "Certificados", Icon: GraduationCap },
     { href: "/dashboard/admin/certification-ready", label: "Listos certificar", Icon: Award },
+  ]},
+  { section: "Página pública", items: [
+    { href: "/dashboard/admin/site-images", label: "Imágenes del sitio", Icon: ImageIcon },
+    { href: "/dashboard/admin/testimonials", label: "Testimonios", Icon: Quote },
   ]},
   { section: "Soporte y sistema", items: [
     { href: "/dashboard/messages", label: "Mensajes", Icon: MessageCircle },

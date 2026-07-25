@@ -102,6 +102,37 @@ export async function api(path: string, opts: ApiOptions = {}) {
   return data;
 }
 
+/**
+ * V3.9.23 — Subida de archivos (imágenes). El helper `api` de arriba solo
+ * maneja texto JSON; para archivos hace falta FormData y NO se debe fijar
+ * el Content-Type a mano (el navegador lo arma solo con el separador).
+ * Reintenta una vez si el token expiró, igual que `api`.
+ */
+export async function apiUpload(path: string, file: File, fieldName = "file") {
+  const doFetch = async (token: string | null) => {
+    const fd = new FormData();
+    fd.append(fieldName, file);
+    const headers: Record<string, string> = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+    return fetch(`${API_URL}${path}`, { method: "POST", headers, body: fd });
+  };
+
+  let res = await doFetch(getToken());
+  if (res.status === 401 && getRefreshToken()) {
+    const newToken = await refreshAccessToken();
+    if (newToken) res = await doFetch(newToken);
+  }
+
+  const text = await res.text();
+  let data: any = null;
+  if (text) { try { data = JSON.parse(text); } catch { data = text; } }
+  if (!res.ok) {
+    const msg = (data && typeof data === "object" && data.detail) || `Error ${res.status}`;
+    throw new ApiError(typeof msg === "string" ? msg : JSON.stringify(msg), res.status);
+  }
+  return data;
+}
+
 export const auth = {
   register: (body: any) => api("/auth/register", { method: "POST", body }),
   login: (body: { email: string; password: string }) =>
@@ -223,6 +254,21 @@ export const teacherApi = {
 };
 
 export const adminApi = {
+  // V3.9.23 — Imágenes de la página pública (Cloudinary)
+  siteImages: () => api("/admin/site-images", { auth: true }),
+  uploadSiteImage: (slot: string, file: File) => apiUpload(`/admin/site-images/${slot}`, file),
+  deleteSiteImage: (slot: string) =>
+    api(`/admin/site-images/${slot}`, { method: "DELETE", auth: true }),
+  // V3.9.23 — Testimonios de la landing
+  testimonials: () => api("/admin/testimonials", { auth: true }),
+  createTestimonial: (body: any) => api("/admin/testimonials", { method: "POST", body, auth: true }),
+  updateTestimonial: (id: string, body: any) =>
+    api(`/admin/testimonials/${id}`, { method: "PATCH", body, auth: true }),
+  uploadTestimonialPhoto: (id: string, file: File) =>
+    apiUpload(`/admin/testimonials/${id}/photo`, file),
+  deleteTestimonial: (id: string) =>
+    api(`/admin/testimonials/${id}`, { method: "DELETE", auth: true }),
+
   dashboard: () => api("/admin/dashboard", { auth: true }),
   users: (params: any = {}) => {
     const qs = new URLSearchParams();
@@ -572,6 +618,9 @@ export const adminStudentsByTeacher = {
 // V2.5 — Logo, settings públicos, finance
 export const publicApi = {
   instituteSettings: () => api("/institute-settings"),
+  // V3.9.23 — Contenido de la landing
+  siteImages: () => api("/site-images"),
+  testimonials: () => api("/testimonials"),
 };
 export const adminFinance = {
   summary: (year?: number, month?: number) => {
