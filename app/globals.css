@@ -19,3 +19,33 @@
 ::-webkit-scrollbar-track { background: #f8fafc; }
 ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 999px; }
 ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+
+/* ===================================================================
+   V3.9.24 — Animaciones de la landing.
+   Movimiento suave que guía la mirada sin distraer ni pesar.
+   Se desactivan solas si el usuario pidió menos animación en su
+   sistema (accesibilidad: hay gente a quien el movimiento le marea).
+   =================================================================== */
+@keyframes dsFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-7px); }
+}
+@keyframes dsPulseSoft {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.7; }
+}
+@keyframes dsNudge {
+  0%, 100% { transform: translateX(0); }
+  50%      { transform: translateX(4px); }
+}
+.ds-float  { animation: dsFloat 3.4s ease-in-out infinite; }
+.ds-float-2 { animation: dsFloat 3.4s ease-in-out 0.45s infinite; }
+.ds-float-3 { animation: dsFloat 3.4s ease-in-out 0.9s infinite; }
+.ds-pulse  { animation: dsPulseSoft 2.4s ease-in-out infinite; }
+.ds-nudge  { animation: dsNudge 1.6s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-float, .ds-float-2, .ds-float-3, .ds-pulse, .ds-nudge {
+    animation: none !important;
+  }
+}

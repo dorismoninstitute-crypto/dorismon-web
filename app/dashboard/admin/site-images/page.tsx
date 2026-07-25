@@ -102,9 +102,15 @@ export default function SiteImagesPage() {
         </div>
       )}
 
-      <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 mb-6 text-xs text-blue-800">
-        💡 Si dudas del tamaño, sube la imagen <strong>más grande</strong> que tengas: el sistema
-        la optimiza sola. Lo que no se puede es agrandar una foto pequeña sin que se vea borrosa.
+      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6 text-xs text-blue-800 space-y-2">
+        <p>
+          🎨 <strong>Varios espacios ya muestran un dibujo</strong> hecho a medida, así tu página
+          se ve completa desde hoy. Cuando subas una foto real, el dibujo desaparece solo.
+        </p>
+        <p>
+          💡 Si dudas del tamaño, sube la imagen <strong>más grande</strong> que tengas: el sistema
+          la optimiza sola. Lo que no se puede es agrandar una foto pequeña sin que se vea borrosa.
+        </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -137,6 +143,11 @@ export default function SiteImagesPage() {
                   {it.url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={it.url} alt={it.label} className="w-full h-full object-contain" />
+                  ) : it.has_drawing ? (
+                    <p className="text-xs text-slate-500 text-center px-4">
+                      🎨 Mostrando un dibujo por ahora<br />
+                      <span className="text-slate-400">Sube una imagen y la reemplaza sola</span>
+                    </p>
                   ) : (
                     <p className="text-xs text-slate-400">Sin imagen todavía</p>
                   )}
