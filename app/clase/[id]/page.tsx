@@ -6,9 +6,13 @@ import "@livekit/components-styles";
 import {
   LiveKitRoom, VideoConference, RoomAudioRenderer, useRoomContext,
 } from "@livekit/components-react";
+import {
+  useRaisedHands, BotonMano, PanelParticipantes,
+  BotonVentanaFlotante, AvisoDePresencia,
+} from "@/components/ClassRoomExtras";
 import Logo from "@/components/Logo";
 import { api } from "@/lib/api";
-import { AlertTriangle, ArrowLeft, Loader2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Loader2, Users, Hand } from "lucide-react";
 
 /**
  * V3.9.26 — Sala de video de una clase, DENTRO de dorismon.com.
@@ -23,6 +27,58 @@ import { AlertTriangle, ArrowLeft, Loader2 } from "lucide-react";
  * PLAN B: si algo falla, se muestra el enlace de respaldo de la clase para
  * que la clase pueda seguir. En un negocio en vivo eso no es opcional.
  */
+
+/** Barra con lo que agregamos: mano, participantes y ventana flotante */
+function BarraDorismon({
+  sessionId, esModerador,
+}: { sessionId: string; esModerador: boolean }) {
+  const { manos, miMano, toggleMano, bajarMano } = useRaisedHands();
+  const [panelAbierto, setPanelAbierto] = useState(false);
+  const manosArriba = Object.keys(manos).length;
+
+  return (
+    <>
+      <AvisoDePresencia sessionId={sessionId} />
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex gap-2 flex-wrap justify-center px-2">
+        <BotonMano miMano={miMano} onToggle={toggleMano} />
+        <button
+          onClick={() => setPanelAbierto((v) => !v)}
+          className="relative inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition"
+        >
+          <Users className="w-4 h-4" />
+          <span className="hidden sm:inline">Participantes</span>
+          {manosArriba > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 bg-amber-400 text-amber-950 text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
+              {manosArriba}
+            </span>
+          )}
+        </button>
+        <BotonVentanaFlotante />
+      </div>
+
+      {/* Aviso al profesor cuando alguien levanta la mano */}
+      {esModerador && manosArriba > 0 && !panelAbierto && (
+        <button
+          onClick={() => setPanelAbierto(true)}
+          className="absolute top-16 left-1/2 -translate-x-1/2 z-20 inline-flex items-center gap-2 bg-amber-400 text-amber-950 text-xs font-bold px-4 py-2 rounded-full shadow-lg animate-pulse"
+        >
+          <Hand className="w-3.5 h-3.5" />
+          {manosArriba === 1 ? "1 estudiante levantó la mano" : `${manosArriba} estudiantes levantaron la mano`}
+        </button>
+      )}
+
+      {panelAbierto && (
+        <PanelParticipantes
+          sessionId={sessionId}
+          esModerador={esModerador}
+          manos={manos}
+          bajarMano={bajarMano}
+          onClose={() => setPanelAbierto(false)}
+        />
+      )}
+    </>
+  );
+}
 
 function SalidaDeLaSala({ onLeave }: { onLeave: () => void }) {
   const room = useRoomContext();
@@ -150,7 +206,10 @@ export default function ClaseVideoPage() {
           }
           style={{ height: "100%" }}
         >
-          <VideoConference />
+          <div className="relative h-full">
+            <VideoConference />
+            <BarraDorismon sessionId={sessionId} esModerador={!!data.is_moderator} />
+          </div>
           <RoomAudioRenderer />
           <SalidaDeLaSala onLeave={() => setSalio(true)} />
         </LiveKitRoom>

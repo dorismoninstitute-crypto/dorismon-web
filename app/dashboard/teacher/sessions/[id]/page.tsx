@@ -122,6 +122,36 @@ export default function AttendancePage() {
         </Card>
       )}
 
+      {/* V3.9.27 — Asistencia sugerida por la videollamada */}
+      {students.some((s: any) => s.video_minutes != null) && (
+        <Card className="mb-4">
+          <CardBody>
+            <div className="flex items-start gap-3 flex-wrap">
+              <div className="flex-1 min-w-[200px]">
+                <h3 className="font-bold text-sm mb-1">🎥 Detectado en la videollamada</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  {students.filter((s: any) => s.video_suggests_present).length} de {students.length} estuvieron
+                  10 minutos o más. Es una sugerencia — tú tienes la última palabra.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setStudents(students.map((s: any) =>
+                    s.video_minutes == null
+                      ? s
+                      : { ...s, state: s.video_suggests_present ? "present" : "absent" }
+                  ));
+                  showToast("success", "Marcado según el video. Revisa y guarda.");
+                }}
+                className="bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold px-4 py-2.5 rounded-lg transition"
+              >
+                Marcar según el video
+              </button>
+            </div>
+          </CardBody>
+        </Card>
+      )}
+
       {/* Lista estudiantes */}
       <Card className="mb-4">
         <CardBody>
@@ -140,6 +170,19 @@ export default function AttendancePage() {
                     {/* V3.9.21: confirmó que asistirá */}
                     {s.confirmed && (
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 mr-2">✔️ Confirmó</span>
+                    )}
+                    {/* V3.9.27: presencia detectada en la videollamada (sugerencia) */}
+                    {s.video_minutes != null && (
+                      <span
+                        title="Tiempo detectado en la videollamada. Es una sugerencia: tú decides."
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full mr-2 ${
+                          s.video_suggests_present
+                            ? "bg-sky-100 text-sky-700"
+                            : "bg-amber-100 text-amber-700"
+                        }`}
+                      >
+                        🎥 {s.video_minutes} min
+                      </span>
                     )}
                     <div className="flex gap-1 flex-wrap">
                       {STATES.map(st => (
