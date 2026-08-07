@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { auth, safeObj, progress, getLevelTheme } from "@/lib/api";
 import { LoadingScreen } from "@/components/ui";
+import { CallProvider } from "@/components/CallProvider";  // V3.9.28
 import Avatar from "@/components/Avatar";
 import Logo from "@/components/Logo";
 import { NotificationCenter } from "@/components/NotificationCenter";
@@ -156,6 +157,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const activeBorderClass = theme ? theme.border : "border-brand-600";
 
   return (
+    // V3.9.28: la clase en vivo vive por encima de todo el panel, así se puede
+    // navegar (tareas, quizzes, asistencia) sin cortar la conexión.
+    <CallProvider>
     <div className="min-h-screen flex bg-slate-50">
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black/40 z-30 lg:hidden" onClick={() => setSidebarOpen(false)} />
@@ -265,5 +269,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main className="p-3 md:p-8 max-w-7xl mx-auto pb-20 md:pb-8">{children}</main>
       </div>
     </div>
+    </CallProvider>
   );
 }

@@ -494,6 +494,34 @@ export function ClassLocation({ location, compact = false }: { location: any; co
   );
 }
 
+/** V3.9.28 — Entra a la clase dentro de la plataforma (capa flotante) */
+function BotonEntrarClasePropia({ session }: { session: any }) {
+  // Import perezoso para no romper páginas fuera del panel
+  const { useLlamada } = require("@/components/CallProvider");
+  const { entrar, sessionId, enLlamada } = useLlamada();
+  const finalizada = session?.status === "completed";
+  const esEsta = enLlamada && sessionId === session.id;
+
+  if (finalizada) {
+    return (
+      <span className="inline-flex items-center gap-2 font-bold text-sm px-5 py-2.5 rounded-xl bg-slate-100 text-slate-400">
+        🎥 Clase finalizada
+      </span>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => entrar(session.id)}
+      className={`inline-flex items-center gap-2 font-bold text-sm px-5 py-2.5 rounded-xl transition ${
+        esEsta ? "bg-emerald-500 text-white" : "bg-emerald-600 hover:bg-emerald-700 text-white"
+      }`}
+    >
+      🎥 {esEsta ? "Volver a la clase" : "Entrar a la clase"}
+    </button>
+  );
+}
+
 export function JoinClassButton({ session }: { session: any }) {
   const [showModal, setShowModal] = React.useState(false);
 
@@ -532,21 +560,10 @@ export function JoinClassButton({ session }: { session: any }) {
     platformInstructions = "Verificá que el link sea correcto. Si no funciona, contacta a tu profesor.";
   }
 
-  // V3.9.26 — Video propio: entra directo, sin salir de la plataforma
+  // V3.9.28 — Video propio: la clase se abre SOBRE la plataforma, así se
+  // puede minimizar y seguir navegando sin perder la conexión.
   if (usaVideoPropio) {
-    const finalizada = session?.status === "completed";
-    return (
-      <a
-        href={`/clase/${session.id}`}
-        className={`inline-flex items-center gap-2 font-bold text-sm px-5 py-2.5 rounded-xl transition ${
-          finalizada
-            ? "bg-slate-100 text-slate-400 pointer-events-none"
-            : "bg-emerald-600 hover:bg-emerald-700 text-white"
-        }`}
-      >
-        🎥 {finalizada ? "Clase finalizada" : "Entrar a la clase"}
-      </a>
-    );
+    return <BotonEntrarClasePropia session={session} />;
   }
 
   const open = () => {

@@ -9,6 +9,11 @@ export default function AdminCertificatesPage() {
   const [err, setErr] = useState("");
   const [show, setShow] = useState(false);
   const [msg, setMsg] = useState("");
+  // V3.9.28
+  const [anulando, setAnulando] = useState<any>(null);
+  const [motivo, setMotivo] = useState("");
+  const [anulandoBusy, setAnulandoBusy] = useState(false);
+  const [aviso, setAviso] = useState<any>(null);
 
   const [students, setStudents] = useState<any[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
@@ -48,7 +53,9 @@ export default function AdminCertificatesPage() {
     } else { setLevels([]); }
   };
 
-  const create = async () => {
+  // V3.9.28 — Emitir con red de seguridad: si el estudiante no terminó el
+  // nivel (o ya tiene certificado), el sistema avisa antes de emitir.
+  const emitir = async (confirmarIgual = false) => {
     setMsg("");
     try {
       const r = await adminApi.issueCertificate({
@@ -57,10 +64,42 @@ export default function AdminCertificatesPage() {
         level_id: parseInt(form.level_id),
         hours: form.hours,
         final_grade: form.final_grade > 0 ? form.final_grade : undefined,
+        ...(confirmarIgual ? { confirmar_incompleto: true } : {}),
       });
       setMsg(`✓ Certificado emitido: ${r.code}`);
       setShow(false);
+      setAviso(null);
       setForm({ student_id: "", course_id: "", level_id: "", hours: 120, final_grade: 0 });
+      load();
+    } catch (e: any) {
+      // El backend devuelve 409 cuando hace falta confirmar
+      if (e?.status === 409 && e?.detail?.necesita_confirmacion) {
+        setAviso({ mensaje: e.detail.mensaje });
+        return;
+      }
+      setMsg("✗ " + e.message);
+    }
+  };
+  const create = () => emitir(false);
+
+  const anular = async () => {
+    if (!anulando || !motivo.trim()) return;
+    setAnulandoBusy(true);
+    try {
+      await adminApi.revokeCertificate(anulando.id, motivo.trim());
+      setMsg("✓ Certificado anulado");
+      setAnulando(null);
+      setMotivo("");
+      load();
+    } catch (e: any) { setMsg("✗ " + e.message); }
+    finally { setAnulandoBusy(false); }
+  };
+
+  const restaurar = async (c: any) => {
+    if (!confirm(`¿Deshacer la anulación del certificado ${c.code}?`)) return;
+    try {
+      await adminApi.restoreCertificate(c.id);
+      setMsg("✓ Anulación deshecha");
       load();
     } catch (e: any) { setMsg("✗ " + e.message); }
   };
@@ -92,10 +131,28 @@ export default function AdminCertificatesPage() {
                     <p className="text-xs text-slate-500">{c.course_name} · Nivel {c.level_code} · {c.hours} horas</p>
                     <p className="text-xs font-mono text-slate-400 mt-1">{c.code}</p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right flex-shrink-0">
                     <p className="text-xs text-slate-500">{new Date(c.issued_at).toLocaleDateString("es")}</p>
                     {c.final_grade && <p className="text-sm font-bold text-emerald-600">{c.final_grade}%</p>}
-                    {c.revoked && <Badge variant="danger">Revocado</Badge>}
+                    {/* V3.9.28: anular un certificado emitido por error */}
+                    {c.revoked ? (
+                      <div className="mt-1">
+                        <Badge variant="danger">Anulado</Badge>
+                        <button
+                          onClick={() => restaurar(c)}
+                          className="block text-[11px] text-slate-500 hover:text-slate-700 mt-1 ml-auto"
+                        >
+                          Deshacer
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setAnulando(c)}
+                        className="text-[11px] text-red-600 hover:text-red-700 font-semibold mt-1"
+                      >
+                        Anular
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -103,6 +160,49 @@ export default function AdminCertificatesPage() {
           </CardBody>
         </Card>
       )}
+
+      {/* V3.9.28 — Anular certificado */}
+      <Modal open={!!anulando} onClose={() => setAnulando(null)} title="Anular certificado">
+        <div className="space-y-4">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+            <p className="font-semibold mb-1">¿Qué pasa al anular?</p>
+            <ul className="text-xs space-y-1 list-disc list-inside leading-relaxed">
+              <li>Desaparece del panel del estudiante</li>
+              <li>Su código deja de verificar como válido</li>
+              <li>Se le avisa al estudiante con el motivo</li>
+              <li>No se borra: queda el registro y se puede deshacer</li>
+            </ul>
+          </div>
+          <Input
+            label="Motivo de la anulación *"
+            value={motivo}
+            onChange={(e: any) => setMotivo(e.target.value)}
+            placeholder="Ej: emitido por error, el estudiante no ha terminado el nivel"
+          />
+          <div className="flex gap-2">
+            <Button onClick={anular} disabled={!motivo.trim() || anulandoBusy} variant="danger">
+              {anulandoBusy ? "Anulando..." : "Anular certificado"}
+            </Button>
+            <Button onClick={() => setAnulando(null)} variant="secondary">Cancelar</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* V3.9.28 — Aviso antes de certificar a alguien que no terminó */}
+      <Modal open={!!aviso} onClose={() => setAviso(null)} title="Espera un momento">
+        <div className="space-y-4">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <p className="text-sm text-amber-900 leading-relaxed">{aviso?.mensaje}</p>
+          </div>
+          <p className="text-sm text-slate-600">
+            ¿Seguro que quieres emitir el certificado de todas formas?
+          </p>
+          <div className="flex gap-2">
+            <Button onClick={() => emitir(true)} variant="primary">Sí, emitir igual</Button>
+            <Button onClick={() => setAviso(null)} variant="secondary">Cancelar</Button>
+          </div>
+        </div>
+      </Modal>
 
       <Modal open={show} onClose={() => setShow(false)} title="Emitir certificado" size="lg">
         <div className="space-y-4">

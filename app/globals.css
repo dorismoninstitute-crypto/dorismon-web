@@ -53,3 +53,37 @@
 /* V3.9.25 — Carrusel deslizable en celular sin barra de scroll visible */
 .ds-noscrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 .ds-noscrollbar::-webkit-scrollbar { display: none; }
+
+/* ===================================================================
+   V3.9.28 — Ajustes de la sala de clase.
+   En pantalla grande el video se veía exagerado y la pantalla
+   compartida quedaba lejos. Esto lo acomoda.
+   =================================================================== */
+
+/* La cámara no se estira más de la cuenta en monitores grandes */
+.ds-lk-stage .lk-participant-media-video {
+  object-fit: cover;
+}
+
+/* La pantalla compartida SE VE COMPLETA (no recortada) y se acerca
+   al máximo que permita el espacio disponible */
+.ds-lk-stage .lk-participant-tile[data-lk-source="screen_share"] .lk-participant-media-video,
+.ds-lk-stage .lk-focus-layout .lk-participant-media-video[data-lk-source="screen_share"] {
+  object-fit: contain;
+  background: #000;
+}
+
+/* Modo "rellenar": el profesor puede acercar la pantalla compartida
+   para que en celular no se vea diminuta */
+.ds-zoom-share .lk-participant-tile[data-lk-source="screen_share"] .lk-participant-media-video,
+.ds-zoom-share .lk-focus-layout .lk-participant-media-video[data-lk-source="screen_share"] {
+  object-fit: cover;
+}
+
+/* La tira de participantes no se come la pantalla en monitores grandes */
+@media (min-width: 1280px) {
+  .ds-lk-stage .lk-carousel { max-width: 240px; }
+}
+
+/* En la ventanita minimizada, ocultar los controles que no caben */
+.ds-mini .lk-control-bar { display: none; }

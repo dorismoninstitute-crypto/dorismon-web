@@ -1,13 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { studentApi, safeArray } from "@/lib/api";
 import { LoadingScreen, ErrorBox, EmptyState, PageHeader } from "@/components/ui";
+import CertificadoImprimible from "@/components/CertificadoImprimible";  // V3.9.28
 
 export default function MyCertificatesPage() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
+  const [viendo, setViendo] = useState<any>(null);  // certificado abierto
 
   useEffect(() => {
     studentApi.certificates()
@@ -20,6 +21,7 @@ export default function MyCertificatesPage() {
 
   return (
     <>
+      {viendo && <CertificadoImprimible cert={viendo} onClose={() => setViendo(null)} />}
       <PageHeader title="Mis certificados" subtitle={`${items.length} certificados obtenidos`} />
       {items.length === 0 ? <EmptyState icon="🎓" title="Aún no tienes certificados" description="Completa un curso para obtener tu primer certificado." /> : (
         <div className="space-y-4">
@@ -38,13 +40,12 @@ export default function MyCertificatesPage() {
                   </div>
                   <p className="text-xs font-mono mt-3 opacity-70">{c.code}</p>
                 </div>
-                <Link
-                  href={`/certificate/${c.code}`}
-                  target="_blank"
+                <button
+                  onClick={() => setViendo(c)}
                   className="bg-white/20 hover:bg-white/30 backdrop-blur px-5 py-2.5 rounded-lg text-sm font-bold transition whitespace-nowrap"
                 >
                   Ver certificado →
-                </Link>
+                </button>
               </div>
             </div>
           ))}

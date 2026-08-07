@@ -8,7 +8,15 @@ type ApiOptions = { method?: string; body?: any; auth?: boolean };
 
 export class ApiError extends Error {
   status: number;
-  constructor(msg: string, status: number) { super(msg); this.status = status; }
+  /** V3.9.28: el detalle tal cual lo mandó el servidor. Cuando es un objeto
+   *  (por ejemplo un aviso que necesita confirmación), aquí llega completo
+   *  en vez de perderse convertido a texto. */
+  detail: any;
+  constructor(msg: string, status: number, detail: any = null) {
+    super(msg);
+    this.status = status;
+    this.detail = detail;
+  }
 }
 
 function getToken(): string | null {
@@ -96,8 +104,13 @@ export async function api(path: string, opts: ApiOptions = {}) {
   let data: any = null;
   if (text) { try { data = JSON.parse(text); } catch { data = text; } }
   if (!res.ok) {
-    const msg = (data && typeof data === "object" && data.detail) || `Error ${res.status}`;
-    throw new ApiError(typeof msg === "string" ? msg : JSON.stringify(msg), res.status);
+    const det = (data && typeof data === "object") ? data.detail : null;
+    const msg = det || `Error ${res.status}`;
+    throw new ApiError(
+      typeof msg === "string" ? msg : (msg?.mensaje || JSON.stringify(msg)),
+      res.status,
+      det,
+    );
   }
   return data;
 }
@@ -127,8 +140,13 @@ export async function apiUpload(path: string, file: File, fieldName = "file") {
   let data: any = null;
   if (text) { try { data = JSON.parse(text); } catch { data = text; } }
   if (!res.ok) {
-    const msg = (data && typeof data === "object" && data.detail) || `Error ${res.status}`;
-    throw new ApiError(typeof msg === "string" ? msg : JSON.stringify(msg), res.status);
+    const det = (data && typeof data === "object") ? data.detail : null;
+    const msg = det || `Error ${res.status}`;
+    throw new ApiError(
+      typeof msg === "string" ? msg : (msg?.mensaje || JSON.stringify(msg)),
+      res.status,
+      det,
+    );
   }
   return data;
 }
@@ -254,6 +272,11 @@ export const teacherApi = {
 };
 
 export const adminApi = {
+  // V3.9.28 — Anular / restaurar certificados emitidos por error
+  revokeCertificate: (id: string, reason: string) =>
+    api(`/admin/certificates/${id}/revoke`, { method: "POST", body: { reason }, auth: true }),
+  restoreCertificate: (id: string) =>
+    api(`/admin/certificates/${id}/restore`, { method: "POST", auth: true }),
   // V3.9.23 — Imágenes de la página pública (Cloudinary)
   siteImages: () => api("/admin/site-images", { auth: true }),
   uploadSiteImage: (slot: string, file: File) => apiUpload(`/admin/site-images/${slot}`, file),
