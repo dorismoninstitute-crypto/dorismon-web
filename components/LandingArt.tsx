@@ -22,7 +22,7 @@ const TINTA = "#16224A";
 /** Panel del estudiante — el dibujo grande de la sección de plataforma */
 export function DrawPlatform({ className = "" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 640 380" className={className} role="img" aria-label="Vista del panel del estudiante">
+    <svg viewBox="0 0 640 380" className={className} preserveAspectRatio="xMidYMid meet" role="img" aria-label="Vista del panel del estudiante">
       <rect width="640" height="380" rx="16" fill="#FFFFFF" />
       <rect x="0" y="0" width="150" height="380" rx="16" fill={TINTA} />
       <rect x="134" y="0" width="16" height="380" fill={TINTA} />

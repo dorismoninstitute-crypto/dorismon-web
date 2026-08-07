@@ -3,14 +3,18 @@ import { useEffect, useState, ReactNode } from "react";
 import { publicApi } from "@/lib/api";
 
 /**
- * V3.9.24 — Muestra la imagen que el admin subió para un espacio.
+ * V3.9.25 — Muestra la imagen que el admin subió para un espacio.
  *
- * CÓMO FUNCIONA (lo importante):
- * - Si el admin subió una foto a ese espacio → se muestra la foto.
- * - Si NO subió nada → se muestra el dibujo de respaldo (`fallback`), que
- *   viene hecho en código. Así la página se ve completa desde el día uno.
- * - Cuando Luis sube la foto real, el dibujo desaparece SOLO. Sin tocar
- *   código, sin desplegar.
+ * CÓMO FUNCIONA:
+ * - Si el admin subió una foto → se muestra la foto (ya optimizada por el
+ *   servidor: formato moderno, calidad justa y el ancho que hace falta).
+ * - Si NO subió nada → se muestra el dibujo de respaldo hecho en código.
+ * - Al subir una foto real, el dibujo desaparece solo. Sin desplegar.
+ *
+ * MEJORAS DE CARGA (V3.9.25):
+ * - Fondo suave mientras la foto llega: nada de huecos blancos parpadeando.
+ * - La imagen aparece con una transición corta en vez de "saltar".
+ * - La foto principal se carga con prioridad; el resto, solo al acercarse.
  */
 
 // Se pide UNA sola vez aunque haya varias imágenes en la página
@@ -26,6 +30,7 @@ export default function SiteImageSlot({
   className = "",
   fallback = null,
   placeholderText = "",
+  priority = false,
 }: {
   slot: string;
   alt: string;
@@ -34,9 +39,12 @@ export default function SiteImageSlot({
   fallback?: ReactNode;
   /** Texto del marcador cuando NO hay dibujo de respaldo */
   placeholderText?: string;
+  /** true en la foto principal: se carga de primero */
+  priority?: boolean;
 }) {
   const [url, setUrl] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  const [shown, setShown] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -50,8 +58,23 @@ export default function SiteImageSlot({
 
   // Foto real subida por el admin: manda sobre todo lo demás
   if (url) {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img src={url} alt={alt} className={className} loading="lazy" />;
+    return (
+      <div className={`relative overflow-hidden ${className}`}>
+        {/* Fondo suave mientras la foto termina de llegar */}
+        {!shown && <div className="absolute inset-0 bg-[#DCE5FB] animate-pulse" aria-hidden="true" />}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={url}
+          alt={alt}
+          onLoad={() => setShown(true)}
+          loading={priority ? "eager" : "lazy"}
+          decoding="async"
+          // @ts-expect-error fetchpriority es válido en HTML aunque React aún no lo tipe
+          fetchpriority={priority ? "high" : "auto"}
+          className={`w-full h-full object-cover transition-opacity duration-500 ${shown ? "opacity-100" : "opacity-0"}`}
+        />
+      </div>
+    );
   }
 
   // Dibujo de respaldo (se muestra de una, sin esperar al servidor)

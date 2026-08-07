@@ -49,3 +49,7 @@
     animation: none !important;
   }
 }
+
+/* V3.9.25 — Carrusel deslizable en celular sin barra de scroll visible */
+.ds-noscrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.ds-noscrollbar::-webkit-scrollbar { display: none; }

@@ -120,8 +120,9 @@ export default function Home() {
               <div>
                 <SiteImageSlot
                   slot="hero"
+                  priority
                   alt="Estudiante en clase de inglés con Dorismon"
-                  className="w-full h-[230px] md:h-[290px] object-cover rounded-2xl"
+                  className="w-full h-[180px] sm:h-[230px] md:h-[290px] object-cover rounded-2xl"
                   placeholderText="Tu foto principal — súbela desde Admin, Imágenes del sitio"
                 />
                 {/* Fichas de nivel flotantes */}
@@ -172,26 +173,32 @@ export default function Home() {
           </div>
 
           <FadeIn>
-            <div className="rounded-2xl bg-[#F1F4FD] border border-[#DCE5FB] p-3 md:p-5 mb-5">
+            {/* V3.9.24.1 — Ancho y alto limitados: a pantalla completa el panel
+                se veía desproporcionado y empujaba el resto de la página.
+                Aplica igual al dibujo y a la captura real que suba el admin. */}
+            <div className="max-w-4xl mx-auto rounded-2xl bg-[#F1F4FD] border border-[#DCE5FB] p-3 md:p-4 mb-6">
               <SiteImageSlot
                 slot="platform"
                 alt="Panel del estudiante en la plataforma Dorismon"
-                className="w-full rounded-xl overflow-hidden"
-                fallback={<DrawPlatform className="w-full h-auto" />}
+                className="w-full max-h-[190px] sm:max-h-[280px] md:max-h-[400px] object-contain rounded-xl overflow-hidden"
+                fallback={<DrawPlatform className="w-full max-h-[190px] sm:max-h-[280px] md:max-h-[400px]" />}
               />
             </div>
           </FadeIn>
 
-          <div className="grid md:grid-cols-3 gap-4">
+          {/* V3.9.25 — En celular se deslizan con el dedo en vez de apilarse:
+              antes eran 3 imágenes una debajo de otra y la página se volvía
+              un álbum de fotos interminable. */}
+          <div className="flex md:grid md:grid-cols-3 gap-4 overflow-x-auto md:overflow-visible snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 pb-2 md:pb-0 ds-noscrollbar">
             {tarjetasPlataforma.map((t, i) => (
-              <FadeIn key={t.slot} delay={i * 90}>
+              <FadeIn key={t.slot} delay={i * 90} className="snap-center shrink-0 w-[78%] sm:w-[45%] md:w-auto">
                 <div style={{ backgroundColor: t.bg }} className="rounded-2xl p-5 h-full">
                   <div className="rounded-xl overflow-hidden mb-4 bg-white/60">
                     <SiteImageSlot
                       slot={t.slot}
                       alt={t.titulo}
-                      className="w-full h-[130px] object-cover"
-                      fallback={<t.Draw className="w-full h-[130px]" />}
+                      className="w-full h-[110px] md:h-[130px] object-cover"
+                      fallback={<t.Draw className="w-full h-[110px] md:h-[130px]" />}
                     />
                   </div>
                   <h3 className="font-bold text-sm mb-1.5" style={{ color: t.tt }}>{t.titulo}</h3>
@@ -200,6 +207,7 @@ export default function Home() {
               </FadeIn>
             ))}
           </div>
+          <p className="md:hidden text-center text-[11px] text-slate-400 mt-2">Desliza para ver más →</p>
         </div>
       </section>
 
@@ -233,14 +241,14 @@ export default function Home() {
 
           {/* Foto de grupo */}
           <FadeIn>
-            <div className="grid md:grid-cols-2 gap-8 items-center bg-white rounded-3xl p-5 md:p-8">
+            <div className="grid md:grid-cols-2 gap-6 md:gap-8 items-center bg-white rounded-3xl p-5 md:p-8">
               <SiteImageSlot
                 slot="group"
                 alt="Grupo de estudiantes en clase de inglés"
-                className="w-full h-[210px] object-cover rounded-2xl"
+                className="w-full h-[160px] md:h-[210px] object-cover rounded-2xl order-2 md:order-1"
                 placeholderText="Foto de un grupo en clase"
               />
-              <div>
+              <div className="order-1 md:order-2">
                 <h3 className="text-xl md:text-2xl font-bold mb-3" style={{ color: TINTA }}>
                   Aprendes con personas, no con una app
                 </h3>
