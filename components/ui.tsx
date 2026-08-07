@@ -497,6 +497,10 @@ export function ClassLocation({ location, compact = false }: { location: any; co
 export function JoinClassButton({ session }: { session: any }) {
   const [showModal, setShowModal] = React.useState(false);
 
+  // V3.9.26: si la clase usa el video propio de Dorismon, el botón lleva a
+  // la sala interna en vez de a un enlace externo. Nada que instalar.
+  const usaVideoPropio = session?.video_provider === "dorismon";
+
   // Detectar plataforma desde el link
   const url = session?.meeting_url || "";
   let platform: "zoom" | "google_meet" | "teams" | "other" | "none" = "none";
@@ -526,6 +530,23 @@ export function JoinClassButton({ session }: { session: any }) {
     platformLabel = "Reunión externa";
     platformIcon = "🔗";
     platformInstructions = "Verificá que el link sea correcto. Si no funciona, contacta a tu profesor.";
+  }
+
+  // V3.9.26 — Video propio: entra directo, sin salir de la plataforma
+  if (usaVideoPropio) {
+    const finalizada = session?.status === "completed";
+    return (
+      <a
+        href={`/clase/${session.id}`}
+        className={`inline-flex items-center gap-2 font-bold text-sm px-5 py-2.5 rounded-xl transition ${
+          finalizada
+            ? "bg-slate-100 text-slate-400 pointer-events-none"
+            : "bg-emerald-600 hover:bg-emerald-700 text-white"
+        }`}
+      >
+        🎥 {finalizada ? "Clase finalizada" : "Entrar a la clase"}
+      </a>
+    );
   }
 
   const open = () => {

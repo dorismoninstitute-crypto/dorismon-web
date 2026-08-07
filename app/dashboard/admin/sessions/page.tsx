@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { adminApi, adminEdit, adminHelpers, adminContent, adminClassSeries, adminPrivateClasses, safeArray, safeObj } from "@/lib/api";
+import { adminApi, adminEdit, adminHelpers, adminContent, adminClassSeries, adminPrivateClasses, safeArray, safeObj, api } from "@/lib/api";
 import { Repeat, User as UserIcon, Plus, X } from "lucide-react";
 import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Input, Textarea, Select, Modal, SuccessBox, ConfirmModal, showToast, MeetingUrlGuide, MeetingUrlInput } from "@/components/ui";
 
@@ -192,13 +192,14 @@ export default function AdminSessionsPage() {
   const [courses, setCourses] = useState<any[]>([]);
   const [levels, setLevels] = useState<any[]>([]);
   const [branches, setBranches] = useState<any[]>([]);
+  const [videoReady, setVideoReady] = useState(false);  // V3.9.26: ¿LiveKit configurado?
   const [classrooms, setClassrooms] = useState<any[]>([]);
 
   const [form, setForm] = useState({
     teacher_id: "", course_id: "", level_id: "", module_id: "",
     title: "", description: "", modality: "online",
     starts_at: "", duration_min: 90,
-    meeting_url: "", branch_id: "", classroom_id: "",
+    meeting_url: "", branch_id: "", classroom_id: "", video_provider: "meet",
     capacity: 12,
     is_open_event: false,
   });
@@ -219,6 +220,13 @@ export default function AdminSessionsPage() {
       })
       .catch((e: any) => { setErr(e.message); setLoading(false); });
   };
+  // V3.9.26: saber si se puede ofrecer el video propio
+  useEffect(() => {
+    api("/video/status", { auth: true })
+      .then((r: any) => setVideoReady(!!r?.ready))
+      .catch(() => setVideoReady(false));
+  }, []);
+
   useEffect(() => { load(); }, [page]);
 
   // V1.7: Abrir modal de serie recurrente
@@ -436,6 +444,7 @@ export default function AdminSessionsPage() {
       if (form.module_id) body.module_id = parseInt(form.module_id);
       if (form.modality === "online" || form.modality === "hibrida") {
         body.meeting_url = form.meeting_url;
+        body.video_provider = form.video_provider;  // V3.9.26
       }
       if (form.modality === "presencial" || form.modality === "hibrida") {
         if (form.branch_id) body.branch_id = parseInt(form.branch_id);
@@ -448,7 +457,7 @@ export default function AdminSessionsPage() {
         teacher_id: "", course_id: "", level_id: "", module_id: "",
         title: "", description: "", modality: "online",
         starts_at: "", duration_min: 90,
-        meeting_url: "", branch_id: "", classroom_id: "", capacity: 12,
+        meeting_url: "", branch_id: "", classroom_id: "", capacity: 12, video_provider: "meet",
         is_open_event: false,
       });
       setModules([]);
@@ -469,7 +478,7 @@ export default function AdminSessionsPage() {
   };
 
   const formValid = form.teacher_id && form.course_id && form.level_id && form.title && form.starts_at &&
-    (form.modality === "online" ? form.meeting_url :
+    (form.modality === "online" ? (form.video_provider === "dorismon" || form.meeting_url) :
      form.modality === "presencial" ? form.branch_id :
      (form.meeting_url && form.branch_id));
 
@@ -669,14 +678,61 @@ export default function AdminSessionsPage() {
           </div>
 
           {(form.modality === "online" || form.modality === "hibrida") && (
-            <div className="space-y-2">
+            <div className="space-y-3">
+              {/* V3.9.26 — ¿Dónde ocurre el video de esta clase? */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">¿Dónde será el video?</label>
+                <div className="grid sm:grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, video_provider: "dorismon" })}
+                    disabled={!videoReady}
+                    className={`text-left p-3 rounded-xl border-2 transition disabled:opacity-50 ${
+                      form.video_provider === "dorismon"
+                        ? "border-emerald-500 bg-emerald-50"
+                        : "border-slate-200 hover:border-slate-300"
+                    }`}
+                  >
+                    <p className="font-bold text-sm text-slate-800">🎥 Video de Dorismon</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {videoReady
+                        ? "Dentro de la plataforma, con tu marca. No instalan nada."
+                        : "Falta configurar LiveKit en Render"}
+                    </p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, video_provider: "meet" })}
+                    className={`text-left p-3 rounded-xl border-2 transition ${
+                      form.video_provider !== "dorismon"
+                        ? "border-brand-500 bg-brand-50"
+                        : "border-slate-200 hover:border-slate-300"
+                    }`}
+                  >
+                    <p className="font-bold text-sm text-slate-800">🔗 Enlace externo</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Google Meet, Zoom o Teams.</p>
+                  </button>
+                </div>
+              </div>
+
               <MeetingUrlInput
-                label={`URL de Zoom/Meet/Teams ${form.modality === "online" ? "*" : "(híbrida *)"}`}
+                label={
+                  form.video_provider === "dorismon"
+                    ? "Enlace de respaldo (recomendado, por si falla la conexión)"
+                    : `URL de Zoom/Meet/Teams ${form.modality === "online" ? "*" : "(híbrida *)"}`
+                }
                 value={form.meeting_url}
                 onChange={(v: string) => setForm({ ...form, meeting_url: v })}
-                required={form.modality === "online"}
+                required={form.modality === "online" && form.video_provider !== "dorismon"}
               />
-              <MeetingUrlGuide />
+              {form.video_provider === "dorismon" ? (
+                <p className="text-xs text-slate-500 bg-amber-50 border border-amber-100 rounded-lg p-2.5">
+                  💡 Deja también un enlace de Meet como respaldo: si el video falla en vivo,
+                  cambias en segundos y la clase sigue.
+                </p>
+              ) : (
+                <MeetingUrlGuide />
+              )}
             </div>
           )}
 

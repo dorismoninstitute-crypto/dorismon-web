@@ -4,7 +4,7 @@ import { ToastContainer } from "@/components/ui";
 import PWAInstaller from "@/components/PWAInstaller";
 import "./globals.css";
 
-export const metadata: Metadata = {
+const baseMetadata: Metadata = {
   metadataBase: new URL("https://dorismon.com"),
   title: {
     default: "Clases de Inglés en Santo Domingo | Dorismon Language Institute",
@@ -61,6 +61,47 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
 };
+
+/**
+ * V3.9.26 — La imagen que se ve al compartir el enlace por WhatsApp.
+ *
+ * ANTES: se usaba el ícono cuadrado de 512 px, que WhatsApp muestra chiquito
+ * y sin gracia. AHORA: si el admin subió la "Imagen para compartir por
+ * WhatsApp" (1200 × 630), se usa esa y el enlace se ve grande y con marca.
+ * Si no hay ninguna, se cae al ícono como antes (nada se rompe).
+ *
+ * En RD casi todo se comparte por WhatsApp, así que esto pesa en la conversión.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  let ogUrl: string | null = null;
+  try {
+    const api = process.env.NEXT_PUBLIC_API_URL || "https://dorismon-api.onrender.com";
+    if (api) {
+      const res = await fetch(`${api}/site-images`, { next: { revalidate: 300 } });
+      if (res.ok) {
+        const data = await res.json();
+        ogUrl = data?.og || null;
+      }
+    }
+  } catch {
+    // Si el servidor no responde, se usa la imagen por defecto
+  }
+
+  if (!ogUrl) return baseMetadata;
+
+  return {
+    ...baseMetadata,
+    openGraph: {
+      ...baseMetadata.openGraph,
+      images: [{ url: ogUrl, width: 1200, height: 630, alt: "Dorismon Language Institute" }],
+    },
+    twitter: {
+      ...baseMetadata.twitter,
+      images: [ogUrl],
+    },
+  };
+}
+
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
