@@ -218,6 +218,9 @@ export const studentApi = {
     api(`/student/quizzes/${id}/submit`, { method: "POST", body, auth: true }),
   calendar: () => api("/student/calendar", { auth: true }),
   attendance: () => api("/student/attendance", { auth: true }),
+  // V3.9.30 — Entregar la tarea con archivo, foto o audio
+  uploadAssignmentFile: (assignmentId: number | string, file: File) =>
+    apiUpload(`/student/assignments/${assignmentId}/upload`, file),
   // V3.9.21: confirmar asistencia a una clase próxima
   confirmSession: (sessionId: string) =>
     api(`/student/sessions/${sessionId}/confirm`, { method: "POST", auth: true }),
@@ -277,6 +280,9 @@ export const adminApi = {
     api(`/admin/certificates/${id}/revoke`, { method: "POST", body: { reason }, auth: true }),
   restoreCertificate: (id: string) =>
     api(`/admin/certificates/${id}/restore`, { method: "POST", auth: true }),
+  // V3.9.30 — Alertas resolubles
+  alerts: () => api("/admin/alerts", { auth: true }),
+  alertAction: (body: any) => api("/admin/alerts/action", { method: "POST", body, auth: true }),
   // V3.9.23 — Imágenes de la página pública (Cloudinary)
   siteImages: () => api("/admin/site-images", { auth: true }),
   uploadSiteImage: (slot: string, file: File) => apiUpload(`/admin/site-images/${slot}`, file),

@@ -4,7 +4,17 @@ import { adminApi, adminEdit, adminHelpers, adminContent, adminClassSeries, admi
 import { Repeat, User as UserIcon, Plus, X } from "lucide-react";
 import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Input, Textarea, Select, Modal, SuccessBox, ConfirmModal, showToast, MeetingUrlGuide, MeetingUrlInput } from "@/components/ui";
 
+const TIPOS = [
+  { key: "all", label: "Todas", icon: "📅" },
+  { key: "series", label: "Series", icon: "🔁" },
+  { key: "single", label: "Sueltas", icon: "📌" },
+  { key: "private", label: "Privadas", icon: "👤" },
+  { key: "trial", label: "Pruebas", icon: "🎯" },
+  { key: "event", label: "Eventos", icon: "🎫" },
+];
+
 export default function AdminSessionsPage() {
+  const [tipo, setTipo] = useState("all");  // V3.9.30
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
@@ -482,6 +492,11 @@ export default function AdminSessionsPage() {
      form.modality === "presencial" ? form.branch_id :
      (form.meeting_url && form.branch_id));
 
+  // V3.9.30: lo que se muestra según la pestaña elegida
+  const visibles = tipo === "all"
+    ? items
+    : items.filter((s: any) => (s.kind || "single") === tipo);
+
   return (
     <>
       <PageHeader
@@ -595,12 +610,38 @@ export default function AdminSessionsPage() {
         </Card>
       )}
 
+      {/* V3.9.30 — Agrupadas por tipo: antes estaban todas mezcladas */}
+      {!loading && !err && items.length > 0 && (
+        <div className="flex gap-2 mb-4 overflow-x-auto pb-1 ds-noscrollbar">
+          {TIPOS.map((t) => {
+            const n = t.key === "all"
+              ? items.length
+              : items.filter((s: any) => (s.kind || "single") === t.key).length;
+            if (n === 0 && t.key !== "all") return null;
+            return (
+              <button
+                key={t.key}
+                onClick={() => setTipo(t.key)}
+                className={`flex-shrink-0 text-sm font-semibold px-4 py-2 rounded-xl border-2 transition ${
+                  tipo === t.key
+                    ? "border-brand-500 bg-brand-50 text-brand-700"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                }`}
+              >
+                {t.icon} {t.label}
+                <span className="ml-1.5 text-xs opacity-70">{n}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {loading ? <LoadingScreen /> : err ? <ErrorBox message={err} /> :
-       items.length === 0 ? <EmptyState icon="📅" title="Sin clases" description="Haz clic en '+ Nueva clase' para programar una." /> : (
+       visibles.length === 0 ? <EmptyState icon="📅" title="Sin clases de este tipo" description="Cambia de pestaña o crea una nueva clase." /> : (
         <Card>
           <CardBody className="p-0">
             <div className="divide-y divide-slate-100">
-              {items.map((s: any) => (
+              {visibles.map((s: any) => (
                 <div key={s.id} className={`p-4 flex flex-wrap items-center gap-3 ${s.status === "cancelled" ? "opacity-50" : ""}`}>
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1">

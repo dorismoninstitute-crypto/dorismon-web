@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { teacherApi, safeArray } from "@/lib/api";
 import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Input, Textarea, Modal, SuccessBox } from "@/components/ui";
+import ArchivoAdjunto from "@/components/ArchivoAdjunto";  // V3.9.30
 
 export default function GradeSubmissionsPage() {
   const params = useParams();
@@ -87,9 +88,10 @@ export default function GradeSubmissionsPage() {
                   </div>
                 )}
                 {s.file_url && (
-                  <a href={s.file_url} target="_blank" rel="noopener noreferrer" className="inline-block mt-2 text-sm text-brand-600 font-semibold hover:underline">
-                    📎 {s.file_name || "Ver archivo"}
-                  </a>
+                  /* V3.9.30: se ve DENTRO de la plataforma (foto, PDF o audio) */
+                  <div className="mt-3">
+                    <ArchivoAdjunto url={s.file_url} nombre={s.file_name} />
+                  </div>
                 )}
 
                 {s.feedback && (

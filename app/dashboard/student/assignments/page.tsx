@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { studentApi, safeArray } from "@/lib/api";
-import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Textarea, SuccessBox, PlanLockedCard } from "@/components/ui";
+import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Textarea, SuccessBox, PlanLockedCard, showToast } from "@/components/ui";
+import ArchivoAdjunto from "@/components/ArchivoAdjunto";  // V3.9.30
 
 export default function StudentAssignmentsPage() {
   const [items, setItems] = useState<any[]>([]);
@@ -10,6 +11,27 @@ export default function StudentAssignmentsPage() {
   const [blockedByPlan, setBlockedByPlan] = useState(false);
   const [open, setOpen] = useState<number | null>(null);
   const [content, setContent] = useState("");
+  // V3.9.30 — entrega con archivo
+  const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [subiendo, setSubiendo] = useState<any>(null);
+  const subirArchivo = async (id: any, file?: File | null) => {
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024) {
+      showToast("error", "El archivo es muy pesado. El máximo son 20 MB.");
+      return;
+    }
+    setSubiendo(id);
+    try {
+      await studentApi.uploadAssignmentFile(id, file);
+      showToast("success", "✅ Archivo entregado");
+      load();
+    } catch (e: any) {
+      showToast("error", e.message);
+    } finally {
+      setSubiendo(null);
+      if (fileInputs.current[id]) fileInputs.current[id]!.value = "";
+    }
+  };
   const [msg, setMsg] = useState("");
 
   const load = () => {
@@ -95,6 +117,14 @@ export default function StudentAssignmentsPage() {
                   </div>
                 )}
 
+                {/* V3.9.30: si ya entregó un archivo, lo ve aquí mismo */}
+                {a.file_url && (
+                  <div className="mt-3">
+                    <p className="text-xs font-semibold text-slate-500 mb-2">Tu entrega:</p>
+                    <ArchivoAdjunto url={a.file_url} nombre={a.file_name} />
+                  </div>
+                )}
+
                 {open === a.id && (
                   <div className="border-t border-slate-100 pt-4 space-y-3">
                     <Textarea
@@ -103,6 +133,32 @@ export default function StudentAssignmentsPage() {
                       value={content}
                       onChange={(e: any) => setContent(e.target.value)}
                     />
+
+                    {/* V3.9.30 — Entregar como archivo, foto o audio */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                      <p className="text-xs font-semibold text-slate-600 mb-2">
+                        O adjunta un archivo
+                      </p>
+                      <p className="text-[11px] text-slate-500 mb-3 leading-relaxed">
+                        Foto de tu hoja, PDF o una grabación de audio (para practicar
+                        pronunciación). Máximo 20 MB.
+                      </p>
+                      <input
+                        ref={(el) => { fileInputs.current[a.id] = el; }}
+                        type="file"
+                        accept="image/*,application/pdf,audio/*"
+                        className="hidden"
+                        onChange={(e) => subirArchivo(a.id, e.target.files?.[0])}
+                      />
+                      <button
+                        onClick={() => fileInputs.current[a.id]?.click()}
+                        disabled={subiendo === a.id}
+                        className="inline-flex items-center gap-2 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-lg transition disabled:opacity-50"
+                      >
+                        📎 {subiendo === a.id ? "Subiendo..." : "Elegir archivo"}
+                      </button>
+                    </div>
+
                     <Button onClick={() => submit(a.id)} disabled={!content.trim()}>
                       Enviar entrega
                     </Button>

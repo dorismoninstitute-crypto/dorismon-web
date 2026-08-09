@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { adminApi, adminInsights, adminCertCandidates, safeObj, safeArray } from "@/lib/api";
 import { LoadingScreen, ErrorBox, PageHeader, Card, CardBody, StatCard, Badge, Button } from "@/components/ui";
+import AlertasAdmin from "@/components/AlertasAdmin";  // V3.9.30
 import { Award, ArrowRight } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -41,6 +42,9 @@ export default function AdminDashboard() {
       <PageHeader title="Panel administrativo" subtitle="Resumen ejecutivo de Dorismon" />
 
       {/* V1.6.4: Banner para cargar plantilla si NO hay módulos */}
+      {/* V3.9.30: alertas que SÍ se pueden resolver */}
+      <AlertasAdmin />
+
       {stats.total_modules === 0 && (
         <Card className="mb-4 border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50">
           <CardBody>
