@@ -101,6 +101,9 @@ const adminGroups = [
     { href: "/dashboard/admin/certificates", label: "Certificados", Icon: GraduationCap },
     { href: "/dashboard/admin/certification-ready", label: "Listos certificar", Icon: Award },
   ]},
+  { section: "Crecimiento", items: [
+    { href: "/dashboard/admin/reactivation", label: "Reactivación", Icon: TrendingUp },
+  ]},
   { section: "Página pública", items: [
     { href: "/dashboard/admin/site-images", label: "Imágenes del sitio", Icon: ImageIcon },
     { href: "/dashboard/admin/testimonials", label: "Testimonios", Icon: Quote },

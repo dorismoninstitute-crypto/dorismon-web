@@ -1,6 +1,7 @@
 import { MetadataRoute } from 'next';
 
-// V2.8: Manifest dinámico que apunta al backend para iconos
+// V3.9.29: los iconos son el ESCUDO REAL del sitio. Antes apuntaban al
+// backend, que devolvía una "D" azul si no había logo en Configuración.
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://dorismon-api.onrender.com";
 
 export default function manifest(): MetadataRoute.Manifest {
@@ -18,14 +19,14 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: "es",
     categories: ["education", "productivity"],
     icons: [
-      { src: `${API_BASE}/institute-icon/72`, sizes: "72x72", type: "image/png", purpose: "any" },
-      { src: `${API_BASE}/institute-icon/96`, sizes: "96x96", type: "image/png", purpose: "any" },
-      { src: `${API_BASE}/institute-icon/128`, sizes: "128x128", type: "image/png", purpose: "any" },
-      { src: `${API_BASE}/institute-icon/144`, sizes: "144x144", type: "image/png", purpose: "any" },
-      { src: `${API_BASE}/institute-icon/152`, sizes: "152x152", type: "image/png", purpose: "any" },
-      { src: `${API_BASE}/institute-icon/192`, sizes: "192x192", type: "image/png", purpose: "maskable" },
-      { src: `${API_BASE}/institute-icon/384`, sizes: "384x384", type: "image/png", purpose: "any" },
-      { src: `${API_BASE}/institute-icon/512`, sizes: "512x512", type: "image/png", purpose: "maskable" },
+      { src: `/icons/icon-72.png`, sizes: "72x72", type: "image/png", purpose: "any" },
+      { src: `/icons/icon-96.png`, sizes: "96x96", type: "image/png", purpose: "any" },
+      { src: `/icons/icon-128.png`, sizes: "128x128", type: "image/png", purpose: "any" },
+      { src: `/icons/icon-144.png`, sizes: "144x144", type: "image/png", purpose: "any" },
+      { src: `/icons/icon-152.png`, sizes: "152x152", type: "image/png", purpose: "any" },
+      { src: `/icons/icon-192.png`, sizes: "192x192", type: "image/png", purpose: "maskable" },
+      { src: `/icons/icon-384.png`, sizes: "384x384", type: "image/png", purpose: "any" },
+      { src: `/icons/icon-512.png`, sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
   };
 }

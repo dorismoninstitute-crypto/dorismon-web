@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { studentApi, studentPayments, placement, progress, events, publicApi, safeArray, safeObj, getLevelTheme } from "@/lib/api";
 import { LoadingScreen, ErrorBox, EmptyState, Card, CardBody, Badge, Button, showToast, CalendarButton, JoinClassButton, ClassLocation } from "@/components/ui";
+import AvisosTelefono from "@/components/AvisosTelefono";  // V3.9.29
 import {
   Calendar, FileText, CheckCircle2, Target, Trophy, TrendingUp,
   Sparkles, GraduationCap, Clock, BookOpen, Award, ChevronRight,
@@ -138,6 +139,9 @@ export default function StudentDashboard() {
 
   return (
     <div className="-m-3 md:-m-8 p-3 md:p-8 min-h-screen bg-slate-50">
+      {/* V3.9.29: activar avisos en el teléfono */}
+      <div className="mb-5"><AvisosTelefono /></div>
+
       {/* V3.0: Aviso de clases canceladas recientemente */}
       {recentCancelled.length > 0 && (
         <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-4 mb-6">

@@ -99,3 +99,50 @@ self.addEventListener("message", (event) => {
     caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))));
   }
 });
+
+/* ===================================================================
+   V3.9.29 — Avisos al teléfono (push).
+   Aquí llega el mensaje cuando el servidor avisa algo, incluso con la
+   plataforma cerrada. Al tocarlo, abre la pantalla que corresponde.
+   =================================================================== */
+
+self.addEventListener("push", (event) => {
+  let datos = {};
+  try {
+    datos = event.data ? event.data.json() : {};
+  } catch (e) {
+    datos = { title: "Dorismon", body: event.data ? event.data.text() : "" };
+  }
+
+  const titulo = datos.title || "Dorismon Language Institute";
+  const opciones = {
+    body: datos.body || "",
+    icon: "/icons/icon-192.png",
+    badge: "/icons/icon-96.png",
+    tag: datos.tag || "dorismon",
+    renotify: true,
+    data: { url: datos.url || "/dashboard" },
+    vibrate: [100, 50, 100],
+  };
+
+  event.waitUntil(self.registration.showNotification(titulo, opciones));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const destino = (event.notification.data && event.notification.data.url) || "/dashboard";
+
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((lista) => {
+      // Si la plataforma ya está abierta, la trae al frente en vez de
+      // abrir otra pestaña
+      for (const c of lista) {
+        if ("focus" in c) {
+          c.navigate(destino).catch(() => {});
+          return c.focus();
+        }
+      }
+      if (clients.openWindow) return clients.openWindow(destino);
+    })
+  );
+});
