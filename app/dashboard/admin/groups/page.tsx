@@ -104,6 +104,11 @@ export default function GruposPage() {
         subtitle="Cada estudiante ve solo las clases de su grupo, no todas las de su nivel."
       />
 
+      <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 mb-5 text-xs text-blue-800 leading-relaxed">
+        💡 Solo se muestran los grupos <strong>activos y con clases por venir</strong>.
+        Los cancelados o terminados no aparecen, para que no los asignes por error.
+      </div>
+
       {sinGrupo.length > 0 && (
         <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 mb-6">
           <div className="flex items-start gap-3 mb-3">
@@ -189,6 +194,12 @@ export default function GruposPage() {
                     <p className="text-[10px] text-slate-400">
                       {g.is_full ? "Lleno" : `${g.spots_left} libres`}
                     </p>
+                    {/* V3.9.35: cuántas clases futuras le quedan al grupo */}
+                    {g.upcoming_classes != null && (
+                      <p className="text-[10px] text-slate-400 mt-0.5">
+                        {g.upcoming_classes} clase{g.upcoming_classes === 1 ? "" : "s"} por venir
+                      </p>
+                    )}
                   </div>
                 </div>
 

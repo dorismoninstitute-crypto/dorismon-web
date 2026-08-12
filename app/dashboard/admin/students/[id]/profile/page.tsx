@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { adminStudentProfileApi } from "@/lib/api";
 import { LoadingScreen, ErrorBox, PageHeader, Card, CardBody, Input, Select, Button, Badge, showToast } from "@/components/ui";
+import QueVeElEstudiante from "@/components/QueVeElEstudiante";  // V3.9.35
 import { ArrowLeft, User as UserIcon, MapPin, Heart, Shield, Info, Save } from "lucide-react";
 
 const DOC_TYPES = [
@@ -194,6 +195,9 @@ export default function AdminStudentProfilePage() {
               📚 Cambiar nivel
             </Button>
           </div>
+
+          {/* V3.9.35 — Diagnóstico: por qué este estudiante ve las clases que ve */}
+          <QueVeElEstudiante studentId={String(studentId)} />
           {showLevelChange && (
             <div className="mt-4 pt-4 border-t border-slate-100 space-y-3">
               <p className="text-sm text-slate-600">Cambia el nivel del estudiante (ej: si quiere empezar de cero, o por decisión pedagógica). Esto no afecta sus pagos ni inscripciones.</p>
