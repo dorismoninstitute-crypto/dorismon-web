@@ -59,6 +59,7 @@ const teacherGroups = [
     { href: "/dashboard/teacher/students", label: "Mis estudiantes", Icon: Users },
     { href: "/dashboard/teacher/assignments", label: "Tareas", Icon: FileText },
     { href: "/dashboard/teacher/quizzes", label: "Quizzes", Icon: CheckCircle2 },
+    { href: "/dashboard/teacher/ai-content", label: "Generar con IA", Icon: Sparkles },  // V3.9.33
     { href: "/dashboard/teacher/materials", label: "Materiales", Icon: BookMarked },
   ]},
   { section: "Finanzas", items: [
@@ -86,6 +87,7 @@ const adminGroups = [
   { section: "Estudiantes", items: [
     { href: "/dashboard/admin/users", label: "Usuarios", Icon: Users },
     { href: "/dashboard/admin/enrollments", label: "Inscripciones", Icon: ClipboardList },
+    { href: "/dashboard/admin/groups", label: "Grupos y horarios", Icon: Users },  // V3.9.33
     { href: "/dashboard/admin/placement-results", label: "Placement", Icon: Target },
     { href: "/dashboard/admin/trial-classes", label: "Clases de prueba", Icon: Sparkles },
   ]},

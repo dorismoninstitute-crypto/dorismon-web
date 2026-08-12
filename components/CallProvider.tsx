@@ -12,7 +12,7 @@ import {
 } from "@/components/ClassRoomExtras";
 import {
   Minimize2, Maximize2, PhoneOff, Users, Hand, AlertTriangle, Loader2, GripVertical,
-  ZoomIn, ZoomOut,
+  ZoomIn, ZoomOut, Columns2,
 } from "lucide-react";
 
 /**
@@ -28,24 +28,35 @@ import {
  * de video no se desmonta al cambiar de página.
  */
 
+/** V3.9.33 — Tres formas de tener la clase en pantalla:
+ *  - "full":  pantalla completa, para dar clase
+ *  - "split": dividida — video a un lado, plataforma al otro (para poner un
+ *             quiz o revisar una tarea SIN dejar de ver a los estudiantes)
+ *  - "mini":  ventanita flotante, para moverte por todo el sistema
+ */
+type ModoVista = "full" | "split" | "mini";
+
 type EstadoLlamada = {
   sessionId: string;
   datos: any;
-  minimizada: boolean;
+  modo: ModoVista;
 };
 
 type CtxLlamada = {
   enLlamada: boolean;
   sessionId: string | null;
+  modo: ModoVista;
   entrar: (sessionId: string) => void;
   salir: () => void;
+  cambiarModo: (m: ModoVista) => void;
   minimizar: () => void;
   maximizar: () => void;
 };
 
 const Ctx = createContext<CtxLlamada>({
-  enLlamada: false, sessionId: null,
-  entrar: () => {}, salir: () => {}, minimizar: () => {}, maximizar: () => {},
+  enLlamada: false, sessionId: null, modo: "full",
+  entrar: () => {}, salir: () => {}, cambiarModo: () => {},
+  minimizar: () => {}, maximizar: () => {},
 });
 
 export const useLlamada = () => useContext(Ctx);
@@ -57,14 +68,14 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
   const entrar = useCallback(async (sessionId: string) => {
     if (llamada?.sessionId === sessionId) {
-      setLlamada((l) => (l ? { ...l, minimizada: false } : l));
+      setLlamada((l) => (l ? { ...l, modo: "full" } : l));
       return;
     }
     setCargando(true);
     setError("");
     try {
       const datos = await api(`/video/sessions/${sessionId}/join`, { method: "POST", auth: true });
-      setLlamada({ sessionId, datos, minimizada: false });
+      setLlamada({ sessionId, datos, modo: "full" });
     } catch (e: any) {
       setError(e?.message || "No se pudo entrar a la clase");
     } finally {
@@ -73,8 +84,10 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   }, [llamada]);
 
   const salir = useCallback(() => setLlamada(null), []);
-  const minimizar = useCallback(() => setLlamada((l) => (l ? { ...l, minimizada: true } : l)), []);
-  const maximizar = useCallback(() => setLlamada((l) => (l ? { ...l, minimizada: false } : l)), []);
+  const cambiarModo = useCallback(
+    (m: ModoVista) => setLlamada((l) => (l ? { ...l, modo: m } : l)), []);
+  const minimizar = useCallback(() => cambiarModo("mini"), [cambiarModo]);
+  const maximizar = useCallback(() => cambiarModo("full"), [cambiarModo]);
 
   // Si llegamos desde un enlace directo /clase/{id}, abrir esa clase
   useEffect(() => {
@@ -100,9 +113,20 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   return (
     <Ctx.Provider value={{
       enLlamada: !!llamada, sessionId: llamada?.sessionId || null,
-      entrar, salir, minimizar, maximizar,
+      modo: llamada?.modo || "full",
+      entrar, salir, cambiarModo, minimizar, maximizar,
     }}>
-      {children}
+      {/* V3.9.33: en modo dividido, el contenido se corre para dejar sitio
+          al video. Así se ven las dos cosas a la vez, sin tapar nada. */}
+      <div
+        style={llamada?.modo === "split"
+          ? { marginRight: "min(42vw, 560px)", transition: "margin 0.2s" }
+          : undefined}
+        className={llamada?.modo === "split" ? "hidden md:block" : ""}
+      >
+        {children}
+      </div>
+      {llamada?.modo === "split" && <div className="md:hidden">{children}</div>}
 
       {cargando && (
         <div className="fixed inset-0 z-[100] bg-[#0F1729]/95 flex flex-col items-center justify-center gap-3">
@@ -132,8 +156,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           key={llamada.sessionId}
           estado={llamada}
           onSalir={salir}
-          onMinimizar={minimizar}
-          onMaximizar={maximizar}
+          onModo={cambiarModo}
         />
       )}
     </Ctx.Provider>
@@ -143,14 +166,14 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 /* -------------------------------------------------------------- La capa */
 
 function CapaDeLlamada({
-  estado, onSalir, onMinimizar, onMaximizar,
+  estado, onSalir, onModo,
 }: {
   estado: EstadoLlamada;
   onSalir: () => void;
-  onMinimizar: () => void;
-  onMaximizar: () => void;
+  onModo: (m: ModoVista) => void;
 }) {
-  const { datos, sessionId, minimizada } = estado;
+  const { datos, sessionId, modo } = estado;
+  const minimizada = modo === "mini";
   const [pos, setPos] = useState({ x: 20, y: 20 });
   const arrastrando = useRef<{ dx: number; dy: number } | null>(null);
 
@@ -175,11 +198,16 @@ function CapaDeLlamada({
   return (
     <div
       className={
-        minimizada
+        modo === "mini"
           ? "fixed z-[90] w-[300px] sm:w-[320px] rounded-2xl overflow-hidden shadow-2xl border border-white/15 bg-[#0F1729]"
+          : modo === "split"
+          // V3.9.33 — Pantalla dividida: el video ocupa la derecha y la
+          // plataforma queda usable a la izquierda. En celular no cabe, así
+          // que ahí se comporta como pantalla completa.
+          ? "fixed top-0 right-0 bottom-0 z-[90] w-full md:w-[min(42vw,560px)] bg-[#0F1729] flex flex-col border-l border-white/10"
           : "fixed inset-0 z-[90] bg-[#0F1729] flex flex-col"
       }
-      style={minimizada ? { right: pos.x, bottom: pos.y } : undefined}
+      style={modo === "mini" ? { right: pos.x, bottom: pos.y } : undefined}
       data-lk-theme="default"
     >
       <LiveKitRoom
@@ -194,10 +222,9 @@ function CapaDeLlamada({
         <ContenidoLlamada
           sessionId={sessionId}
           datos={datos}
-          minimizada={minimizada}
+          modo={modo}
           onSalir={onSalir}
-          onMinimizar={onMinimizar}
-          onMaximizar={onMaximizar}
+          onModo={onModo}
           onEmpezarArrastre={(e) => {
             const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
             arrastrando.current = { dx: e.clientX - r.left, dy: e.clientY - r.top };
@@ -210,8 +237,9 @@ function CapaDeLlamada({
 }
 
 function ContenidoLlamada({
-  sessionId, datos, minimizada, onSalir, onMinimizar, onMaximizar, onEmpezarArrastre,
+  sessionId, datos, modo, onSalir, onModo, onEmpezarArrastre,
 }: any) {
+  const minimizada = modo === "mini";
   const room = useRoomContext();
   const { manos, miMano, toggleMano, bajarMano } = useRaisedHands();
   const [panel, setPanel] = useState(false);
@@ -252,7 +280,15 @@ function ContenidoLlamada({
 
         <div className="flex items-center gap-1.5 px-2 py-2 bg-white/5">
           <button
-            onClick={onMaximizar}
+            onClick={() => onModo("split")}
+            title="Ver el video al lado de la plataforma"
+            className="hidden md:inline-flex flex-1 items-center justify-center gap-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold py-2 rounded-lg transition"
+          >
+            <Columns2 className="w-3.5 h-3.5" />
+            Dividir
+          </button>
+          <button
+            onClick={() => onModo("full")}
             className="flex-1 inline-flex items-center justify-center gap-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold py-2 rounded-lg transition"
           >
             <Maximize2 className="w-3.5 h-3.5" />
@@ -310,8 +346,21 @@ function ContenidoLlamada({
             {acercar ? <ZoomOut className="w-4 h-4" /> : <ZoomIn className="w-4 h-4" />}
             <span className="hidden lg:inline">{acercar ? "Alejar" : "Acercar"}</span>
           </button>
+          {/* V3.9.33 — Los tres modos de ver la clase */}
           <button
-            onClick={onMinimizar}
+            onClick={() => onModo(modo === "split" ? "full" : "split")}
+            title="Video al lado de la plataforma"
+            className={`hidden md:inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-xl transition ${
+              modo === "split"
+                ? "bg-sky-500/30 text-sky-100"
+                : "bg-white/10 hover:bg-white/20 text-white"
+            }`}
+          >
+            <Columns2 className="w-4 h-4" />
+            <span className="hidden lg:inline">Dividir</span>
+          </button>
+          <button
+            onClick={() => onModo("mini")}
             title="Seguir en clase mientras navegas la plataforma"
             className="inline-flex items-center gap-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 text-sm font-semibold px-3 py-2 rounded-xl transition"
           >
