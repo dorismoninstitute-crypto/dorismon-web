@@ -174,39 +174,10 @@ export default function AdminDashboard() {
         <StatCard label="Clases semana" value={stats.scheduled_classes} icon="📅" color="warning" />
       </div>
 
-      {/* Widget estudiantes en riesgo */}
-      {atRisk.length > 0 && (
-        <Card className="mb-6 border-amber-200 bg-amber-50">
-          <CardBody>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-amber-900 flex items-center gap-2">
-                ⚠️ Estudiantes en riesgo
-                <Badge variant="warning">{atRisk.length}</Badge>
-              </h3>
-              <Link href="/dashboard/admin/users" className="text-xs font-semibold text-amber-700 hover:text-amber-900">
-                Ver detalle →
-              </Link>
-            </div>
-            <p className="text-sm text-amber-800 mb-3">
-              Estos estudiantes tienen 3 o más ausencias en sus últimas 10 clases. Considerá contactarlos.
-            </p>
-            <div className="space-y-2">
-              {atRisk.slice(0, 5).map((s: any) => (
-                <div key={s.student_id} className="p-3 bg-white rounded-lg flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-sm">
-                    {(s.full_name || "?").split(" ").map((w: string) => w[0]).join("").slice(0, 2)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm">{s.full_name}</p>
-                    <p className="text-xs text-slate-500">{s.email}</p>
-                  </div>
-                  <Badge variant="danger">{s.absent_count} faltas / {s.total_recorded}</Badge>
-                </div>
-              ))}
-            </div>
-          </CardBody>
-        </Card>
-      )}
+      {/* V3.9.31 — El bloque viejo de "Estudiantes en riesgo" se eliminó.
+          Era el que nunca se podía quitar: mostraba la lista pero sin forma
+          de resolverla. Ahora esa información vive en <AlertasAdmin />, con
+          botón de WhatsApp y "Ya lo manejé". */}
 
       <div className="grid lg:grid-cols-2 gap-5 mb-6">
         <Card>

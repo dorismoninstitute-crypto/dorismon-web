@@ -102,6 +102,7 @@ const adminGroups = [
     { href: "/dashboard/admin/certification-ready", label: "Listos certificar", Icon: Award },
   ]},
   { section: "Crecimiento", items: [
+    { href: "/dashboard/admin/ai-content", label: "Generar contenido", Icon: Sparkles },
     { href: "/dashboard/admin/reactivation", label: "Reactivación", Icon: TrendingUp },
   ]},
   { section: "Página pública", items: [

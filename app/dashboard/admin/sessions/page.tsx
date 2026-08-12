@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { adminApi, adminEdit, adminHelpers, adminContent, adminClassSeries, adminPrivateClasses, safeArray, safeObj, api } from "@/lib/api";
 import { Repeat, User as UserIcon, Plus, X } from "lucide-react";
 import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Input, Textarea, Select, Modal, SuccessBox, ConfirmModal, showToast, MeetingUrlGuide, MeetingUrlInput } from "@/components/ui";
+import SelectorVideo from "@/components/SelectorVideo";  // V3.9.32
 
 const TIPOS = [
   { key: "all", label: "Todas", icon: "📅" },
@@ -27,7 +28,7 @@ export default function AdminSessionsPage() {
   const [showEvent, setShowEvent] = useState(false);
   const [eventForm, setEventForm] = useState<any>({
     title: "", description: "", date: "", time: "", duration_min: 90,
-    modality: "hibrida", teacher_id: "", meeting_url: "", branch_id: "", capacity: 30,
+    modality: "hibrida", teacher_id: "", meeting_url: "", branch_id: "", capacity: 30, video_provider: "meet",
   });
   const [eventSaving, setEventSaving] = useState(false);
   const [seriesList, setSeriesList] = useState<any[]>([]);  // V1.7
@@ -40,12 +41,12 @@ export default function AdminSessionsPage() {
     name: "", course_id: "", level_id: "", teacher_id: "",
     days_of_week: [], start_time_hhmm: "19:00", duration_min: 90,
     start_date: "", end_date: "", num_classes: "", end_type: "num_classes",
-    modality: "online", meeting_url: "", capacity: 15,
+    modality: "online", meeting_url: "", capacity: 15, video_provider: "meet",
   });
   const [privateForm, setPrivateForm] = useState<any>({
     student_id: "", teacher_id: "", course_id: "", level_id: "",
     title: "", starts_at: "", duration_min: 60,
-    modality: "online", meeting_url: "", counts_for_progress: false,
+    modality: "online", meeting_url: "", counts_for_progress: false, video_provider: "meet",
   });
   const [confirmDeleteSeries, setConfirmDeleteSeries] = useState<any>(null);
   const [msg, setMsg] = useState("");
@@ -111,6 +112,7 @@ export default function AdminSessionsPage() {
         modality: eventForm.modality,
         teacher_id: eventForm.teacher_id,
         meeting_url: needsLink ? eventForm.meeting_url : undefined,
+        video_provider: eventForm.video_provider,  // V3.9.32
         branch_id: needsBranch ? parseInt(eventForm.branch_id) : undefined,
         capacity: eventForm.capacity || 30,
       });
@@ -305,6 +307,7 @@ export default function AdminSessionsPage() {
         start_date: seriesForm.start_date,
         modality: seriesForm.modality,
         meeting_url: seriesForm.meeting_url || null,
+        video_provider: seriesForm.video_provider,  // V3.9.32
         capacity: parseInt(seriesForm.capacity),
       };
       if (seriesForm.end_type === "end_date") body.end_date = seriesForm.end_date;
@@ -334,6 +337,7 @@ export default function AdminSessionsPage() {
         duration_min: parseInt(privateForm.duration_min),
         modality: privateForm.modality,
         meeting_url: privateForm.meeting_url || null,
+        video_provider: privateForm.video_provider,  // V3.9.32
         counts_for_progress: privateForm.counts_for_progress,
       };
       await adminPrivateClasses.create(body);
@@ -930,7 +934,16 @@ export default function AdminSessionsPage() {
           </Select>
 
           {(eventForm.modality === "online" || eventForm.modality === "hibrida") && (
-            <MeetingUrlInput label="Link del evento (para los online) *" value={eventForm.meeting_url} onChange={(v: string) => setEventForm({ ...eventForm, meeting_url: v })} />
+            <>
+            <SelectorVideo
+              value={eventForm.video_provider}
+              onChange={(v) => setEventForm({ ...eventForm, video_provider: v })}
+            />
+            <MeetingUrlInput
+              label={eventForm.video_provider === "dorismon" ? "Enlace de respaldo (recomendado)" : "Link del evento (para los online) *"}
+              value={eventForm.meeting_url}
+              onChange={(v: string) => setEventForm({ ...eventForm, meeting_url: v })} />
+            </>
           )}
 
           {(eventForm.modality === "presencial" || eventForm.modality === "hibrida") && (
@@ -1045,7 +1058,17 @@ export default function AdminSessionsPage() {
           </Select>
 
           {seriesForm.modality !== "presencial" && (
-            <Input label="Link Zoom/Meet/Teams" value={seriesForm.meeting_url} onChange={(e: any) => setSeriesForm({ ...seriesForm, meeting_url: e.target.value })} placeholder="https://zoom.us/..." />
+            <>
+            <SelectorVideo
+              value={seriesForm.video_provider}
+              onChange={(v) => setSeriesForm({ ...seriesForm, video_provider: v })}
+            />
+            <Input
+              label={seriesForm.video_provider === "dorismon" ? "Enlace de respaldo (recomendado)" : "Link Zoom/Meet/Teams"}
+              value={seriesForm.meeting_url}
+              onChange={(e: any) => setSeriesForm({ ...seriesForm, meeting_url: e.target.value })}
+              placeholder="https://zoom.us/..." />
+            </>
           )}
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-900">
@@ -1096,7 +1119,17 @@ export default function AdminSessionsPage() {
           </Select>
 
           {privateForm.modality !== "presencial" && (
-            <Input label="Link Zoom/Meet/Teams" value={privateForm.meeting_url} onChange={(e: any) => setPrivateForm({ ...privateForm, meeting_url: e.target.value })} placeholder="https://zoom.us/..." />
+            <>
+            <SelectorVideo
+              value={privateForm.video_provider}
+              onChange={(v) => setPrivateForm({ ...privateForm, video_provider: v })}
+            />
+            <Input
+              label={privateForm.video_provider === "dorismon" ? "Enlace de respaldo (recomendado)" : "Link Zoom/Meet/Teams"}
+              value={privateForm.meeting_url}
+              onChange={(e: any) => setPrivateForm({ ...privateForm, meeting_url: e.target.value })}
+              placeholder="https://zoom.us/..." />
+            </>
           )}
 
           <label className="flex items-start gap-2 cursor-pointer p-3 bg-slate-50 rounded-lg">
