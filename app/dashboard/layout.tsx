@@ -15,7 +15,7 @@ import {
   Users, Briefcase, MapPin, CreditCard, DollarSign, FileSearch, Wrench,
   ClipboardList, FolderKanban, FileEdit, BookMarked, Layers, Wallet,
   MessageCircle, HelpCircle, Inbox, TrendingUp, Sparkles, Clock,
-  Image as ImageIcon, Quote,
+  Image as ImageIcon, Quote, Repeat,
 } from "lucide-react";
 
 // V2.9.1: Items agrupados por área con encabezados de sección
@@ -27,6 +27,7 @@ const studentGroups = [
   { section: "Aprendizaje", items: [
     { href: "/dashboard/student/courses", label: "Mis cursos", Icon: BookOpen },
     { href: "/dashboard/student/calendar", label: "Calendario", Icon: Calendar },
+    { href: "/dashboard/student/makeups", label: "Reponer clase", Icon: Repeat },  // V3.9.36
     { href: "/dashboard/student/library", label: "Biblioteca", Icon: Library },
     { href: "/dashboard/student/assignments", label: "Tareas", Icon: FileText },
     { href: "/dashboard/student/quizzes", label: "Quizzes", Icon: CheckCircle2 },
@@ -88,6 +89,7 @@ const adminGroups = [
     { href: "/dashboard/admin/users", label: "Usuarios", Icon: Users },
     { href: "/dashboard/admin/enrollments", label: "Inscripciones", Icon: ClipboardList },
     { href: "/dashboard/admin/groups", label: "Grupos y horarios", Icon: Users },  // V3.9.33
+    { href: "/dashboard/admin/makeups", label: "Reposiciones", Icon: Repeat },  // V3.9.36
     { href: "/dashboard/admin/placement-results", label: "Placement", Icon: Target },
     { href: "/dashboard/admin/trial-classes", label: "Clases de prueba", Icon: Sparkles },
   ]},

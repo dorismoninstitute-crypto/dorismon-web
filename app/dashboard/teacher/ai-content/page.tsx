@@ -36,6 +36,9 @@ export default function GenerarContenidoPage() {
   const [nivel, setNivel] = useState("B1");
   const [cantidad, setCantidad] = useState(10);
   const [generando, setGenerando] = useState(false);
+  // V3.9.36 — Contador honesto: la IA tarda, y si Render estaba dormido,
+  // tarda más. Mejor decirlo que dejar al usuario mirando un botón.
+  const [segundos, setSegundos] = useState(0);
   const [resultado, setResultado] = useState<any>(null);
   const [copiado, setCopiado] = useState(false);
   // V3.9.33 — Guardar el quiz de verdad, no solo copiarlo
@@ -84,8 +87,10 @@ export default function GenerarContenidoPage() {
       return;
     }
     setGenerando(true);
+    setSegundos(0);
     setResultado(null);
     setGuardado(null);
+    const reloj = setInterval(() => setSegundos((s) => s + 1), 1000);
     try {
       const body: any = { topic: tema.trim(), level: nivel };
       if (tipo === "quiz") body.count = cantidad;
@@ -94,6 +99,7 @@ export default function GenerarContenidoPage() {
     } catch (e: any) {
       showToast("error", e.message);
     } finally {
+      clearInterval(reloj);
       setGenerando(false);
     }
   };
@@ -232,7 +238,18 @@ export default function GenerarContenidoPage() {
             {generando ? "Generando..." : "Generar"}
           </button>
           {generando && (
-            <p className="text-xs text-slate-500 mt-2">Puede tardar unos segundos.</p>
+            <div className="mt-3 bg-slate-50 border border-slate-200 rounded-xl p-3">
+              <p className="text-sm font-semibold text-slate-700 mb-1">
+                Generando... {segundos > 0 && `(${segundos}s)`}
+              </p>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                {segundos < 15
+                  ? "Esto suele tardar entre 10 y 25 segundos."
+                  : segundos < 45
+                  ? "Sigue trabajando. Si el servidor estaba dormido, la primera vez tarda más."
+                  : "Está tardando más de lo normal. Si pasa de un minuto, vuelve a intentar."}
+              </p>
+            </div>
           )}
         </CardBody>
       </Card>
