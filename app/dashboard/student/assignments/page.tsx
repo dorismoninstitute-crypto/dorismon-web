@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import { studentApi, safeArray } from "@/lib/api";
 import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Textarea, SuccessBox, PlanLockedCard, showToast } from "@/components/ui";
 import ArchivoAdjunto from "@/components/ArchivoAdjunto";  // V3.9.30
+import AvisoCruzado from "@/components/AvisoCruzado";  // V3.9.42
 
 export default function StudentAssignmentsPage() {
   const [items, setItems] = useState<any[]>([]);
@@ -66,6 +67,7 @@ export default function StudentAssignmentsPage() {
     return (
       <>
         <PageHeader title="Mis tareas" subtitle="Tareas y ejercicios" />
+        <AvisoCruzado desde="tareas" />
         <PlanLockedCard
           title="Las tareas no están en tu plan"
           message="Las tareas con feedback del profesor están disponibles a partir del plan Professional. Mejora tu plan para acceder."
@@ -77,6 +79,8 @@ export default function StudentAssignmentsPage() {
   return (
     <>
       <PageHeader title="Mis tareas" subtitle={`${items.length} tareas asignadas`} />
+      {/* V3.9.42: para que no se le pasen los quizzes del otro menú */}
+      <AvisoCruzado desde="tareas" />
       {msg.startsWith("✓") && <div className="mb-4"><SuccessBox message={msg} /></div>}
       {msg.startsWith("✗") && <div className="mb-4"><ErrorBox message={msg.slice(2)} /></div>}
 

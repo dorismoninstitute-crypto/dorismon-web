@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Send } from "lucide-react";
 import { teacherApi, safeArray, api } from "@/lib/api";
 import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Input, Textarea, Select, Modal, SuccessBox, showToast } from "@/components/ui";
@@ -157,6 +158,18 @@ export default function TeacherQuizzesPage() {
         subtitle={`${items.length} quizzes`}
         action={<Button onClick={openModal}>+ Nuevo quiz</Button>}
       />
+      {/* V3.9.42 — Acceso cruzado con los demás tipos de actividad */}
+      <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 mb-5 flex items-center gap-3 flex-wrap">
+        <p className="text-xs text-slate-600 flex-1 min-w-[180px]">
+          ¿Buscas poner una <strong>tarea</strong> (escrita, audio, escuchar, completar espacios)?
+        </p>
+        <Link
+          href="/dashboard/teacher/assignments"
+          className="text-xs font-bold text-brand-600 hover:text-brand-700"
+        >
+          Ir a Tareas →
+        </Link>
+      </div>
       {msg.startsWith("✓") && <div className="mb-4"><SuccessBox message={msg} /></div>}
       {msg.startsWith("✗") && <div className="mb-4"><ErrorBox message={msg.slice(2)} /></div>}
 

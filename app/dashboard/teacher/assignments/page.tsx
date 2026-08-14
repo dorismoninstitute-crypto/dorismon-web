@@ -72,7 +72,20 @@ export default function TeacherAssignmentsPage() {
       <PageHeader
         title="Tareas"
         subtitle={`${items.length} tareas asignadas`}
-        action={<Button onClick={openModal}>+ Nueva tarea</Button>}
+        action={<Button onClick={openModal}>
+      {/* V3.9.42 — Los quizzes son un tipo de actividad más; que no haya que
+          adivinar en qué menú se crea cada cosa. */}
+      <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 mb-5 flex items-center gap-3 flex-wrap">
+        <p className="text-xs text-slate-600 flex-1 min-w-[180px]">
+          ¿Buscas crear un <strong>quiz</strong>? Están en su propia sección.
+        </p>
+        <Link
+          href="/dashboard/teacher/quizzes"
+          className="text-xs font-bold text-brand-600 hover:text-brand-700"
+        >
+          Ir a Quizzes →
+        </Link>
+      </div>+ Nueva tarea</Button>}
       />
       {msg.startsWith("✓") && <div className="mb-4"><SuccessBox message={msg} /></div>}
       {msg.startsWith("✗") && <div className="mb-4"><ErrorBox message={msg.slice(2)} /></div>}

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { studentApi, safeArray } from "@/lib/api";
 import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, PlanLockedCard } from "@/components/ui";
+import AvisoCruzado from "@/components/AvisoCruzado";  // V3.9.42
 
 export default function StudentQuizzesPage() {
   const [items, setItems] = useState<any[]>([]);
@@ -29,6 +30,7 @@ export default function StudentQuizzesPage() {
     return (
       <>
         <PageHeader title="Quizzes" subtitle="Evaluá tu progreso" />
+        <AvisoCruzado desde="quizzes" />
         <PlanLockedCard
           title="Los quizzes no están en tu plan"
           message="Los quizzes evaluativos están disponibles a partir del plan Professional. Mejora tu plan para acceder."
@@ -40,6 +42,8 @@ export default function StudentQuizzesPage() {
   return (
     <>
       <PageHeader title="Quizzes" subtitle="Evaluá tu progreso con quizzes automáticos" />
+      {/* V3.9.42: para que no se le pasen las tareas del otro menú */}
+      <AvisoCruzado desde="quizzes" />
       {items.length === 0 ? <EmptyState icon="✓" title="Sin quizzes disponibles" /> : (
         <div className="grid md:grid-cols-2 gap-4">
           {items.map((q: any) => (
