@@ -64,26 +64,18 @@ export default function ReposicionesPage() {
 
   useEffect(() => {
     if (!nueva || estudiantes.length) return;
-    // V3.9.38 FIX — Antes pedía limit=200, pero el máximo permitido es 100:
-    // el servidor devolvía error y la lista quedaba VACÍA. Ahora se piden
-    // hasta 100 por página y se juntan varias páginas.
-    (async () => {
-      const todos: any[] = [];
-      for (let p = 1; p <= 5; p++) {
-        try {
-          const r: any = await api(`/admin/users?role=student&limit=100&page=${p}`, { auth: true });
-          const lote = r?.items || [];
-          todos.push(...lote);
-          if (lote.length < 100) break;
-        } catch {
-          break;
+    // V3.9.39 — Solo estudiantes CON INSCRIPCIÓN ACTIVA, con su nivel, grupo
+    // y profesor. Antes salían todas las cuentas de estudiante (incluidas las
+    // que nunca se inscribieron), y eso no sirve para agendar una reposición.
+    api("/admin/students-for-makeup", { auth: true })
+      .then((r: any) => {
+        const lista = r?.items || [];
+        setEstudiantes(lista);
+        if (lista.length === 0) {
+          showToast("error", "No hay estudiantes con inscripción activa.");
         }
-      }
-      setEstudiantes(todos);
-      if (todos.length === 0) {
-        showToast("error", "No se pudieron cargar los estudiantes. Recarga la página.");
-      }
-    })();
+      })
+      .catch(() => showToast("error", "No se pudieron cargar los estudiantes. Recarga la página."));
     api("/admin/users?role=teacher", { auth: true })
       .then((r: any) => setProfesores(r?.items || []))
       .catch(() => {});
@@ -333,9 +325,23 @@ export default function ReposicionesPage() {
             >
               <option value="">— Elige el estudiante —</option>
               {estudiantes.map((s: any) => (
-                <option key={s.id} value={s.id}>{s.full_name}</option>
+                <option key={s.student_id} value={s.student_id}>
+                  {s.display}{s.is_paused ? " (en pausa)" : ""}
+                </option>
               ))}
             </select>
+
+            {form.student_id && (() => {
+              const el = estudiantes.find((x: any) => x.student_id === form.student_id);
+              if (!el) return null;
+              return (
+                <div className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 mb-3 text-xs text-slate-600">
+                  <strong>{el.name}</strong> · Nivel {el.level_code}
+                  {el.group_name ? ` · Grupo ${el.group_name}` : " · sin grupo asignado"}
+                  {el.teacher_name && ` · Profesor: ${el.teacher_name}`}
+                </div>
+              );
+            })()}
 
             {form.student_id && (
               <>

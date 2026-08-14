@@ -16,6 +16,10 @@ const TIPOS = [
 
 export default function AdminSessionsPage() {
   const [tipo, setTipo] = useState("all");  // V3.9.30
+  // V3.9.39 — Sustituir profesor en UNA clase
+  const [sustituir, setSustituir] = useState<any>(null);
+  const [profesLibres, setProfesLibres] = useState<any[]>([]);
+  const [subBusy, setSubBusy] = useState(false);
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
@@ -497,6 +501,38 @@ export default function AdminSessionsPage() {
      (form.meeting_url && form.branch_id));
 
   // V3.9.30: lo que se muestra según la pestaña elegida
+  // V3.9.39 — Al abrir, se consulta quién está libre a esa hora
+  const abrirSustituto = async (s: any) => {
+    setSustituir(s);
+    setProfesLibres([]);
+    try {
+      const r: any = await api(`/admin/sessions/${s.id}/available-teachers`, { auth: true });
+      setProfesLibres(r?.items || []);
+    } catch { /* si falla, se puede elegir igual */ }
+  };
+
+  const ponerSustituto = async (teacherId: string, confirmar = false) => {
+    setSubBusy(true);
+    try {
+      const r: any = await api(`/admin/sessions/${sustituir.id}/substitute-teacher`, {
+        method: "POST", auth: true,
+        body: { teacher_id: teacherId, ...(confirmar ? { confirm_overlap: true } : {}) },
+      });
+      showToast("success", `✅ ${r.teacher_name} dará esa clase. Cobra su propia tarifa.`);
+      setSustituir(null);
+      load();
+    } catch (e: any) {
+      const d = e?.detail;
+      if (e?.status === 409 && d?.necesita_confirmacion) {
+        if (confirm(d.mensaje)) { await ponerSustituto(teacherId, true); return; }
+      } else {
+        showToast("error", e.message);
+      }
+    } finally {
+      setSubBusy(false);
+    }
+  };
+
   const visibles = tipo === "all"
     ? items
     : items.filter((s: any) => (s.kind || "single") === tipo);
@@ -663,6 +699,12 @@ export default function AdminSessionsPage() {
                     </p>
                   </div>
                   <Button variant="outline" size="sm" onClick={() => openEdit(s)}>Editar</Button>
+                  {/* V3.9.39 — Sustituto en UNA clase, sin tocar la serie */}
+                  {s.status !== "cancelled" && new Date(s.starts_at_utc) > new Date() && (
+                    <Button variant="outline" size="sm" onClick={() => abrirSustituto(s)}>
+                      👨‍🏫 Sustituto
+                    </Button>
+                  )}
                   {s.status !== "cancelled" && (
                     <Button variant="danger" size="sm" onClick={() => setConfirmCancelId(s.id)}>Cancelar</Button>
                   )}
@@ -821,6 +863,56 @@ export default function AdminSessionsPage() {
               Programar clase
             </Button>
           </div>
+        </div>
+      </Modal>
+
+      {/* V3.9.39 — Elegir sustituto para una clase */}
+      <Modal open={!!sustituir} onClose={() => setSustituir(null)} title="¿Quién dará esta clase?">
+        <div className="space-y-3">
+          <div className="bg-slate-50 rounded-lg px-3 py-2 text-xs text-slate-600">
+            <strong>{sustituir?.title}</strong>
+            {sustituir?.starts_at_utc && (
+              <> · {new Date(sustituir.starts_at_utc).toLocaleString("es", {
+                weekday: "short", day: "numeric", month: "short",
+                hour: "2-digit", minute: "2-digit", hour12: true })}</>
+            )}
+          </div>
+
+          <div className="bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">
+            <p className="text-xs text-emerald-800 leading-relaxed">
+              💰 <strong>Cobra quien da la clase</strong>, con su propia tarifa.
+              Solo cambia esta clase: la serie y el profesor de siempre no se tocan.
+            </p>
+          </div>
+
+          {profesLibres.length === 0 ? (
+            <p className="text-sm text-slate-500 py-3">Buscando profesores...</p>
+          ) : (
+            <div className="space-y-1.5 max-h-64 overflow-y-auto">
+              {profesLibres.map((p: any) => (
+                <button
+                  key={p.teacher_id}
+                  onClick={() => ponerSustituto(p.teacher_id)}
+                  disabled={subBusy}
+                  className={`w-full text-left p-3 rounded-xl border-2 transition disabled:opacity-50 ${
+                    p.available
+                      ? "border-emerald-200 bg-emerald-50 hover:border-emerald-400"
+                      : "border-slate-200 bg-white hover:border-slate-300"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <span className="font-semibold text-sm text-slate-800">{p.name}</span>
+                    <span className="text-[11px] text-slate-500">
+                      Grupal RD${p.rate_group?.toFixed(0)} · Privada RD${p.rate_private?.toFixed(0)}
+                    </span>
+                  </div>
+                  <p className={`text-[11px] mt-0.5 ${p.available ? "text-emerald-700" : "text-amber-700"}`}>
+                    {p.available ? "✓ Libre a esa hora" : `⚠️ Ocupado: ${p.conflict}`}
+                  </p>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </Modal>
 

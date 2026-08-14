@@ -12,7 +12,7 @@ import {
 } from "@/components/ClassRoomExtras";
 import {
   Minimize2, Maximize2, PhoneOff, Users, Hand, AlertTriangle, Loader2, GripVertical,
-  ZoomIn, ZoomOut, Columns2,
+  ZoomIn, ZoomOut, Columns2, MoreVertical, LifeBuoy,
 } from "lucide-react";
 
 /**
@@ -84,8 +84,13 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   }, [llamada]);
 
   const salir = useCallback(() => setLlamada(null), []);
-  const cambiarModo = useCallback(
-    (m: ModoVista) => setLlamada((l) => (l ? { ...l, modo: m } : l)), []);
+  const cambiarModo = useCallback((m: ModoVista) => {
+    // V3.9.39 — El modo dividido NO existe en celular: no cabe y dejaba al
+    // usuario atrapado sin ver nada. En pantalla chica se fuerza a completa.
+    const esChica = typeof window !== "undefined" && window.innerWidth < 768;
+    const destino = (m === "split" && esChica) ? "full" : m;
+    setLlamada((l) => (l ? { ...l, modo: destino } : l));
+  }, []);
   const minimizar = useCallback(() => cambiarModo("mini"), [cambiarModo]);
   const maximizar = useCallback(() => cambiarModo("full"), [cambiarModo]);
 
@@ -101,6 +106,19 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     // solo al montar
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // V3.9.39 — Si giran el teléfono o achican la ventana estando en modo
+  // dividido, se vuelve a pantalla completa para que no quede roto.
+  useEffect(() => {
+    if (llamada?.modo !== "split") return;
+    const alCambiar = () => {
+      if (window.innerWidth < 768) {
+        setLlamada((l) => (l ? { ...l, modo: "full" } : l));
+      }
+    };
+    window.addEventListener("resize", alCambiar);
+    return () => window.removeEventListener("resize", alCambiar);
+  }, [llamada?.modo]);
 
   // Avisar antes de cerrar la pestaña si hay una clase en curso
   useEffect(() => {
@@ -118,15 +136,15 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     }}>
       {/* V3.9.33: en modo dividido, el contenido se corre para dejar sitio
           al video. Así se ven las dos cosas a la vez, sin tapar nada. */}
+      {/* V3.9.39 — El contenido se corre solo en pantalla grande. Antes se
+          duplicaba y en celular quedaba oculto detrás del video. */}
       <div
-        style={llamada?.modo === "split"
+        style={llamada?.modo === "split" && typeof window !== "undefined" && window.innerWidth >= 768
           ? { marginRight: "min(42vw, 560px)", transition: "margin 0.2s" }
           : undefined}
-        className={llamada?.modo === "split" ? "hidden md:block" : ""}
       >
         {children}
       </div>
-      {llamada?.modo === "split" && <div className="md:hidden">{children}</div>}
 
       {cargando && (
         <div className="fixed inset-0 z-[100] bg-[#0F1729]/95 flex flex-col items-center justify-center gap-3">
@@ -246,6 +264,7 @@ function ContenidoLlamada({
   // V3.9.28: acercar la pantalla compartida (útil en celular, donde una
   // pantalla de computadora completa se ve diminuta)
   const [acercar, setAcercar] = useState(false);
+  const [menu, setMenu] = useState(false);  // V3.9.39: menú de opciones
   const manosArriba = Object.keys(manos).length;
 
   const colgar = () => {
@@ -322,57 +341,91 @@ function ContenidoLlamada({
           )}
         </div>
 
+        {/* V3.9.39 — En celular solo lo esencial: mano, participantes y salir.
+            Lo demás va en un menú, para que nada quede fuera de la pantalla.
+            Antes había 6 botones apretados y varios quedaban ocultos. */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
           <BotonMano miMano={miMano} onToggle={toggleMano} />
+
           <button
             onClick={() => setPanel((v) => !v)}
+            title="Participantes"
             className="relative inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white text-sm font-semibold px-3 py-2 rounded-xl transition"
           >
             <Users className="w-4 h-4" />
-            <span className="hidden md:inline">Participantes</span>
+            <span className="hidden lg:inline">Participantes</span>
             {manosArriba > 0 && (
               <span className="absolute -top-1.5 -right-1.5 bg-amber-400 text-amber-950 text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
                 {manosArriba}
               </span>
             )}
           </button>
-          <button
-            onClick={() => setAcercar((v) => !v)}
-            title={acercar ? "Ver la pantalla completa" : "Acercar la pantalla compartida"}
-            className={`inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-xl transition ${
-              acercar ? "bg-sky-500/30 text-sky-100" : "bg-white/10 hover:bg-white/20 text-white"
-            }`}
-          >
-            {acercar ? <ZoomOut className="w-4 h-4" /> : <ZoomIn className="w-4 h-4" />}
-            <span className="hidden lg:inline">{acercar ? "Alejar" : "Acercar"}</span>
-          </button>
-          {/* V3.9.33 — Los tres modos de ver la clase */}
-          <button
-            onClick={() => onModo(modo === "split" ? "full" : "split")}
-            title="Video al lado de la plataforma"
-            className={`hidden md:inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-xl transition ${
-              modo === "split"
-                ? "bg-sky-500/30 text-sky-100"
-                : "bg-white/10 hover:bg-white/20 text-white"
-            }`}
-          >
-            <Columns2 className="w-4 h-4" />
-            <span className="hidden lg:inline">Dividir</span>
-          </button>
-          <button
-            onClick={() => onModo("mini")}
-            title="Seguir en clase mientras navegas la plataforma"
-            className="inline-flex items-center gap-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 text-sm font-semibold px-3 py-2 rounded-xl transition"
-          >
-            <Minimize2 className="w-4 h-4" />
-            <span className="hidden md:inline">Minimizar</span>
-          </button>
+
+          {/* Menú con el resto de opciones */}
+          <div className="relative">
+            <button
+              onClick={() => setMenu((v) => !v)}
+              title="Más opciones"
+              className="inline-flex items-center bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-xl transition"
+              aria-label="Más opciones"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </button>
+
+            {menu && (
+              <>
+                <div className="fixed inset-0 z-30" onClick={() => setMenu(false)} />
+                <div className="absolute right-0 top-full mt-1.5 z-40 w-56 bg-[#182338] border border-white/10 rounded-xl overflow-hidden shadow-2xl">
+                  <button
+                    onClick={() => { setAcercar((v) => !v); setMenu(false); }}
+                    className="w-full flex items-center gap-2.5 px-4 py-3 text-white text-sm hover:bg-white/10 transition text-left"
+                  >
+                    {acercar ? <ZoomOut className="w-4 h-4" /> : <ZoomIn className="w-4 h-4" />}
+                    {acercar ? "Alejar pantalla compartida" : "Acercar pantalla compartida"}
+                  </button>
+
+                  {/* El modo dividido solo existe en computadora */}
+                  <button
+                    onClick={() => { onModo(modo === "split" ? "full" : "split"); setMenu(false); }}
+                    className="hidden md:flex w-full items-center gap-2.5 px-4 py-3 text-white text-sm hover:bg-white/10 transition text-left"
+                  >
+                    <Columns2 className="w-4 h-4" />
+                    {modo === "split" ? "Ver pantalla completa" : "Ver al lado de la plataforma"}
+                  </button>
+
+                  <button
+                    onClick={() => { onModo("mini"); setMenu(false); }}
+                    className="w-full flex items-center gap-2.5 px-4 py-3 text-emerald-200 text-sm hover:bg-white/10 transition text-left"
+                  >
+                    <Minimize2 className="w-4 h-4" />
+                    Minimizar y seguir navegando
+                  </button>
+
+                  {/* Plan B a un toque, para cuando el video falla en vivo */}
+                  {datos.fallback_url && (
+                    <a
+                      href={datos.fallback_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setMenu(false)}
+                      className="w-full flex items-center gap-2.5 px-4 py-3 text-amber-200 text-sm hover:bg-white/10 transition text-left border-t border-white/10"
+                    >
+                      <LifeBuoy className="w-4 h-4" />
+                      Usar el enlace de respaldo
+                    </a>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+
           <button
             onClick={colgar}
+            title="Salir de la clase"
             className="inline-flex items-center gap-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-200 text-sm font-semibold px-3 py-2 rounded-xl transition"
           >
             <PhoneOff className="w-4 h-4" />
-            <span className="hidden md:inline">Salir</span>
+            <span className="hidden lg:inline">Salir</span>
           </button>
         </div>
       </header>
