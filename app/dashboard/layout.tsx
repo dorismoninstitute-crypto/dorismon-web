@@ -15,7 +15,7 @@ import {
   Users, Briefcase, MapPin, CreditCard, DollarSign, FileSearch, Wrench,
   ClipboardList, FolderKanban, FileEdit, BookMarked, Layers, Wallet,
   MessageCircle, HelpCircle, Inbox, TrendingUp, Sparkles, Clock,
-  Image as ImageIcon, Quote, Repeat,
+  Image as ImageIcon, Quote, Repeat, ClipboardCheck,
 } from "lucide-react";
 
 // V2.9.1: Items agrupados por área con encabezados de sección
@@ -80,6 +80,7 @@ const adminGroups = [
     { href: "/dashboard/admin/courses", label: "Cursos", Icon: BookOpen },
     { href: "/dashboard/admin/content", label: "Contenido", Icon: Layers },
     { href: "/dashboard/admin/sessions", label: "Clases", Icon: Calendar },
+    { href: "/dashboard/admin/attendance", label: "Asistencia", Icon: ClipboardCheck },  // V3.9.40
     { href: "/dashboard/admin/teachers-schedule", label: "Agenda de profesores", Icon: Clock },
     { href: "/dashboard/admin/students-by-teacher", label: "Estudiantes por profesor", Icon: Users },
     { href: "/dashboard/admin/events", label: "Eventos", Icon: Ticket },
