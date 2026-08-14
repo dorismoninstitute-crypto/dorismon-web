@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { LoadingScreen, ErrorBox, PageHeader, Card, CardBody, showToast } from "@/components/ui";
+import SelectorVideo from "@/components/SelectorVideo";  // V3.9.38
 import { RotateCcw, Calendar, User, AlertTriangle, Check, X, Plus } from "lucide-react";
 
 /**
@@ -43,6 +44,7 @@ export default function ReposicionesPage() {
     student_id: "", original_session_id: "", teacher_id: "",
     starts_at_utc: "", duration_min: 60, modality: "online",
     counts_for_progress: false, reason: "",
+    video_provider: "meet", meeting_url: "",
   });
 
   const cargar = async (f = filtro) => {
@@ -62,9 +64,26 @@ export default function ReposicionesPage() {
 
   useEffect(() => {
     if (!nueva || estudiantes.length) return;
-    api("/admin/users?role=student&limit=200", { auth: true })
-      .then((r: any) => setEstudiantes(r?.items || []))
-      .catch(() => {});
+    // V3.9.38 FIX — Antes pedía limit=200, pero el máximo permitido es 100:
+    // el servidor devolvía error y la lista quedaba VACÍA. Ahora se piden
+    // hasta 100 por página y se juntan varias páginas.
+    (async () => {
+      const todos: any[] = [];
+      for (let p = 1; p <= 5; p++) {
+        try {
+          const r: any = await api(`/admin/users?role=student&limit=100&page=${p}`, { auth: true });
+          const lote = r?.items || [];
+          todos.push(...lote);
+          if (lote.length < 100) break;
+        } catch {
+          break;
+        }
+      }
+      setEstudiantes(todos);
+      if (todos.length === 0) {
+        showToast("error", "No se pudieron cargar los estudiantes. Recarga la página.");
+      }
+    })();
     api("/admin/users?role=teacher", { auth: true })
       .then((r: any) => setProfesores(r?.items || []))
       .catch(() => {});
@@ -100,6 +119,7 @@ export default function ReposicionesPage() {
         student_id: "", original_session_id: "", teacher_id: "",
         starts_at_utc: "", duration_min: 60, modality: "online",
         counts_for_progress: false, reason: "",
+        video_provider: "meet", meeting_url: "",
       });
       await cargar();
     } catch (e: any) {
@@ -391,6 +411,24 @@ export default function ReposicionesPage() {
                 </select>
               </div>
             </div>
+
+            {/* V3.9.38 — Dónde será el video de esta reposición */}
+            {form.modality !== "presencial" && (
+              <div className="mb-3">
+                <SelectorVideo
+                  value={form.video_provider}
+                  onChange={(v) => setForm({ ...form, video_provider: v })}
+                />
+                <input
+                  value={form.meeting_url}
+                  onChange={(e) => setForm({ ...form, meeting_url: e.target.value })}
+                  placeholder={form.video_provider === "dorismon"
+                    ? "Enlace de respaldo (recomendado)"
+                    : "Link de Zoom / Meet / Teams"}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm mt-2"
+                />
+              </div>
+            )}
 
             {/* La decisión que acordamos */}
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 mb-4">
