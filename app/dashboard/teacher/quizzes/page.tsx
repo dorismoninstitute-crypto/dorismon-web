@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import { teacherApi, safeArray } from "@/lib/api";
-import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Input, Textarea, Select, Modal, SuccessBox } from "@/components/ui";
+import { Send } from "lucide-react";
+import { teacherApi, safeArray, api } from "@/lib/api";
+import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Input, Textarea, Select, Modal, SuccessBox, showToast } from "@/components/ui";
 
 type QuestionDraft = {
   type: "multiple_choice" | "true_false" | "fill_blank" | "short_answer";
@@ -12,6 +13,8 @@ type QuestionDraft = {
 };
 
 export default function TeacherQuizzesPage() {
+  // V3.9.41 — Publicar / despublicar un quiz
+  const [publicando, setPublicando] = useState<any>(null);
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
@@ -123,6 +126,27 @@ export default function TeacherQuizzesPage() {
     } catch (e: any) { setMsg("✗ " + e.message); }
   };
 
+  const cambiarPublicacion = async (q: any, publicar: boolean, reavisar = false) => {
+    if (publicar && !reavisar) {
+      if (!confirm(`¿Publicar "${q.title}"? Se les avisará a los estudiantes del nivel por correo y notificación.`)) return;
+    }
+    if (reavisar && !confirm("¿Volver a avisarles a los estudiantes sobre este quiz?")) return;
+    setPublicando(q.id);
+    try {
+      const r: any = await api(`/teacher/quizzes/${q.id}/${publicar ? "publish" : "unpublish"}`, {
+        method: "POST", auth: true,
+      });
+      showToast("success", publicar
+        ? `✅ Publicado. Se avisó a ${r.notified ?? 0} estudiante(s).`
+        : "Quiz despublicado. Ya no lo ven los estudiantes.");
+      load();
+    } catch (e: any) {
+      showToast("error", e.message);
+    } finally {
+      setPublicando(null);
+    }
+  };
+
   if (loading) return <LoadingScreen />;
   if (err) return <ErrorBox message={err} />;
 
@@ -148,9 +172,47 @@ export default function TeacherQuizzesPage() {
                   </Badge>
                 </div>
                 {q.description && <p className="text-sm text-slate-600 mb-2">{q.description}</p>}
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-500 mb-3">
                   {q.question_count} preguntas · {q.attempts} intentos · Mínimo {q.passing_score}%
                 </p>
+
+                {/* V3.9.41 — FALTABA EL BOTÓN: el quiz se creaba pero no había
+                    forma de publicarlo desde aquí. Al publicar se avisa a los
+                    estudiantes del nivel por correo, campana y teléfono. */}
+                <div className="flex gap-2 flex-wrap items-center">
+                  {q.is_published ? (
+                    <>
+                      <button
+                        onClick={() => cambiarPublicacion(q, false)}
+                        disabled={publicando === q.id}
+                        className="text-xs font-semibold border border-slate-200 text-slate-600 px-3 py-2 rounded-lg hover:bg-slate-50 transition disabled:opacity-50"
+                      >
+                        Despublicar
+                      </button>
+                      <button
+                        onClick={() => cambiarPublicacion(q, true, true)}
+                        disabled={publicando === q.id}
+                        className="text-xs font-semibold text-brand-600 hover:text-brand-700 disabled:opacity-50"
+                      >
+                        🔔 Volver a avisar
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => cambiarPublicacion(q, true)}
+                      disabled={publicando === q.id || !q.question_count}
+                      className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold px-4 py-2.5 rounded-lg transition"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      {publicando === q.id ? "Publicando..." : "Publicar y avisar"}
+                    </button>
+                  )}
+                  {!q.question_count && (
+                    <span className="text-[11px] text-amber-600">
+                      Sin preguntas: agrégale al menos una para publicarlo
+                    </span>
+                  )}
+                </div>
               </CardBody>
             </Card>
           ))}
