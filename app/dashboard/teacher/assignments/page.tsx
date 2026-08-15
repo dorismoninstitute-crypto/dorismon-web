@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { teacherApi, adminHelpers, safeArray } from "@/lib/api";
 import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Input, Textarea, Select, Modal, SuccessBox } from "@/components/ui";
+import SelectorAudiencia from "@/components/SelectorAudiencia";  // V3.9.46
 
 export default function TeacherAssignmentsPage() {
   const [items, setItems] = useState<any[]>([]);
@@ -14,6 +15,7 @@ export default function TeacherAssignmentsPage() {
   const [form, setForm] = useState({
     title: "", description: "", instructions: "",
     course_id: "", level_id: "",
+    series_id: null as string | null,  // V3.9.46: a qué grupo va
     max_score: 100, due_at: "",
   });
   const [msg, setMsg] = useState("");
@@ -54,12 +56,13 @@ export default function TeacherAssignmentsPage() {
         description: form.description || undefined,
         instructions: form.instructions || undefined,
         level_id: form.level_id ? parseInt(form.level_id) : null,
+        series_id: form.series_id || null,  // V3.9.46
         max_score: form.max_score,
         due_at: form.due_at ? new Date(form.due_at).toISOString() : null,
       });
       setMsg("✓ Tarea creada");
       setShowModal(false);
-      setForm({ title: "", description: "", instructions: "", course_id: "", level_id: "", max_score: 100, due_at: "" });
+      setForm({ title: "", description: "", instructions: "", course_id: "", level_id: "", series_id: null, max_score: 100, due_at: "" });
       load();
     } catch (e: any) { setMsg("✗ " + e.message); }
   };
@@ -130,6 +133,16 @@ export default function TeacherAssignmentsPage() {
               {levels.map(l => <option key={l.id} value={l.id}>{l.code} — {l.name}</option>)}
             </Select>
           </div>
+
+          {/* V3.9.46 P1 — A quién va la tarea, con nombres humanos */}
+          {form.level_id && (
+            <SelectorAudiencia
+              levelId={form.level_id}
+              value={{ series_id: form.series_id }}
+              onChange={(v) => setForm({ ...form, series_id: v.series_id || null })}
+              etiquetaTodos="Todos mis estudiantes de este nivel"
+            />
+          )}
 
           <div className="grid md:grid-cols-2 gap-3">
             <Input label="Puntaje máximo" type="number" value={form.max_score} onChange={(e: any) => setForm({ ...form, max_score: Number(e.target.value) })} />

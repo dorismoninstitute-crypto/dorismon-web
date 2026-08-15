@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Send } from "lucide-react";
 import { teacherApi, safeArray, api } from "@/lib/api";
 import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Input, Textarea, Select, Modal, SuccessBox, showToast } from "@/components/ui";
+import SelectorAudiencia from "@/components/SelectorAudiencia";  // V3.9.46
 
 type QuestionDraft = {
   type: "multiple_choice" | "true_false" | "fill_blank" | "short_answer";
@@ -25,6 +26,7 @@ export default function TeacherQuizzesPage() {
   const [quiz, setQuiz] = useState({
     title: "", description: "",
     course_id: "", level_id: "",
+    series_id: null as string | null,  // V3.9.46: a qué grupo va
     passing_score: 70, max_attempts: 3,
   });
   const [courses, setCourses] = useState<any[]>([]);
@@ -108,6 +110,7 @@ export default function TeacherQuizzesPage() {
         title: quiz.title,
         description: quiz.description || undefined,
         level_id: parseInt(quiz.level_id),
+        series_id: quiz.series_id || null,  // V3.9.46
         passing_score: quiz.passing_score,
         max_attempts: quiz.max_attempts,
         questions: questions.map(q => ({
@@ -121,7 +124,7 @@ export default function TeacherQuizzesPage() {
       await teacherApi.createQuiz(body);
       setMsg("✓ Quiz creado");
       setShow(false);
-      setQuiz({ title: "", description: "", course_id: "", level_id: "", passing_score: 70, max_attempts: 3 });
+      setQuiz({ title: "", description: "", course_id: "", level_id: "", series_id: null, passing_score: 70, max_attempts: 3 });
       setQuestions([{ type: "multiple_choice", statement: "", options: ["", "", "", ""], correct_answer: "", points: 10 }]);
       load();
     } catch (e: any) { setMsg("✗ " + e.message); }
@@ -251,6 +254,16 @@ export default function TeacherQuizzesPage() {
                   {levels.map(l => <option key={l.id} value={l.id}>{l.code}</option>)}
                 </Select>
               </div>
+
+              {/* V3.9.46 P1 — A quién va el quiz */}
+              {quiz.level_id && (
+                <SelectorAudiencia
+                  levelId={quiz.level_id}
+                  value={{ series_id: quiz.series_id }}
+                  onChange={(v) => setQuiz({ ...quiz, series_id: v.series_id || null })}
+                  etiquetaTodos="Todos mis estudiantes de este nivel"
+                />
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <Input label="Mínimo aprobación (%)" type="number" value={quiz.passing_score} onChange={(e: any) => setQuiz({ ...quiz, passing_score: Number(e.target.value) })} />
