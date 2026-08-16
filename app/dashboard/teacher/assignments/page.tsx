@@ -4,8 +4,10 @@ import Link from "next/link";
 import { teacherApi, adminHelpers, safeArray } from "@/lib/api";
 import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Input, Textarea, Select, Modal, SuccessBox } from "@/components/ui";
 import SelectorAudiencia from "@/components/SelectorAudiencia";  // V3.9.46
+import SeguimientoTarea from "@/components/SeguimientoTarea";  // V3.9.49
 
 export default function TeacherAssignmentsPage() {
+  const [viendo, setViendo] = useState<any>(null);  // V3.9.49
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
@@ -72,6 +74,9 @@ export default function TeacherAssignmentsPage() {
 
   return (
     <>
+      {viendo && (
+        <SeguimientoTarea assignmentId={viendo.id} onClose={() => { setViendo(null); load(); }} />
+      )}
       <PageHeader
         title="Tareas"
         subtitle={`${items.length} tareas asignadas`}
@@ -108,8 +113,12 @@ export default function TeacherAssignmentsPage() {
                 {a.submitted > a.graded && (
                   <Badge variant="warning">{a.submitted - a.graded} por calificar</Badge>
                 )}
+                {/* V3.9.49 P2 — quién entregó Y quién no */}
+                <Button size="sm" variant="outline" onClick={() => setViendo(a)}>
+                  👥 Quién entregó
+                </Button>
                 <Link href={`/dashboard/teacher/assignments/${a.id}`}>
-                  <Button size="sm" variant="outline">Ver entregas</Button>
+                  <Button size="sm" variant="outline">Calificar</Button>
                 </Link>
               </CardBody>
             </Card>

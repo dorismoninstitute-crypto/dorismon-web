@@ -11,6 +11,10 @@ export default function StudentAssignmentsPage() {
   const [err, setErr] = useState("");
   const [blockedByPlan, setBlockedByPlan] = useState(false);
   const [open, setOpen] = useState<number | null>(null);
+  // V3.9.51 — Borrador: se guarda para no perder el trabajo, y es lo que
+  // marca la tarea como "empezada" para el profesor.
+  const [guardando, setGuardando] = useState(false);
+  const [borradorGuardado, setBorradorGuardado] = useState<number | null>(null);
   const [content, setContent] = useState("");
   // V3.9.30 — entrega con archivo
   const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -57,6 +61,44 @@ export default function StudentAssignmentsPage() {
       setContent(""); setOpen(null);
       load();
     } catch (e: any) { setMsg("✗ " + e.message); }
+  };
+
+  // V3.9.51 — Al abrir la tarea se pide su DETALLE. Ese es el hecho que
+  // marca "la vio": abrir el listado no lo es. De paso se recupera el
+  // borrador que hubiera guardado antes.
+  const abrirTarea = async (a: any) => {
+    if (open === a.id) { setOpen(null); return; }
+    setOpen(a.id);
+    setContent("");
+    setBorradorGuardado(null);
+    try {
+      const d: any = await studentApi.assignmentDetail(a.id);
+      if (d?.content && !d?.submitted_at) {
+        setContent(d.content);
+        if (d?.started_at) setBorradorGuardado(a.id);
+      }
+    } catch {
+      // Si falla, el estudiante puede escribir igual: no se le bloquea
+    }
+  };
+
+  // Guardar borrador. Botón explícito en vez de autosave por tecla: es más
+  // predecible y no llena el servidor de peticiones.
+  const guardarBorrador = async (id: number) => {
+    if (!content.trim()) {
+      setMsg("✗ Escribe algo antes de guardar");
+      return;
+    }
+    setGuardando(true);
+    try {
+      await studentApi.saveAssignmentDraft(id, content);
+      setBorradorGuardado(id);
+      setMsg("✓ Borrador guardado — puedes seguir después");
+    } catch (e: any) {
+      setMsg("✗ " + e.message);
+    } finally {
+      setGuardando(false);
+    }
   };
 
   if (loading) return <LoadingScreen />;
@@ -109,8 +151,8 @@ export default function StudentAssignmentsPage() {
                     {a.description && <p className="text-sm text-slate-600 mt-1">{a.description}</p>}
                   </div>
                   {!a.submitted && (
-                    <Button onClick={() => setOpen(open === a.id ? null : a.id)}>
-                      {open === a.id ? "Cerrar" : "Entregar"}
+                    <Button onClick={() => abrirTarea(a)}>
+                      {open === a.id ? "Cerrar" : "Hacer la tarea"}
                     </Button>
                   )}
                 </div>
@@ -163,9 +205,29 @@ export default function StudentAssignmentsPage() {
                       </button>
                     </div>
 
-                    <Button onClick={() => submit(a.id)} disabled={!content.trim()}>
-                      Enviar entrega
-                    </Button>
+                    {/* V3.9.51 — Guardar sin entregar, para seguir después */}
+                    {borradorGuardado === a.id && (
+                      <div className="bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2 text-xs text-emerald-800">
+                        ✓ Tienes un borrador guardado. Puedes cerrar y seguir
+                        después — no se pierde.
+                      </div>
+                    )}
+
+                    <div className="flex gap-2 flex-wrap">
+                      <Button onClick={() => submit(a.id)} disabled={!content.trim()}>
+                        Enviar entrega
+                      </Button>
+                      <button
+                        onClick={() => guardarBorrador(a.id)}
+                        disabled={guardando || !content.trim()}
+                        className="text-sm font-semibold border border-slate-200 text-slate-600 px-4 py-2 rounded-lg hover:bg-slate-50 transition disabled:opacity-50"
+                      >
+                        {guardando ? "Guardando..." : "Guardar borrador"}
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-slate-400">
+                      Enviar es definitivo. Guardar borrador te deja seguir después.
+                    </p>
                   </div>
                 )}
 

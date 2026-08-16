@@ -5,6 +5,7 @@ import { adminApi, adminInsights, adminCertCandidates, safeObj, safeArray } from
 import { LoadingScreen, ErrorBox, PageHeader, Card, CardBody, StatCard, Badge, Button } from "@/components/ui";
 import AlertasAdmin from "@/components/AlertasAdmin";  // V3.9.30
 import SinHorarioAviso from "@/components/SinHorarioAviso";  // V3.9.36
+import { EstudiantesEnRiesgo } from "@/components/PanelSeguimiento";  // V3.9.49
 import { Award, ArrowRight } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -46,6 +47,7 @@ export default function AdminDashboard() {
       {/* V3.9.30: alertas que SÍ se pueden resolver */}
       <AlertasAdmin />
       <SinHorarioAviso />
+      <EstudiantesEnRiesgo paraAdmin />
 
       {stats.total_modules === 0 && (
         <Card className="mb-4 border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50">

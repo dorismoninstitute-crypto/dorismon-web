@@ -5,6 +5,7 @@ import { Send } from "lucide-react";
 import { teacherApi, safeArray, api } from "@/lib/api";
 import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, Input, Textarea, Select, Modal, SuccessBox, showToast } from "@/components/ui";
 import SelectorAudiencia from "@/components/SelectorAudiencia";  // V3.9.46
+import SeguimientoQuiz from "@/components/SeguimientoQuiz";  // V3.9.49
 
 type QuestionDraft = {
   type: "multiple_choice" | "true_false" | "fill_blank" | "short_answer";
@@ -15,6 +16,7 @@ type QuestionDraft = {
 };
 
 export default function TeacherQuizzesPage() {
+  const [viendoQuiz, setViendoQuiz] = useState<any>(null);  // V3.9.49
   // V3.9.41 — Publicar / despublicar un quiz
   const [publicando, setPublicando] = useState<any>(null);
   const [items, setItems] = useState<any[]>([]);
@@ -156,6 +158,13 @@ export default function TeacherQuizzesPage() {
 
   return (
     <>
+      {viendoQuiz && (
+        <SeguimientoQuiz
+          quizId={viendoQuiz.id}
+          puedeConceder
+          onClose={() => { setViendoQuiz(null); load(); }}
+        />
+      )}
       <PageHeader
         title="Quizzes"
         subtitle={`${items.length} quizzes`}
@@ -196,6 +205,13 @@ export default function TeacherQuizzesPage() {
                     forma de publicarlo desde aquí. Al publicar se avisa a los
                     estudiantes del nivel por correo, campana y teléfono. */}
                 <div className="flex gap-2 flex-wrap items-center">
+                  {/* V3.9.49 P2 — quién lo hizo y cómo le fue */}
+                  <button
+                    onClick={() => setViendoQuiz(q)}
+                    className="text-xs font-semibold border border-slate-200 text-slate-700 px-3 py-2 rounded-lg hover:bg-slate-50 transition"
+                  >
+                    👥 Quién lo hizo
+                  </button>
                   {q.is_published ? (
                     <>
                       <button

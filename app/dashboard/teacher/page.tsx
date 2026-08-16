@@ -4,6 +4,7 @@ import Link from "next/link";
 import { teacherApi, safeArray, safeObj, getLevelTheme } from "@/lib/api";
 import { LoadingScreen, ErrorBox, PageHeader, Card, CardBody, Button, JoinClassButton, CalendarButton, showToast } from "@/components/ui";
 import AvisosTelefono from "@/components/AvisosTelefono";  // V3.9.29
+import { EntregasPendientes, EstudiantesEnRiesgo } from "@/components/PanelSeguimiento";  // V3.9.49
 import PendingAttendance from "@/components/PendingAttendance";
 import Avatar from "@/components/Avatar";
 import {
@@ -81,6 +82,10 @@ export default function TeacherDashboard() {
       </div>
 
       {/* Stats premium */}
+      {/* V3.9.49 P2 — que se entere sin tener que ir a buscarlo */}
+      <EntregasPendientes />
+      <EstudiantesEnRiesgo />
+
       <div className="mb-5"><AvisosTelefono /></div>
 
       {/* V3.9.22: clases sin asistencia (acceso directo para pasar lista) */}

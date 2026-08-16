@@ -210,6 +210,13 @@ export const studentApi = {
   rescheduleTrial: () =>
     api("/student/trial-class/reschedule", { method: "POST", auth: true }),
   assignments: () => api("/student/assignments", { auth: true }),
+  // V3.9.51 — Abrir el detalle de UNA tarea. Esto marca que la vio.
+  // El listado NO marca nada: solo esto es "el estudiante abrió esta tarea".
+  assignmentDetail: (id: number) =>
+    api(`/student/assignments/${id}`, { auth: true }),
+  // Guardar borrador: esto es lo que marca la tarea como empezada
+  saveAssignmentDraft: (id: number, content: string) =>
+    api(`/student/assignments/${id}/draft`, { method: "POST", body: { content }, auth: true }),
   submitAssignment: (id: number, body: any) =>
     api(`/student/assignments/${id}/submit`, { method: "POST", body, auth: true }),
   quizzes: () => api("/student/quizzes", { auth: true }),
