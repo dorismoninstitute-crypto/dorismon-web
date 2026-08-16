@@ -55,8 +55,24 @@ export default function AdminCertificatesPage() {
 
   // V3.9.28 — Emitir con red de seguridad: si el estudiante no terminó el
   // nivel (o ya tiene certificado), el sistema avisa antes de emitir.
-  const emitir = async (confirmarIgual = false) => {
+  const emitir = async (confirmarIgual = false, enrollmentId?: string) => {
     setMsg("");
+
+    // V3.9.56 — Saltarse el flujo de finalización exige un MOTIVO.
+    //
+    // Antes se mandaba solo el booleano y el backend lo rechazaba: la
+    // pantalla se quedaba sin poder emitir y sin explicar por qué. Ahora se
+    // pide el motivo aquí, que además es lo que queda en la auditoría.
+    let motivoExc = "";
+    if (confirmarIgual) {
+      const m = prompt(
+        "Este estudiante no tiene el nivel completado.\n\n" +
+        "¿Por qué se emite igualmente? (queda registrado)"
+      );
+      if (!m?.trim()) return;
+      motivoExc = m.trim();
+    }
+
     try {
       const r = await adminApi.issueCertificate({
         student_id: form.student_id,
@@ -64,7 +80,11 @@ export default function AdminCertificatesPage() {
         level_id: parseInt(form.level_id),
         hours: form.hours,
         final_grade: form.final_grade > 0 ? form.final_grade : undefined,
-        ...(confirmarIgual ? { confirmar_incompleto: true } : {}),
+        // Si el estudiante repitió el nivel, hay que decir de qué matrícula
+        ...(enrollmentId ? { enrollment_id: enrollmentId } : {}),
+        ...(confirmarIgual
+          ? { confirmar_incompleto: true, exception_reason: motivoExc }
+          : {}),
       });
       setMsg(`✓ Certificado emitido: ${r.code}`);
       setShow(false);
@@ -75,6 +95,22 @@ export default function AdminCertificatesPage() {
       // El backend devuelve 409 cuando hace falta confirmar
       if (e?.status === 409 && e?.detail?.necesita_confirmacion) {
         setAviso({ mensaje: e.detail.mensaje });
+        return;
+      }
+      // V3.9.56 — Repitió el nivel: hay que elegir a qué matrícula pertenece
+      if (e?.status === 400 && e?.detail?.necesita_enrollment_id) {
+        const ops = e.detail.opciones || [];
+        const texto = ops.map((o: any, i: number) =>
+          `${i + 1}) ${o.academic_status}` +
+          (o.completed_at ? ` — completado ${o.completed_at.slice(0, 10)}`
+                          : ` — desde ${(o.enrolled_at || "").slice(0, 10)}`)
+        ).join("\n");
+        const eleccion = prompt(
+          `${e.detail.mensaje}\n\n${texto}\n\nEscribe el número:`);
+        const idx = parseInt(eleccion || "0") - 1;
+        if (ops[idx]) {
+          await emitir(confirmarIgual, ops[idx].enrollment_id);
+        }
         return;
       }
       setMsg("✗ " + e.message);

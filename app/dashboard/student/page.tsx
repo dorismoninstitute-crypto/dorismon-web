@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { studentApi, studentPayments, placement, progress, events, publicApi, safeArray, safeObj, getLevelTheme } from "@/lib/api";
 import { LoadingScreen, ErrorBox, EmptyState, Card, CardBody, Badge, Button, showToast, CalendarButton, JoinClassButton, ClassLocation } from "@/components/ui";
+import MiProgresoNivel from "@/components/MiProgresoNivel";  // V3.9.53
 import AvisosTelefono from "@/components/AvisosTelefono";  // V3.9.29
 import {
   Calendar, FileText, CheckCircle2, Target, Trophy, TrendingUp,

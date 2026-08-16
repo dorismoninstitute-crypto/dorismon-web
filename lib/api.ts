@@ -194,6 +194,10 @@ export const catalog = {
   course: (id: number) => api(`/courses/${id}`),
   levelModules: (id: number) => api(`/levels/${id}/modules`),
   lesson: (id: number) => api(`/lessons/${id}`, { auth: true }),
+  // V3.9.55 — Marcar una lección como vista. Es lo que cubre el contenido
+  // del módulo: sin esto, el requisito de cobertura sería inalcanzable.
+  completeLesson: (id: number, completed = true) =>
+    api(`/lessons/${id}/complete`, { method: "POST", body: { completed }, auth: true }),
   // V2.9.1: planes públicos para checkout
   plans: () => api("/plans"),
 };
@@ -534,7 +538,19 @@ export const profileApi = {
     api("/auth/change-password", { method: "POST", body: { current_password, new_password }, auth: true }),
 };
 
-// V1.6.3 — Candidatos a certificación
+/**
+ * V1.6.3 — Candidatos a certificación.
+ *
+ * ⚠️ V3.9.54 — RUTA ANTIGUA. Ninguna pantalla la usa.
+ *
+ * La emisión de certificados va por el flujo de P3:
+ *   Admin → Finalizaciones → aprobar nivel → emitir certificado
+ *
+ * El backend ya la alineó al criterio nuevo (solo lista y emite matrículas
+ * con el nivel COMPLETADO), así que no puede contradecir al flujo principal.
+ * Se conserva para no romper nada que la llame, pero no se debe usar en
+ * pantallas nuevas.
+ */
 export const adminCertCandidates = {
   list: () => api("/admin/certification-candidates", { auth: true }),
   issue: (enrollmentId: string, body?: { final_grade?: number; hours_completed?: number }) =>
