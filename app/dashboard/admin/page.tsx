@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { adminApi, adminAssign, api, safeArray } from "@/lib/api";
+import { adminApi, adminAssign, api, auth, safeArray } from "@/lib/api";
 import { LoadingScreen, ErrorBox, showToast } from "@/components/ui";
 import AlertasAdmin from "@/components/AlertasAdmin";
 import {
@@ -55,6 +55,7 @@ function faltan(iso: string): string | null {
 
 export default function AdminDashboard() {
   const [d, setD] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [finance, setFinance] = useState<any>(null);
   const [alertas, setAlertas] = useState<any>({});
   const [clases, setClases] = useState<any[]>([]);
@@ -65,8 +66,15 @@ export default function AdminDashboard() {
   useEffect(() => {
     (async () => {
       try {
-        const dash = await adminApi.dashboard();
+        // La identidad visible sale de /auth/me, la misma fuente que usan
+        // el sidebar y Mi cuenta. Nunca usar listados/estadísticas del
+        // dashboard como fuente de identidad del usuario autenticado.
+        const [dash, me] = await Promise.all([
+          adminApi.dashboard(),
+          auth.me(),
+        ]);
         setD(dash);
+        setCurrentUser(me);
 
         // Todos son endpoints existentes. Un panel secundario puede fallar sin
         // impedir que Dirección vea el resto del dashboard.
@@ -212,7 +220,7 @@ export default function AdminDashboard() {
       <div>
         <h1 className="text-2xl md:text-3xl font-black text-slate-800">
           {saludo()}
-          {d?.user?.full_name ? `, ${d.user.full_name.split(" ")[0]}` : ""}
+          {currentUser?.full_name ? `, ${currentUser.full_name.split(" ")[0]}` : ""}
         </h1>
         <p className="text-sm text-slate-500 capitalize">{hoyLargo()}</p>
       </div>
