@@ -42,9 +42,15 @@ function telefonoWhatsApp(tel?: string | null): string | null {
   return d.length === 10 ? "1" + d : d;
 }
 
-export default function AlertasAdmin() {
-  const [data, setData] = useState<any>(null);
-  const [cargando, setCargando] = useState(true);
+export default function AlertasAdmin({
+  initialData = null,
+  showAllClear = true,
+}: {
+  initialData?: any;
+  showAllClear?: boolean;
+} = {}) {
+  const [data, setData] = useState<any>(initialData);
+  const [cargando, setCargando] = useState(!initialData);
   const [ocupado, setOcupado] = useState<string | null>(null);
 
   const cargar = async () => {
@@ -58,7 +64,14 @@ export default function AlertasAdmin() {
     }
   };
 
-  useEffect(() => { cargar(); }, []);
+  useEffect(() => {
+    if (initialData) {
+      setData(initialData);
+      setCargando(false);
+      return;
+    }
+    cargar();
+  }, [initialData]);
 
   const actuar = async (key: string, action: string, note?: string) => {
     setOcupado(key);
@@ -97,6 +110,7 @@ export default function AlertasAdmin() {
 
   // Sin nada pendiente: se felicita en vez de mostrar una caja vacía
   if (grupos.length === 0) {
+    if (!showAllClear) return null;
     return (
       <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 mb-6 flex items-center gap-3">
         <Check className="w-5 h-5 text-emerald-600 flex-shrink-0" />

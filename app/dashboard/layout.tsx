@@ -72,58 +72,65 @@ const teacherGroups = [
   ]},
 ];
 
+/**
+ * V3.9.60 — Menú del Admin reorganizado por CÓMO SE TRABAJA, no por cuándo
+ * se fue construyendo cada módulo.
+ *
+ * ⚠️ Todas las rutas se conservan tal cual: esto es solo reagrupación. Nada
+ * de aquí cambia una llamada a la API ni un permiso.
+ */
 const adminGroups = [
   { section: null, items: [
-    { href: "/dashboard/admin", label: "Dashboard", Icon: BarChart3 },
+    { href: "/dashboard/admin", label: "Inicio", Icon: BarChart3 },
+  ]},
+  { section: "Operación académica", items: [
+    { href: "/dashboard/admin/sessions", label: "Clases", Icon: Calendar },
+    { href: "/dashboard/admin/groups", label: "Grupos y horarios", Icon: Users },
+    { href: "/dashboard/admin/teachers-schedule", label: "Agenda de profesores", Icon: Clock },
+    { href: "/dashboard/admin/attendance", label: "Asistencia", Icon: ClipboardCheck },
+    { href: "/dashboard/admin/makeups", label: "Reposiciones", Icon: Repeat },
+    { href: "/dashboard/admin/events", label: "Eventos", Icon: Ticket },
+    { href: "/dashboard/admin/branches", label: "Sedes y aulas", Icon: MapPin },
+  ]},
+  { section: "Personas", items: [
+    { href: "/dashboard/admin/students-by-teacher", label: "Estudiantes", Icon: Users },
+    { href: "/dashboard/admin/enrollments", label: "Inscripciones", Icon: ClipboardList },
+    { href: "/dashboard/admin/placement-results", label: "Placement", Icon: Target },
+    { href: "/dashboard/admin/trial-classes", label: "Clases de prueba", Icon: Sparkles },
+    { href: "/dashboard/admin/users", label: "Usuarios", Icon: Users },
   ]},
   { section: "Académico", items: [
     { href: "/dashboard/admin/courses", label: "Cursos", Icon: BookOpen },
     { href: "/dashboard/admin/content", label: "Contenido", Icon: Layers },
-    { href: "/dashboard/admin/sessions", label: "Clases", Icon: Calendar },
-    { href: "/dashboard/admin/attendance", label: "Asistencia", Icon: ClipboardCheck },  // V3.9.40
-    { href: "/dashboard/admin/teachers-schedule", label: "Agenda de profesores", Icon: Clock },
-    { href: "/dashboard/admin/students-by-teacher", label: "Estudiantes por profesor", Icon: Users },
-    { href: "/dashboard/admin/events", label: "Eventos", Icon: Ticket },
-    { href: "/dashboard/admin/branches", label: "Sedes y aulas", Icon: MapPin },
-  ]},
-  { section: "Estudiantes", items: [
-    { href: "/dashboard/admin/users", label: "Usuarios", Icon: Users },
-    { href: "/dashboard/admin/enrollments", label: "Inscripciones", Icon: ClipboardList },
-    { href: "/dashboard/admin/groups", label: "Grupos y horarios", Icon: Users },  // V3.9.33
-    { href: "/dashboard/admin/makeups", label: "Reposiciones", Icon: Repeat },  // V3.9.36
-    { href: "/dashboard/admin/placement-results", label: "Placement", Icon: Target },
-    { href: "/dashboard/admin/trial-classes", label: "Clases de prueba", Icon: Sparkles },
+    { href: "/dashboard/admin/ai-content", label: "Generar contenido IA", Icon: Sparkles },
+    { href: "/dashboard/admin/academic-overview", label: "Seguimiento académico", Icon: TrendingUp },
+    { href: "/dashboard/admin/completions", label: "Finalizaciones", Icon: GraduationCap },
+    { href: "/dashboard/admin/certificates", label: "Certificados", Icon: Award },
+    { href: "/dashboard/admin/certification-ready", label: "Listos para certificar", Icon: Award },
   ]},
   { section: "Finanzas", items: [
-    { href: "/dashboard/admin/plans", label: "Planes", Icon: CreditCard },
+    { href: "/dashboard/admin/finance", label: "Resumen financiero", Icon: TrendingUp },
     { href: "/dashboard/admin/payments", label: "Pagos estudiantes", Icon: DollarSign },
     { href: "/dashboard/admin/payment-proofs", label: "Verificar pagos", Icon: CheckCircle2 },
+    { href: "/dashboard/admin/plans", label: "Planes", Icon: CreditCard },
     { href: "/dashboard/admin/bank-accounts", label: "Cuentas bancarias", Icon: CreditCard },
     { href: "/dashboard/admin/teacher-payments", label: "Pagos a profesores", Icon: Wallet },
-    { href: "/dashboard/admin/finance", label: "Contabilidad", Icon: TrendingUp },
-  ]},
-  { section: "Certificación", items: [
-    { href: "/dashboard/admin/certificates", label: "Certificados", Icon: GraduationCap },
-    { href: "/dashboard/admin/completions", label: "Finalizaciones", Icon: GraduationCap },  // V3.9.53
-    { href: "/dashboard/admin/certification-ready", label: "Listos certificar", Icon: Award },
   ]},
   { section: "Crecimiento", items: [
-    { href: "/dashboard/admin/ai-content", label: "Generar contenido", Icon: Sparkles },
     { href: "/dashboard/admin/reactivation", label: "Reactivación", Icon: TrendingUp },
-  ]},
-  { section: "Página pública", items: [
-    { href: "/dashboard/admin/site-images", label: "Imágenes del sitio", Icon: ImageIcon },
     { href: "/dashboard/admin/testimonials", label: "Testimonios", Icon: Quote },
+    { href: "/dashboard/admin/site-images", label: "Página pública", Icon: ImageIcon },
   ]},
-  { section: "Soporte y sistema", items: [
+  { section: "Sistema", items: [
     { href: "/dashboard/messages", label: "Mensajes", Icon: MessageCircle },
-    { href: "/dashboard/admin/tickets", label: "Tickets soporte", Icon: Inbox },
+    { href: "/dashboard/admin/tickets", label: "Tickets de soporte", Icon: Inbox },
     { href: "/dashboard/admin/audit", label: "Auditoría", Icon: FileSearch },
     { href: "/dashboard/admin/settings", label: "Configuración", Icon: Wrench },
     { href: "/dashboard/admin/maintenance", label: "Mantenimiento", Icon: Wrench },
     { href: "/dashboard/account", label: "Mi cuenta", Icon: Settings },
   ]},
 ];
+
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -158,6 +165,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const u = safeObj(user, {}) as any;
   const role = u.role || "student";
   const groups = role === "super_admin" ? adminGroups : role === "teacher" ? teacherGroups : studentGroups;
+  const isAdmin = role === "super_admin";  // V3.9.60 — barra inferior móvil
 
   // Tema del sidebar: para estudiante usa colores por nivel, para admin/profe usa brand
   const theme = role === "student" ? getLevelTheme(studentLevel) : null;
@@ -276,7 +284,49 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
            El registro ya valida el email con MX records, marcamos email_verified=true.
            Si en el futuro queremos verificación adicional, será opcional. */}
 
-        <main className="p-3 md:p-8 max-w-7xl mx-auto pb-20 md:pb-8">{children}</main>
+        <main className="p-3 md:p-8 max-w-7xl mx-auto pb-24 md:pb-8">{children}</main>
+
+        {/* V3.9.60 — Barra inferior en móvil, solo para Admin.
+            Los cuatro destinos que Dirección abre a diario; "Más" abre el
+            menú completo, que sigue siendo la navegación de verdad. */}
+        {isAdmin && (
+          <nav
+            aria-label="Navegación rápida"
+            className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-slate-200 flex"
+            style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+          >
+            {[
+              { href: "/dashboard/admin", label: "Inicio", Icon: BarChart3 },
+              { href: "/dashboard/admin/sessions", label: "Clases", Icon: Calendar },
+              { href: "/dashboard/admin/students-by-teacher", label: "Estudiantes", Icon: Users },
+              { href: "/dashboard/admin/finance", label: "Finanzas", Icon: TrendingUp },
+            ].map((t) => {
+              const activo = pathname === t.href;
+              return (
+                <Link
+                  key={t.href}
+                  href={t.href}
+                  aria-current={activo ? "page" : undefined}
+                  className={clsx(
+                    "flex-1 flex flex-col items-center gap-0.5 py-2.5 min-h-[56px] transition",
+                    activo ? "text-brand-600" : "text-slate-500 hover:text-slate-700"
+                  )}
+                >
+                  <t.Icon className="w-5 h-5" />
+                  <span className="text-[10px] font-semibold">{t.label}</span>
+                </Link>
+              );
+            })}
+            <button
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Abrir el menú completo"
+              className="flex-1 flex flex-col items-center gap-0.5 py-2.5 min-h-[56px] text-slate-500 hover:text-slate-700 transition"
+            >
+              <Menu className="w-5 h-5" />
+              <span className="text-[10px] font-semibold">Más</span>
+            </button>
+          </nav>
+        )}
       </div>
     </div>
     </CallProvider>
