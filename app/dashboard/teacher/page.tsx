@@ -197,7 +197,10 @@ export default function TeacherDashboard() {
                             </p>
                           </div>
                         </div>
-                        {s.meeting_url && (
+                        {/* V3.9.64 — Mismo criterio que el panel del
+                            estudiante: con Video Dorismon el `meeting_url` es
+                            un respaldo opcional, no un requisito para entrar. */}
+                        {(s.video_provider === "dorismon" || s.meeting_url) && (
                           <div className="flex gap-2 mt-3 flex-wrap">
                             <JoinClassButton session={s} />
                             <CalendarButton sessionId={s.id} />

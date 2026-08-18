@@ -56,7 +56,23 @@ export default function CalendarPage() {
                       </div>
                       {e.type === "class" && (
                         <div className="flex flex-col gap-2">
-                          {e.meeting_url && <JoinClassButton session={{ id: e.id, meeting_url: e.meeting_url }} />}
+                          {/* V3.9.64 — Antes se pasaba solo {id, meeting_url},
+                              así que el botón no sabía ni el proveedor ni los
+                              horarios: con Video Dorismon no aparecía, y
+                              cuando aparecía no distinguía si la clase estaba
+                              en curso. Ahora recibe la clase completa. */}
+                          {(e.video_provider === "dorismon" || e.meeting_url) && (
+                            <JoinClassButton
+                              session={{
+                                id: e.id,
+                                meeting_url: e.meeting_url,
+                                video_provider: e.video_provider,
+                                starts_at_utc: e.starts_at_utc || e.starts_at,
+                                ends_at_utc: e.ends_at_utc,
+                                status: e.status,
+                              }}
+                            />
+                          )}
                           {e.id && <CalendarButton sessionId={e.id} />}
                         </div>
                       )}

@@ -493,7 +493,12 @@ export default function StudentDashboard() {
                 </div>
               </div>
               <div className="flex gap-2 flex-wrap mt-4">
-                {progressData.next_session.meeting_url && (
+                {/* V3.9.64 — El Video Dorismon NO necesita `meeting_url`: el
+                    enlace externo es solo un respaldo OPCIONAL. Antes esta
+                    condición exigía el link, así que un grupo con video propio
+                    y sin respaldo se quedaba sin botón para entrar. */}
+                {(progressData.next_session.video_provider === "dorismon" ||
+                  progressData.next_session.meeting_url) && (
                   <JoinClassButton session={progressData.next_session} />
                 )}
                 <CalendarButton sessionId={progressData.next_session.id} />

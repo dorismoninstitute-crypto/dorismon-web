@@ -36,9 +36,12 @@ export default function AdminSessionsPage() {
   });
   const [eventSaving, setEventSaving] = useState(false);
   const [seriesList, setSeriesList] = useState<any[]>([]);  // V1.7
-  // V3.9.8: Reprogramar serie a futuro
+  // V3.9.62: Editar serie completa (horario, profesor, modalidad y video)
   const [reschedSeries, setReschedSeries] = useState<any>(null);
-  const [reschedForm, setReschedForm] = useState<any>({ days_of_week: [], start_time_hhmm: "", duration_min: 90, teacher_id: "", modality: "" });
+  const [reschedForm, setReschedForm] = useState<any>({
+    days_of_week: [], start_time_hhmm: "", duration_min: 90,
+    teacher_id: "", modality: "", video_provider: "meet", meeting_url: "",
+  });
   const [reschedSaving, setReschedSaving] = useState(false);
   const [studentsList, setStudentsList] = useState<any[]>([]);  // V1.7 para privadas
   const [seriesForm, setSeriesForm] = useState<any>({
@@ -128,6 +131,10 @@ export default function AdminSessionsPage() {
     finally { setEventSaving(false); }
   };
 
+  // V3.9.62 — Abrir "Editar serie" con el estado REAL del grupo cargado.
+  //
+  // Antes el modal abría con el video vacío. Si guardabas para cambiar la
+  // hora, el enlace de la serie se perdía porque el formulario nunca lo tuvo.
   const openReschedule = (s: any) => {
     setReschedSeries(s);
     setReschedForm({
@@ -136,6 +143,8 @@ export default function AdminSessionsPage() {
       duration_min: s.duration_min || 90,
       teacher_id: "",  // vacío = no cambiar
       modality: "",    // vacío = no cambiar
+      video_provider: s.video_provider || "meet",
+      meeting_url: s.meeting_url || "",
     });
   };
   const toggleReschedDay = (day: string) => {
@@ -144,25 +153,68 @@ export default function AdminSessionsPage() {
       days_of_week: f.days_of_week.includes(day) ? f.days_of_week.filter((d: string) => d !== day) : [...f.days_of_week, day],
     }));
   };
+
+  // ¿Cambian los DÍAS? Es la única edición que obliga a regenerar fechas.
+  // Se calcula aquí para poder avisarlo ANTES de guardar.
+  const reschedCambiaDias = (() => {
+    if (!reschedSeries) return false;
+    const antes = (reschedSeries.days_of_week || "").split(",").filter(Boolean).sort().join(",");
+    const ahora = [...reschedForm.days_of_week].sort().join(",");
+    return antes !== ahora;
+  })();
+
   const doReschedule = async () => {
     if (!reschedSeries) return;
     if (reschedForm.days_of_week.length === 0) { showToast("error", "Selecciona al menos un día"); return; }
     if (!reschedForm.start_time_hhmm) { showToast("error", "Indica la hora"); return; }
+    if (reschedForm.video_provider === "meet" && !reschedForm.meeting_url.trim()) {
+      showToast("error", "Un enlace externo necesita el link de la reunión");
+      return;
+    }
     setReschedSaving(true);
     try {
-      const body: any = {
-        days_of_week: reschedForm.days_of_week.join(","),
-        start_time_hhmm: reschedForm.start_time_hhmm,
-        duration_min: reschedForm.duration_min,
-      };
+      // Solo se manda lo que cambió de verdad: así el backend sabe que puede
+      // editar en sitio en vez de regenerar las clases futuras.
+      const body: any = {};
+      if (reschedCambiaDias) body.days_of_week = reschedForm.days_of_week.join(",");
+      if (reschedForm.start_time_hhmm !== reschedSeries.start_time_hhmm) {
+        body.start_time_hhmm = reschedForm.start_time_hhmm;
+      }
+      if (Number(reschedForm.duration_min) !== Number(reschedSeries.duration_min)) {
+        body.duration_min = Number(reschedForm.duration_min);
+      }
       if (reschedForm.teacher_id) body.teacher_id = reschedForm.teacher_id;
       if (reschedForm.modality) body.modality = reschedForm.modality;
+      if (reschedForm.video_provider !== (reschedSeries.video_provider || "meet")) {
+        body.video_provider = reschedForm.video_provider;
+      }
+      if (reschedForm.meeting_url.trim() !== (reschedSeries.meeting_url || "")) {
+        body.meeting_url = reschedForm.meeting_url.trim();
+      }
+
+      if (Object.keys(body).length === 0) {
+        showToast("error", "No cambiaste nada todavía");
+        setReschedSaving(false);
+        return;
+      }
+
       const r: any = await adminClassSeries.reschedule(reschedSeries.id, body);
-      showToast("success", `Serie reprogramada: ${r.regenerated_classes} clases futuras actualizadas (${r.kept_past_classes} pasadas intactas)`);
+
+      const partes: string[] = [];
+      if (r.modo === "regenerada") {
+        partes.push(`${r.regenerated_classes} clases futuras reprogramadas`);
+      } else if (r.updated_classes > 0) {
+        partes.push(`${r.updated_classes} clases futuras actualizadas`);
+      }
+      partes.push(`${r.kept_past_classes} pasadas intactas`);
+      if (r.not_moved_classes > 0) {
+        partes.push(`${r.not_moved_classes} se quedaron en su hora (la nueva ya pasó)`);
+      }
+      showToast("success", `✅ ${partes.join(" · ")}`);
       setReschedSeries(null);
       load();
     } catch (e: any) {
-      showToast("error", e.message || "No se pudo reprogramar");
+      showToast("error", e.message || "No se pudo guardar el cambio");
     } finally {
       setReschedSaving(false);
     }
@@ -632,12 +684,14 @@ export default function AdminSessionsPage() {
                     </p>
                     <p className="text-xs text-slate-500">
                       <strong>{s.total_classes}</strong> clases ({s.past_classes} pasadas, {s.future_classes} futuras)
+                      {" · "}
+                      {s.video_provider === "dorismon" ? "🎥 Video Dorismon" : "🔗 Enlace externo"}
                     </p>
                   </div>
                   <div className="flex flex-col gap-2 sm:flex-row">
-                    {/* V3.9.8: Reprogramar horario/profesor de toda la serie a futuro */}
+                    {/* V3.9.62: Editar la serie completa (horario, profesor, modalidad y video) */}
                     <Button size="sm" variant="outline" onClick={() => openReschedule(s)} className="text-brand-600 border-brand-200 hover:bg-brand-50">
-                      <Repeat size={12} className="inline mr-1" /> Reprogramar
+                      <Repeat size={12} className="inline mr-1" /> Editar serie
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => setConfirmDeleteSeries(s)} className="text-red-600 border-red-200 hover:bg-red-50">
                       <X size={12} className="inline mr-1" /> Cancelar serie
@@ -949,12 +1003,22 @@ export default function AdminSessionsPage() {
         </div>
       </Modal>
 
-      {/* V3.9.8: Modal reprogramar serie a futuro */}
-      <Modal open={!!reschedSeries} onClose={() => setReschedSeries(null)} title={`Reprogramar: ${reschedSeries?.name || ""}`}>
+      {/* V3.9.62: Modal editar serie completa (horario, profesor, modalidad, video) */}
+      <Modal open={!!reschedSeries} onClose={() => setReschedSeries(null)} title={`Editar serie: ${reschedSeries?.name || ""}`}>
         <div className="space-y-3">
-          <div className="bg-brand-50 border border-brand-200 rounded-lg p-3 text-sm text-brand-800">
-            ↻ Esto cambia el horario de las clases <strong>futuras</strong> de esta serie. Las clases que ya pasaron quedan intactas.
-          </div>
+          {/* El aviso cambia según lo que realmente vaya a pasar. Regenerar
+              fechas y ajustar un enlace no son la misma operación. */}
+          {reschedCambiaDias ? (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-900">
+              ⚠️ Cambiaste los <strong>días</strong>, así que hay que reprogramar las fechas de las clases futuras.
+              Se conservan el módulo, el profesor, el video y el cupo de cada una. Las clases que ya pasaron no se tocan.
+            </div>
+          ) : (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-sm text-emerald-900">
+              ✅ Se actualizan las clases <strong>futuras</strong> sin borrar ninguna: se conservan la asistencia,
+              las entregas y las grabaciones. Las clases que ya pasaron quedan intactas.
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium mb-1.5">Días de la semana</label>
@@ -977,6 +1041,25 @@ export default function AdminSessionsPage() {
             <Input label="Duración (min)" type="number" value={reschedForm.duration_min} onChange={(e: any) => setReschedForm({ ...reschedForm, duration_min: parseInt(e.target.value) || 90 })} />
           </div>
 
+          {/* V3.9.62 — El video de la serie. Este es el caso que motivó todo:
+              un Google Meet viejo que dejó de funcionar y no había forma de
+              cambiar sin destruir el grupo. */}
+          <div className="border-t border-slate-200 pt-3">
+            <SelectorVideo
+              value={reschedForm.video_provider}
+              onChange={(v: string) => setReschedForm({ ...reschedForm, video_provider: v })}
+            />
+            <MeetingUrlInput
+              label={reschedForm.video_provider === "dorismon" ? "Enlace de respaldo (opcional)" : "Enlace de la clase"}
+              value={reschedForm.meeting_url}
+              onChange={(v: string) => setReschedForm({ ...reschedForm, meeting_url: v })}
+              required={reschedForm.video_provider !== "dorismon"}
+            />
+            <p className="text-xs text-slate-500 mt-1">
+              Sirve Google Meet, Zoom, Teams o cualquier enlace https://. Se aplica solo a las clases futuras.
+            </p>
+          </div>
+
           <Select label="Cambiar profesor (opcional)" value={reschedForm.teacher_id} onChange={(e: any) => setReschedForm({ ...reschedForm, teacher_id: e.target.value })}>
             <option value="">— Mantener el actual —</option>
             {teachers.map((t: any) => <option key={t.id} value={t.id}>{t.full_name}</option>)}
@@ -990,7 +1073,7 @@ export default function AdminSessionsPage() {
           </Select>
 
           <Button onClick={doReschedule} className="w-full" size="lg" disabled={reschedSaving}>
-            {reschedSaving ? "Reprogramando..." : "Reprogramar clases futuras"}
+            {reschedSaving ? "Guardando..." : reschedCambiaDias ? "Reprogramar clases futuras" : "Guardar cambios"}
           </Button>
         </div>
       </Modal>

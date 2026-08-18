@@ -686,16 +686,26 @@ export function MeetingUrlInput({
   const detectLocally = (url: string) => {
     if (!url || url.trim() === "") return null;
     const u = url.trim();
-    if (/^https?:\/\/[a-z0-9-]+(\.[a-z0-9-]+)*\.zoom\.us\/(j|my|webinar|s)\//i.test(u)) {
+    // V3.9.64 — SOLO https://. El backend rechaza http:// desde v3.9.63, y
+    // antes este input lo daba por bueno con `https?`: el admin veía el link
+    // en verde y al guardar recibía un error. Un enlace de clase sin cifrar
+    // tampoco debería aceptarse.
+    if (/^http:\/\//i.test(u)) {
+      return {
+        valid: false,
+        reason: "El enlace debe empezar con https:// (no http://).",
+      };
+    }
+    if (/^https:\/\/[a-z0-9-]+(\.[a-z0-9-]+)*\.zoom\.us\/(j|my|webinar|s)\//i.test(u)) {
       return { valid: true, type: "zoom", label: "Zoom" };
     }
-    if (/^https?:\/\/meet\.google\.com\//i.test(u)) {
+    if (/^https:\/\/meet\.google\.com\//i.test(u)) {
       return { valid: true, type: "google_meet", label: "Google Meet" };
     }
-    if (/^https?:\/\/teams\.microsoft\.com\/l\/meetup-join\//i.test(u)) {
+    if (/^https:\/\/teams\.microsoft\.com\/l\/meetup-join\//i.test(u)) {
       return { valid: true, type: "teams", label: "Microsoft Teams" };
     }
-    if (/^https?:\/\/[^\s]+/i.test(u)) {
+    if (/^https:\/\/[^\s]+/i.test(u)) {
       return {
         valid: true, type: "other", label: "Link genérico",
         warning: "El link no es de Zoom, Meet ni Teams. Verificá que sea correcto.",
