@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { studentApi, studentPayments, placement, progress, events, publicApi, safeArray, safeObj, getLevelTheme } from "@/lib/api";
-import { LoadingScreen, ErrorBox, EmptyState, Card, CardBody, Badge, Button, showToast, CalendarButton, JoinClassButton, ClassLocation } from "@/components/ui";
+import { LoadingScreen, ErrorBox, EmptyState, Card, CardBody, Badge, Button, showToast, CalendarButton, JoinClassButton, tieneEntradaOnline, ClassLocation } from "@/components/ui";
 import MiProgresoNivel from "@/components/MiProgresoNivel";  // V3.9.53
 import AvisosTelefono from "@/components/AvisosTelefono";  // V3.9.29
 import {
@@ -493,12 +493,10 @@ export default function StudentDashboard() {
                 </div>
               </div>
               <div className="flex gap-2 flex-wrap mt-4">
-                {/* V3.9.64 — El Video Dorismon NO necesita `meeting_url`: el
-                    enlace externo es solo un respaldo OPCIONAL. Antes esta
-                    condición exigía el link, así que un grupo con video propio
-                    y sin respaldo se quedaba sin botón para entrar. */}
-                {(progressData.next_session.video_provider === "dorismon" ||
-                  progressData.next_session.meeting_url) && (
+                {/* V3.9.65 — Una sola regla compartida: respeta la modalidad
+                    (presencial nunca muestra entrada online) y no exige
+                    `meeting_url` cuando el video es de Dorismon. */}
+                {tieneEntradaOnline(progressData.next_session) && (
                   <JoinClassButton session={progressData.next_session} />
                 )}
                 <CalendarButton sessionId={progressData.next_session.id} />

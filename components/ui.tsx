@@ -522,6 +522,29 @@ function BotonEntrarClasePropia({ session }: { session: any }) {
   );
 }
 
+/**
+ * V3.9.65 — ¿Esta clase tiene entrada online?
+ *
+ * UNA SOLA REGLA, en un solo sitio. Antes la condición estaba copiada en el
+ * panel del estudiante, el del profesor y el calendario, y a las tres les
+ * faltaba lo mismo: mirar la MODALIDAD.
+ *
+ *   presencial -> NUNCA entrada online. Se va al aula.
+ *   online     -> entrada online.
+ *   hibrida    -> entrada online (y además se muestra la sede).
+ *
+ * OJO CON EL CASO QUE MOTIVÓ ESTO: cuando un miércoles suelto de una serie
+ * virtual se pasa a presencial, la sesión CONSERVA su `meeting_url` y su
+ * `video_provider` heredados. Eso es deliberado: si mañana se revierte a
+ * virtual, la videollamada vuelve sola. Pero mientras sea presencial no debe
+ * usarse — y la condición vieja, que solo miraba el enlace, lo habría usado.
+ */
+export function tieneEntradaOnline(session: any): boolean {
+  if (!session) return false;
+  if (session.modality === "presencial") return false;
+  return session.video_provider === "dorismon" || !!session.meeting_url;
+}
+
 export function JoinClassButton({ session }: { session: any }) {
   const [showModal, setShowModal] = React.useState(false);
 

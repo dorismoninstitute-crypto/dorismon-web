@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { teacherApi, safeArray, safeObj, getLevelTheme } from "@/lib/api";
-import { LoadingScreen, ErrorBox, PageHeader, Card, CardBody, Button, JoinClassButton, CalendarButton, showToast } from "@/components/ui";
+import { LoadingScreen, ErrorBox, PageHeader, Card, CardBody, Button, JoinClassButton, tieneEntradaOnline, CalendarButton, showToast } from "@/components/ui";
 import AvisosTelefono from "@/components/AvisosTelefono";  // V3.9.29
 import { EntregasPendientes, EstudiantesEnRiesgo } from "@/components/PanelSeguimiento";  // V3.9.49
 import PanelFinalizaciones from "@/components/PanelFinalizaciones";  // V3.9.53
@@ -197,10 +197,10 @@ export default function TeacherDashboard() {
                             </p>
                           </div>
                         </div>
-                        {/* V3.9.64 — Mismo criterio que el panel del
-                            estudiante: con Video Dorismon el `meeting_url` es
-                            un respaldo opcional, no un requisito para entrar. */}
-                        {(s.video_provider === "dorismon" || s.meeting_url) && (
+                        {/* V3.9.65 — Misma regla compartida que el resto:
+                            presencial no muestra entrada online; Video
+                            Dorismon no exige enlace de respaldo. */}
+                        {tieneEntradaOnline(s) && (
                           <div className="flex gap-2 mt-3 flex-wrap">
                             <JoinClassButton session={s} />
                             <CalendarButton sessionId={s.id} />

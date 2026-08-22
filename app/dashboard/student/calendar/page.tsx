@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { studentApi, safeArray } from "@/lib/api";
-import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, CalendarButton, JoinClassButton, ClassLocation } from "@/components/ui";
+import { LoadingScreen, ErrorBox, EmptyState, PageHeader, Card, CardBody, Badge, Button, CalendarButton, JoinClassButton, tieneEntradaOnline, ClassLocation } from "@/components/ui";
 
 export default function CalendarPage() {
   const [events, setEvents] = useState<any[]>([]);
@@ -61,7 +61,7 @@ export default function CalendarPage() {
                               horarios: con Video Dorismon no aparecía, y
                               cuando aparecía no distinguía si la clase estaba
                               en curso. Ahora recibe la clase completa. */}
-                          {(e.video_provider === "dorismon" || e.meeting_url) && (
+                          {tieneEntradaOnline(e) && (
                             <JoinClassButton
                               session={{
                                 id: e.id,

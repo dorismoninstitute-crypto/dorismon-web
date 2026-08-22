@@ -36,12 +36,56 @@ export default function AdminSessionsPage() {
   });
   const [eventSaving, setEventSaving] = useState(false);
   const [seriesList, setSeriesList] = useState<any[]>([]);  // V1.7
+
+  // ══ V3.9.65 — ¿PARA QUIÉN ES ESTA CLASE SUELTA? ══
+  //
+  // Antes una clase suelta se creaba "para el nivel" y se anunciaba a todo
+  // A2. No había forma de decir "esta es para María y Pedro". Ahora se elige
+  // grupo o estudiantes concretos, y esa elección se guarda en
+  // SessionAudience, que ya es la fuente de verdad del sistema.
+  const [audienceMode, setAudienceMode] = useState<"level" | "series" | "students">("level");
+  const [pickedStudents, setPickedStudents] = useState<any[]>([]);
+  const [studentQuery, setStudentQuery] = useState("");
+  const [studentHits, setStudentHits] = useState<any[]>([]);
+  const [searchingStudents, setSearchingStudents] = useState(false);
+
+  // Buscador con pausa: no se dispara una consulta por cada tecla.
+  useEffect(() => {
+    if (audienceMode !== "students") return;
+    const q = studentQuery.trim();
+    if (q.length < 2) { setStudentHits([]); return; }
+    let cancelado = false;
+    setSearchingStudents(true);
+    const t = setTimeout(async () => {
+      try {
+        const r: any = await adminApi.users({ role: "student", q, limit: 15 });
+        if (!cancelado) setStudentHits(safeArray(r?.items ?? r));
+      } catch {
+        if (!cancelado) setStudentHits([]);
+      } finally {
+        if (!cancelado) setSearchingStudents(false);
+      }
+    }, 350);
+    return () => { cancelado = true; clearTimeout(t); };
+  }, [studentQuery, audienceMode]);
+
+  const toggleStudent = (st: any) => {
+    setPickedStudents((prev) =>
+      prev.some((x) => x.id === st.id)
+        ? prev.filter((x) => x.id !== st.id)
+        : [...prev, st]
+    );
+  };
   // V3.9.62: Editar serie completa (horario, profesor, modalidad y video)
   const [reschedSeries, setReschedSeries] = useState<any>(null);
   const [reschedForm, setReschedForm] = useState<any>({
     days_of_week: [], start_time_hhmm: "", duration_min: 90,
     teacher_id: "", modality: "", video_provider: "meet", meeting_url: "",
+    // V3.9.69 — El backend ya aceptaba sede/aula, pero el modal no las
+    // enviaba: una serie presencial se quedaba en "Ubicación por confirmar".
+    branch_id: "", classroom_id: "",
   });
+  const [reschedClassrooms, setReschedClassrooms] = useState<any[]>([]);
   const [reschedSaving, setReschedSaving] = useState(false);
   const [studentsList, setStudentsList] = useState<any[]>([]);  // V1.7 para privadas
   const [seriesForm, setSeriesForm] = useState<any>({
@@ -49,7 +93,9 @@ export default function AdminSessionsPage() {
     days_of_week: [], start_time_hhmm: "19:00", duration_min: 90,
     start_date: "", end_date: "", num_classes: "", end_type: "num_classes",
     modality: "online", meeting_url: "", capacity: 15, video_provider: "meet",
+    branch_id: "", classroom_id: "",
   });
+  const [seriesClassrooms, setSeriesClassrooms] = useState<any[]>([]);
   const [privateForm, setPrivateForm] = useState<any>({
     student_id: "", teacher_id: "", course_id: "", level_id: "",
     title: "", starts_at: "", duration_min: 60,
@@ -58,7 +104,19 @@ export default function AdminSessionsPage() {
   const [confirmDeleteSeries, setConfirmDeleteSeries] = useState<any>(null);
   const [msg, setMsg] = useState("");
   const [editing, setEditing] = useState<any>(null);
-  const [editForm, setEditForm] = useState({ title: "", description: "", meeting_url: "", teacher_notes: "", starts_at: "", duration_min: 60, teacher_id: "", modality: "" });
+  const [editForm, setEditForm] = useState({
+    title: "", description: "", meeting_url: "", teacher_notes: "",
+    starts_at: "", duration_min: 60, teacher_id: "", modality: "",
+    // V3.9.68 — Faltaban en el editor de UNA sesión, así que una excepción
+    // virtual dentro de una serie presencial no podía elegir Video Dorismon,
+    // y una excepción presencial dentro de una serie virtual se quedaba en
+    // "Ubicación por confirmar" porque no había dónde poner sede/aula.
+    video_provider: "meet", branch_id: "", classroom_id: "",
+  });
+  const [editClassrooms, setEditClassrooms] = useState<any[]>([]);
+  // V3.9.65 — Hasta dónde llega el cambio al editar una clase de una serie.
+  // "this" | "this_and_following" | "all"
+  const [editScope, setEditScope] = useState<"this" | "this_and_following" | "all">("this");
   const [isEditPast, setIsEditPast] = useState(false);
 
   // Convierte una fecha ISO (UTC) al formato datetime-local en hora local (YYYY-MM-DDTHH:mm)
@@ -88,7 +146,21 @@ export default function AdminSessionsPage() {
       duration_min: dur,
       teacher_id: s.teacher_id || "",
       modality: s.modality || "online",
+      video_provider: s.video_provider || "meet",
+      branch_id: s.branch_id ? String(s.branch_id) : "",
+      classroom_id: s.classroom_id ? String(s.classroom_id) : "",
     });
+    // Cargar las aulas de la sede que ya tiene, si tiene
+    if (s.branch_id) {
+      adminApi.classrooms(Number(s.branch_id))
+        .then((r: any) => setEditClassrooms(safeArray(r)))
+        .catch(() => setEditClassrooms([]));
+    } else {
+      setEditClassrooms([]);
+    }
+    // Siempre se abre en "solo esta clase": el cambio más conservador. Que
+    // afecte a varias fechas tiene que ser una decisión consciente.
+    setEditScope("this");
   };
 
   // V3.9.8: Reprogramar serie a futuro (hora, días, profesor)
@@ -145,7 +217,16 @@ export default function AdminSessionsPage() {
       modality: "",    // vacío = no cambiar
       video_provider: s.video_provider || "meet",
       meeting_url: s.meeting_url || "",
+      branch_id: s.branch_id ? String(s.branch_id) : "",
+      classroom_id: s.classroom_id ? String(s.classroom_id) : "",
     });
+    if (s.branch_id) {
+      adminApi.classrooms(Number(s.branch_id))
+        .then((r: any) => setReschedClassrooms(safeArray(r)))
+        .catch(() => setReschedClassrooms([]));
+    } else {
+      setReschedClassrooms([]);
+    }
   };
   const toggleReschedDay = (day: string) => {
     setReschedForm((f: any) => ({
@@ -167,8 +248,27 @@ export default function AdminSessionsPage() {
     if (!reschedSeries) return;
     if (reschedForm.days_of_week.length === 0) { showToast("error", "Selecciona al menos un día"); return; }
     if (!reschedForm.start_time_hhmm) { showToast("error", "Indica la hora"); return; }
-    if (reschedForm.video_provider === "meet" && !reschedForm.meeting_url.trim()) {
-      showToast("error", "Un enlace externo necesita el link de la reunión");
+    // V3.9.69 — La modalidad manda. Una serie PRESENCIAL no necesita video,
+    // y antes este formulario lo exigía igualmente: no se podía ni cambiarle
+    // el aula sin inventarse un enlace.
+    const modFinal = reschedForm.modality || reschedSeries.modality || "online";
+    if (modFinal !== "presencial" && reschedForm.meeting_url.trim() &&
+        !esHttps(reschedForm.meeting_url)) {
+      showToast("error", "El enlace de la reunión debe empezar con https://");
+      return;
+    }
+    if (modFinal !== "presencial" && reschedForm.video_provider === "meet") {
+      if (!reschedForm.meeting_url.trim()) {
+        showToast("error", "Un enlace externo necesita el link de la reunión");
+        return;
+      }
+      if (!esHttps(reschedForm.meeting_url)) {
+        showToast("error", "El enlace de la reunión debe empezar con https://");
+        return;
+      }
+    }
+    if (modFinal !== "online" && !reschedForm.branch_id) {
+      showToast("error", "Una clase presencial necesita sede");
       return;
     }
     setReschedSaving(true);
@@ -191,6 +291,10 @@ export default function AdminSessionsPage() {
       if (reschedForm.meeting_url.trim() !== (reschedSeries.meeting_url || "")) {
         body.meeting_url = reschedForm.meeting_url.trim();
       }
+      const _rb = reschedForm.branch_id ? Number(reschedForm.branch_id) : null;
+      const _rc = reschedForm.classroom_id ? Number(reschedForm.classroom_id) : null;
+      if (_rb !== (reschedSeries.branch_id ?? null)) body.branch_id = _rb;
+      if (_rc !== (reschedSeries.classroom_id ?? null)) body.classroom_id = _rc;
 
       if (Object.keys(body).length === 0) {
         showToast("error", "No cambiaste nada todavía");
@@ -232,24 +336,144 @@ export default function AdminSessionsPage() {
           teacher_notes: editForm.teacher_notes,
         };
       } else {
-        body = {
-          title: editForm.title,
-          description: editForm.description,
-          meeting_url: editForm.meeting_url,
-          teacher_notes: editForm.teacher_notes,
-          teacher_id: editForm.teacher_id || undefined,
-          modality: editForm.modality || undefined,
+        // ══ V3.9.67 — SOLO SE MANDA LO QUE DE VERDAD CAMBIÓ ══
+        //
+        // ANTES este formulario enviaba SIEMPRE modality y meeting_url, aunque
+        // el admin no los hubiera tocado — venían precargados del estado de la
+        // sesión. Con "esta y las siguientes" eso era destructivo:
+        //
+        //   miércoles presencial (excepción) · viernes virtual · lunes virtual
+        //   editas el TÍTULO del miércoles con "esta y las siguientes"
+        //   -> se reenviaba "presencial"
+        //   -> viernes y lunes quedaban presenciales
+        //
+        // Es decir: borraba excepciones futuras sin que nadie lo pidiera.
+        // Ahora cada campo se compara con el valor original de la sesión y
+        // solo viaja si difiere.
+        body = {};
+        const cambio = (campo: string, valor: any, original: any) => {
+          if (valor !== original) body[campo] = valor;
         };
-        // Solo enviar fecha/hora si el admin puso una fecha válida
+
+        cambio("title", editForm.title, editing.title || "");
+        cambio("description", editForm.description, editing.description || "");
+        cambio("teacher_notes", editForm.teacher_notes, editing.teacher_notes || "");
+        cambio("meeting_url", editForm.meeting_url, editing.meeting_url || "");
+        if (editForm.teacher_id && editForm.teacher_id !== editing.teacher_id) {
+          body.teacher_id = editForm.teacher_id;
+        }
+        if (editForm.modality && editForm.modality !== editing.modality) {
+          body.modality = editForm.modality;
+        }
+        // V3.9.68 — También por delta: si el admin no los tocó, no viajan, y
+        // así una excepción conserva la configuración heredada de la serie.
+        if (editForm.video_provider !== (editing.video_provider || "meet")) {
+          body.video_provider = editForm.video_provider;
+        }
+        const _b = editForm.branch_id ? Number(editForm.branch_id) : null;
+        const _c = editForm.classroom_id ? Number(editForm.classroom_id) : null;
+        if (_b !== (editing.branch_id ?? null)) body.branch_id = _b;
+        if (_c !== (editing.classroom_id ?? null)) body.classroom_id = _c;
+
+        // La fecha/hora solo viaja si el admin la movió de verdad.
         if (editForm.starts_at) {
           const start = new Date(editForm.starts_at);
           const end = new Date(start.getTime() + (editForm.duration_min || 60) * 60000);
-          body.starts_at_utc = start.toISOString();
-          body.ends_at_utc = end.toISOString();
+          const originalStart = editing.starts_at_utc
+            ? new Date(editing.starts_at_utc).getTime()
+            : null;
+          const originalDur = editing.starts_at_utc && editing.ends_at_utc
+            ? Math.round((new Date(editing.ends_at_utc).getTime() -
+                          new Date(editing.starts_at_utc).getTime()) / 60000)
+            : null;
+          if (start.getTime() !== originalStart ||
+              (editForm.duration_min || 60) !== originalDur) {
+            body.starts_at_utc = start.toISOString();
+            body.ends_at_utc = end.toISOString();
+          }
+        }
+
+        if (Object.keys(body).length === 0) {
+          showToast("error", "No cambiaste nada todavía");
+          return;
+        }
+
+        // ══ V3.9.68 — NO PROMETER LO QUE NO SE VA A HACER ══
+        //
+        // El backend solo propaga logística: modalidad, video, enlace, sede,
+        // aula y cupo. La hora, la duración, el profesor y el título se
+        // aplican SOLO a esta sesión, y con razón: una hora concreta no
+        // significa nada en otra fecha, y el cambio permanente de profesor
+        // tiene su propio flujo con detección de choques e histórico.
+        //
+        // El problema era que la interfaz decía "desde esta fecha en
+        // adelante" y luego cambiaba la hora de una sola clase. El admin se
+        // quedaba creyendo que había reprogramado el grupo entero.
+        if (editScope === "this_and_following") {
+          const noPropagables = Object.keys(body).filter((k) =>
+            ["starts_at_utc", "ends_at_utc", "teacher_id", "title", "description",
+             "teacher_notes"].includes(k)
+          );
+          if (noPropagables.length > 0) {
+            const horario = noPropagables.some((k) => k.startsWith("starts_") || k.startsWith("ends_"));
+            const profe = noPropagables.includes("teacher_id");
+            showToast(
+              "error",
+              horario
+                ? "El horario de varias fechas se cambia en “Editar serie”. Aquí puedes cambiarlo solo para esta clase."
+                : profe
+                ? "El cambio permanente de profesor se hace en “Editar serie”, que revisa choques de horario. Aquí solo para esta clase."
+                : "El título y las notas se aplican solo a esta clase. Cambia el alcance a “Solo esta clase”."
+            );
+            return;
+          }
         }
       }
-      await adminEdit.updateSession(editing.id, body);
-      showToast("success", "Clase actualizada");
+
+      // ══ V3.9.65 — UNA SOLA PANTALLA, TRES RUTAS DISTINTAS ══
+      //
+      // Para Dirección esto es un único formulario. Por debajo, cada alcance
+      // va al endpoint que ya existe y que ya está probado:
+      //
+      //   Solo esta clase        -> PATCH /admin/sessions/{id}
+      //   Esta y las siguientes  -> el mismo, con apply_to
+      //   Toda la serie          -> PATCH /admin/class-series/{id}/reschedule
+      //
+      // La tercera NO se reimplementa aquí: ese endpoint ya conserva el
+      // historial, los IDs de sesión y la rotación de módulos. Duplicarlo
+      // sería crear una segunda verdad.
+      if (editScope === "all" && editing.series_id) {
+        // ══ V3.9.67 — "TODA LA SERIE" NO REUTILIZA ESTE FORMULARIO ══
+        //
+        // ANTES esta rama mandaba al endpoint de serie la modalidad cargada en
+        // la pantalla. Peligroso: si abrías un miércoles que era una EXCEPCIÓN
+        // presencial dentro de una serie virtual y solo querías cambiar el
+        // enlace, se enviaba también "presencial" y toda la serie se volvía
+        // presencial. Los valores de una excepción no representan a la serie.
+        //
+        // Ahora se abre el editor de serie de verdad —el que ya está probado—
+        // precargado con el estado REAL del grupo, no con el de esta sesión.
+        const serie = seriesList.find((g: any) => g.id === editing.series_id);
+        if (!serie) {
+          showToast("error", "No se encontró la serie de esta clase");
+          return;
+        }
+        setEditing(null);
+        openReschedule(serie);
+        showToast("success", "Edita aquí la programación habitual del grupo");
+        return;
+      }
+
+      {
+        if (editScope === "this_and_following" && editing.series_id) {
+          body.apply_to = "this_and_following";
+        }
+        const r: any = await adminEdit.updateSession(editing.id, body);
+        const extra = r?.following_updated
+          ? ` y ${r.following_updated} clases siguientes`
+          : "";
+        showToast("success", `Clase actualizada${extra}`);
+      }
       setEditing(null);
       load();
     } catch (e: any) { showToast("error", e.message); }
@@ -270,6 +494,7 @@ export default function AdminSessionsPage() {
     meeting_url: "", branch_id: "", classroom_id: "", video_provider: "meet",
     capacity: 12,
     is_open_event: false,
+    series_id: "",   // V3.9.65: si la clase suelta pertenece a un grupo
   });
   const [modules, setModules] = useState<any[]>([]);
 
@@ -337,6 +562,8 @@ export default function AdminSessionsPage() {
     }));
   };
 
+  const esHttps = (value: string) => /^https:\/\//i.test((value || "").trim());
+
   // V1.7: Crear serie
   const submitSeries = async () => {
     if (!seriesForm.name || !seriesForm.course_id || !seriesForm.level_id || !seriesForm.teacher_id || seriesForm.days_of_week.length === 0 || !seriesForm.start_date) {
@@ -346,6 +573,25 @@ export default function AdminSessionsPage() {
     if (seriesForm.end_type === "end_date" && !seriesForm.end_date) {
       showToast("error", "Falta fecha de fin");
       return;
+    }
+    if (seriesForm.modality !== "online" && !seriesForm.branch_id) {
+      showToast("error", "Una serie presencial necesita sede");
+      return;
+    }
+    if (seriesForm.modality !== "presencial" && seriesForm.meeting_url.trim() &&
+        !esHttps(seriesForm.meeting_url)) {
+      showToast("error", "El enlace de la reunión debe empezar con https://");
+      return;
+    }
+    if (seriesForm.modality !== "presencial" && seriesForm.video_provider !== "dorismon") {
+      if (!seriesForm.meeting_url.trim()) {
+        showToast("error", "Con enlace externo hace falta el link de la reunión");
+        return;
+      }
+      if (!esHttps(seriesForm.meeting_url)) {
+        showToast("error", "El enlace de la reunión debe empezar con https://");
+        return;
+      }
     }
     if (seriesForm.end_type === "num_classes" && !seriesForm.num_classes) {
       showToast("error", "Falta cantidad de clases");
@@ -365,6 +611,10 @@ export default function AdminSessionsPage() {
         meeting_url: seriesForm.meeting_url || null,
         video_provider: seriesForm.video_provider,  // V3.9.32
         capacity: parseInt(seriesForm.capacity),
+        // V3.9.69 — Sede y aula desde el principio. Antes una serie
+        // presencial nacía sin ubicación y no había forma de dársela.
+        branch_id: seriesForm.branch_id ? parseInt(seriesForm.branch_id) : null,
+        classroom_id: seriesForm.classroom_id ? parseInt(seriesForm.classroom_id) : null,
       };
       if (seriesForm.end_type === "end_date") body.end_date = seriesForm.end_date;
       else body.num_classes = parseInt(seriesForm.num_classes);
@@ -495,6 +745,18 @@ export default function AdminSessionsPage() {
 
   const create = async () => {
     setMsg("");
+    if ((form.modality === "online" || form.modality === "hibrida") &&
+        form.meeting_url.trim() && !esHttps(form.meeting_url)) {
+      setMsg("✗ El enlace debe empezar con https://"); return;
+    }
+    if ((form.modality === "online" || form.modality === "hibrida") &&
+        form.video_provider !== "dorismon") {
+      if (!form.meeting_url.trim()) { setMsg("✗ Falta el enlace de la reunión"); return; }
+      if (!esHttps(form.meeting_url)) { setMsg("✗ El enlace debe empezar con https://"); return; }
+    }
+    if ((form.modality === "presencial" || form.modality === "hibrida") && !form.branch_id) {
+      setMsg("✗ Selecciona la sede"); return;
+    }
     try {
       const start = new Date(form.starts_at);
       const end = new Date(start.getTime() + form.duration_min * 60000);
@@ -520,8 +782,25 @@ export default function AdminSessionsPage() {
         if (form.branch_id) body.branch_id = parseInt(form.branch_id);
         if (form.classroom_id) body.classroom_id = parseInt(form.classroom_id);
       }
-      await adminApi.createSession(body);
-      setMsg("✓ Clase programada con éxito");
+      // V3.9.65 — La audiencia va con la clase. El backend valida cada ID y
+      // la guarda en SessionAudience; nunca se confía en lo que llegue aquí.
+      if (audienceMode === "students") {
+        if (pickedStudents.length === 0) {
+          setMsg("✗ Selecciona al menos un estudiante");
+          return;
+        }
+        body.student_ids = pickedStudents.map((x) => x.id);
+      } else if (audienceMode === "series") {
+        if (!form.series_id) { setMsg("✗ Selecciona un grupo"); return; }
+        body.series_id = form.series_id;
+      }
+
+      const r: any = await adminApi.createSession(body);
+      setMsg(
+        audienceMode === "students"
+          ? `✓ Clase programada para ${pickedStudents.length} estudiante(s)`
+          : "✓ Clase programada con éxito"
+      );
       setShow(false);
       setForm({
         teacher_id: "", course_id: "", level_id: "", module_id: "",
@@ -529,7 +808,12 @@ export default function AdminSessionsPage() {
         starts_at: "", duration_min: 90,
         meeting_url: "", branch_id: "", classroom_id: "", capacity: 12, video_provider: "meet",
         is_open_event: false,
+        series_id: "",
       });
+      setAudienceMode("level");
+      setPickedStudents([]);
+      setStudentQuery("");
+      setStudentHits([]);
       setModules([]);
       load();
     } catch (e: any) { setMsg("✗ " + e.message); }
@@ -547,10 +831,15 @@ export default function AdminSessionsPage() {
     }
   };
 
+  // V3.9.69 — Híbrida con Video Dorismon NO necesita enlace de respaldo.
+  // Antes esta condición lo exigía, así que "Híbrida + Video Dorismon + sede"
+  // dejaba el botón deshabilitado sin explicar por qué.
+  const _urlOk = !form.meeting_url.trim() || esHttps(form.meeting_url);
+  const _videoOk = _urlOk && (form.video_provider === "dorismon" || esHttps(form.meeting_url));
   const formValid = form.teacher_id && form.course_id && form.level_id && form.title && form.starts_at &&
-    (form.modality === "online" ? (form.video_provider === "dorismon" || form.meeting_url) :
-     form.modality === "presencial" ? form.branch_id :
-     (form.meeting_url && form.branch_id));
+    (form.modality === "online" ? _videoOk :
+     form.modality === "presencial" ? !!form.branch_id :
+     (_videoOk && !!form.branch_id));
 
   // V3.9.30: lo que se muestra según la pestaña elegida
   // V3.9.39 — Al abrir, se consulta quién está libre a esa hora
@@ -892,11 +1181,123 @@ export default function AdminSessionsPage() {
 
           <Input label="Capacidad" type="number" value={form.capacity} onChange={(e: any) => setForm({ ...form, capacity: Number(e.target.value) })} />
 
+          {/* ══ V3.9.65 — DESTINATARIOS ══
+              Antes toda clase suelta se anunciaba al nivel entero. Ahora se
+              dice a quién va, y solo esa gente la ve y la recibe. */}
+          {!form.is_open_event && (
+            <div className="border-t border-slate-200 pt-3">
+              <label className="block text-sm font-medium mb-1.5">Destinatarios</label>
+              <div className="flex gap-1.5 mb-2 flex-wrap">
+                {[
+                  { k: "level", t: "Alumnos de este profesor en el nivel" },
+                  { k: "series", t: "Un grupo" },
+                  { k: "students", t: "Estudiantes específicos" },
+                ].map((o) => (
+                  <button
+                    key={o.k}
+                    type="button"
+                    onClick={() => setAudienceMode(o.k as any)}
+                    className={`px-3 py-1.5 rounded-lg text-sm border transition ${
+                      audienceMode === o.k
+                        ? "bg-brand-600 text-white border-brand-600"
+                        : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                    }`}
+                  >
+                    {o.t}
+                  </button>
+                ))}
+              </div>
+
+              {audienceMode === "series" && (
+                <Select value={form.series_id} onChange={(e: any) => setForm({ ...form, series_id: e.target.value })}>
+                  <option value="">— Elige un grupo —</option>
+                  {seriesList.map((g: any) => (
+                    <option key={g.id} value={g.id}>{g.name}</option>
+                  ))}
+                </Select>
+              )}
+
+              {audienceMode === "students" && (
+                <div>
+                  <Input
+                    placeholder="Busca por nombre o correo..."
+                    value={studentQuery}
+                    onChange={(e: any) => setStudentQuery(e.target.value)}
+                  />
+
+                  {pickedStudents.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {pickedStudents.map((st: any) => (
+                        <button
+                          key={st.id}
+                          type="button"
+                          onClick={() => toggleStudent(st)}
+                          className="inline-flex items-center gap-1.5 bg-brand-100 text-brand-800 text-xs font-semibold px-2.5 py-1 rounded-full hover:bg-brand-200 transition"
+                        >
+                          {st.full_name}
+                          <span className="text-brand-500">×</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {searchingStudents && (
+                    <p className="text-xs text-slate-400 mt-2">Buscando...</p>
+                  )}
+
+                  {studentHits.length > 0 && (
+                    <div className="mt-2 border border-slate-200 rounded-xl overflow-hidden max-h-52 overflow-y-auto">
+                      {studentHits.map((st: any) => {
+                        const elegido = pickedStudents.some((x) => x.id === st.id);
+                        return (
+                          <button
+                            key={st.id}
+                            type="button"
+                            onClick={() => toggleStudent(st)}
+                            className={`w-full text-left px-3 py-2 text-sm border-b border-slate-100 last:border-0 transition ${
+                              elegido ? "bg-brand-50 text-brand-800" : "hover:bg-slate-50 text-slate-700"
+                            }`}
+                          >
+                            <span className="font-medium">{st.full_name}</span>
+                            <span className="text-xs text-slate-400 ml-2">{st.email}</span>
+                            {elegido && <span className="float-right text-brand-600">✓</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {studentQuery.trim().length >= 2 && !searchingStudents && studentHits.length === 0 && (
+                    <p className="text-xs text-slate-400 mt-2">Nadie coincide con esa búsqueda.</p>
+                  )}
+
+                  <p className="text-xs text-slate-500 mt-2">
+                    Solo estos estudiantes verán la clase y recibirán el aviso.
+                    No hace falta que pertenezcan a un grupo.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
           <label className="flex items-start gap-3 p-4 rounded-lg border-2 border-slate-200 hover:border-brand-300 cursor-pointer transition">
             <input
               type="checkbox"
               checked={form.is_open_event}
-              onChange={(e) => setForm({ ...form, is_open_event: e.target.checked })}
+              onChange={(e) => {
+                // V3.9.67 — Marcar "evento abierto" LIMPIA la audiencia. Antes
+                // la interfaz solo ocultaba el selector: audienceMode seguía en
+                // "students" y create() podía enviar student_ids igualmente,
+                // dejando datos contradictorios en SessionAudience.
+                const abierto = e.target.checked;
+                setForm({ ...form, is_open_event: abierto, series_id: abierto ? "" : form.series_id });
+                if (abierto) {
+                  setAudienceMode("level");
+                  setPickedStudents([]);
+                  setStudentQuery("");
+                  setStudentHits([]);
+                }
+              }}
               className="mt-0.5 w-5 h-5 accent-brand-600"
             />
             <div>
@@ -909,9 +1310,13 @@ export default function AdminSessionsPage() {
 
           <div className="pt-3 border-t border-slate-100">
             <p className="text-xs text-slate-500 mb-3">
-            {form.is_open_event ?
-              "🎫 Cualquier estudiante podrá registrarse a este evento desde 'Eventos disponibles'." :
-              "Los estudiantes del nivel recibirán notificación automática."}
+            {form.is_open_event
+              ? "🎫 Cualquier estudiante podrá registrarse a este evento desde 'Eventos disponibles'."
+              : audienceMode === "students"
+              ? `Solo ${pickedStudents.length || "los"} estudiante(s) seleccionado(s) verán esta clase y recibirán el aviso.`
+              : audienceMode === "series"
+              ? "Solo el grupo seleccionado verá esta clase y recibirá el aviso."
+              : "Recibirán aviso los alumnos de este profesor en este nivel (no todo el nivel)."}
           </p>
             <Button onClick={create} disabled={!formValid} className="w-full" size="lg">
               Programar clase
@@ -995,11 +1400,117 @@ export default function AdminSessionsPage() {
                 <option value="presencial">Presencial</option>
                 <option value="hibrida">Híbrida</option>
               </Select>
-              <MeetingUrlInput label="URL meeting" value={editForm.meeting_url} onChange={(v: string) => setEditForm({ ...editForm, meeting_url: v })} />
+
+              {/* V3.9.68 — Los controles siguen a la modalidad elegida.
+                  Antes solo había "URL meeting": una excepción virtual dentro
+                  de una serie presencial no podía usar Video Dorismon, y una
+                  excepción presencial se quedaba sin sede ni aula. */}
+              {editForm.modality !== "presencial" && (
+                <>
+                  <SelectorVideo
+                    value={editForm.video_provider}
+                    onChange={(v: string) => setEditForm({ ...editForm, video_provider: v })}
+                  />
+                  <MeetingUrlInput
+                    label={editForm.video_provider === "dorismon" ? "Enlace de respaldo (opcional)" : "Enlace de la clase"}
+                    value={editForm.meeting_url}
+                    onChange={(v: string) => setEditForm({ ...editForm, meeting_url: v })}
+                    required={editForm.video_provider !== "dorismon"}
+                  />
+                </>
+              )}
+
+              {editForm.modality !== "online" && (
+                <div className="grid grid-cols-2 gap-2">
+                  <Select
+                    label="Sede"
+                    value={editForm.branch_id}
+                    onChange={async (e: any) => {
+                      const b = e.target.value;
+                      setEditForm({ ...editForm, branch_id: b, classroom_id: "" });
+                      if (b) {
+                        try {
+                          setEditClassrooms(safeArray(await adminApi.classrooms(Number(b))));
+                        } catch { setEditClassrooms([]); }
+                      } else {
+                        setEditClassrooms([]);
+                      }
+                    }}
+                  >
+                    <option value="">— Sin sede —</option>
+                    {branches.map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}
+                  </Select>
+                  <Select
+                    label="Aula"
+                    value={editForm.classroom_id}
+                    onChange={(e: any) => setEditForm({ ...editForm, classroom_id: e.target.value })}
+                    disabled={!editForm.branch_id}
+                  >
+                    <option value="">— Sin aula —</option>
+                    {editClassrooms.map((r: any) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                  </Select>
+                </div>
+              )}
+
+              {editForm.modality === "presencial" && (
+                <p className="text-xs text-slate-500 -mt-1">
+                  Esta clase será solo presencial: no se mostrará “Entrar a la clase”.
+                  Si tenía enlace de videollamada, se conserva por dentro por si vuelve a ser virtual.
+                </p>
+              )}
+
+              {/* V3.9.65 — El selector que faltaba. Sin él, la única forma de
+                  cambiar la modalidad de una clase de una serie era el editor
+                  de la SERIE, que por diseño aplica a todas las futuras: se
+                  quería un miércoles presencial y quedaban todos. */}
+              {editing?.series_id && (
+                <div className="border-t border-slate-200 pt-3">
+                  <label className="block text-sm font-medium mb-1.5">
+                    ¿A qué clases aplica este cambio?
+                  </label>
+                  <div className="space-y-1.5">
+                    {[
+                      { k: "this", t: "Solo esta clase",
+                        d: "Una excepción puntual. Las demás siguen igual." },
+                      { k: "this_and_following", t: "Esta clase y las siguientes",
+                        d: "Modalidad, video, sede, aula y cupo, desde esta fecha en adelante. El horario y el profesor se cambian en “Editar serie”." },
+                      { k: "all", t: "Toda la serie",
+                        d: "Cambia la programación habitual del grupo. Las clases ya dadas nunca se modifican." },
+                    ].map((o) => (
+                      <button
+                        key={o.k}
+                        type="button"
+                        onClick={() => setEditScope(o.k as any)}
+                        className={`w-full text-left px-3 py-2.5 rounded-xl border transition ${
+                          editScope === o.k
+                            ? "border-brand-500 bg-brand-50"
+                            : "border-slate-200 bg-white hover:bg-slate-50"
+                        }`}
+                      >
+                        <p className={`text-sm font-semibold ${editScope === o.k ? "text-brand-800" : "text-slate-700"}`}>
+                          {o.t}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-0.5">{o.d}</p>
+                      </button>
+                    ))}
+                  </div>
+                  {editScope === "all" && (
+                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 mt-2">
+                      Al guardar se abrirá <strong>“Editar serie”</strong> con la programación
+                      habitual del grupo. Los valores de esta clase no se copian:
+                      podría ser una excepción y no representar al grupo.
+                    </p>
+                  )}
+                </div>
+              )}
             </>
           )}
           <Textarea label="Notas del profesor (post-clase)" value={editForm.teacher_notes} onChange={(e: any) => setEditForm({ ...editForm, teacher_notes: e.target.value })} placeholder="Repasen el verbo X. Próxima clase traer..." />
-          <Button onClick={saveEdit} className="w-full" size="lg">Guardar cambios</Button>
+          <Button onClick={saveEdit} className="w-full" size="lg">
+            {editScope === "all" && editing?.series_id
+              ? "Continuar en “Editar serie”"
+              : "Guardar cambios"}
+          </Button>
         </div>
       </Modal>
 
@@ -1044,32 +1555,65 @@ export default function AdminSessionsPage() {
           {/* V3.9.62 — El video de la serie. Este es el caso que motivó todo:
               un Google Meet viejo que dejó de funcionar y no había forma de
               cambiar sin destruir el grupo. */}
-          <div className="border-t border-slate-200 pt-3">
-            <SelectorVideo
-              value={reschedForm.video_provider}
-              onChange={(v: string) => setReschedForm({ ...reschedForm, video_provider: v })}
-            />
-            <MeetingUrlInput
-              label={reschedForm.video_provider === "dorismon" ? "Enlace de respaldo (opcional)" : "Enlace de la clase"}
-              value={reschedForm.meeting_url}
-              onChange={(v: string) => setReschedForm({ ...reschedForm, meeting_url: v })}
-              required={reschedForm.video_provider !== "dorismon"}
-            />
-            <p className="text-xs text-slate-500 mt-1">
-              Sirve Google Meet, Zoom, Teams o cualquier enlace https://. Se aplica solo a las clases futuras.
-            </p>
-          </div>
+          <Select label="Modalidad" value={reschedForm.modality || reschedSeries?.modality || "online"} onChange={(e: any) => setReschedForm({ ...reschedForm, modality: e.target.value })}>
+            <option value="online">Online</option>
+            <option value="presencial">Presencial</option>
+            <option value="hibrida">Híbrida</option>
+          </Select>
+
+          {/* V3.9.69 — Los controles siguen a la modalidad, igual que en el
+              editor de una sesión. Una serie presencial pedía enlace de
+              videollamada y no ofrecía dónde poner la sede. */}
+          {(reschedForm.modality || reschedSeries?.modality) !== "presencial" && (
+            <div className="border-t border-slate-200 pt-3">
+              <SelectorVideo
+                value={reschedForm.video_provider}
+                onChange={(v: string) => setReschedForm({ ...reschedForm, video_provider: v })}
+              />
+              <MeetingUrlInput
+                label={reschedForm.video_provider === "dorismon" ? "Enlace de respaldo (opcional)" : "Enlace de la clase"}
+                value={reschedForm.meeting_url}
+                onChange={(v: string) => setReschedForm({ ...reschedForm, meeting_url: v })}
+                required={reschedForm.video_provider !== "dorismon"}
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                Sirve Google Meet, Zoom, Teams o cualquier enlace https://. Se aplica solo a las clases futuras.
+              </p>
+            </div>
+          )}
+
+          {(reschedForm.modality || reschedSeries?.modality) !== "online" && (
+            <div className="grid grid-cols-2 gap-2 border-t border-slate-200 pt-3">
+              <Select
+                label="Sede"
+                value={reschedForm.branch_id}
+                onChange={async (e: any) => {
+                  const b = e.target.value;
+                  setReschedForm({ ...reschedForm, branch_id: b, classroom_id: "" });
+                  if (b) {
+                    try { setReschedClassrooms(safeArray(await adminApi.classrooms(Number(b)))); }
+                    catch { setReschedClassrooms([]); }
+                  } else { setReschedClassrooms([]); }
+                }}
+              >
+                <option value="">— Sin sede —</option>
+                {branches.map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </Select>
+              <Select
+                label="Aula"
+                value={reschedForm.classroom_id}
+                onChange={(e: any) => setReschedForm({ ...reschedForm, classroom_id: e.target.value })}
+                disabled={!reschedForm.branch_id}
+              >
+                <option value="">— Sin aula —</option>
+                {reschedClassrooms.map((r: any) => <option key={r.id} value={r.id}>{r.name}</option>)}
+              </Select>
+            </div>
+          )}
 
           <Select label="Cambiar profesor (opcional)" value={reschedForm.teacher_id} onChange={(e: any) => setReschedForm({ ...reschedForm, teacher_id: e.target.value })}>
             <option value="">— Mantener el actual —</option>
             {teachers.map((t: any) => <option key={t.id} value={t.id}>{t.full_name}</option>)}
-          </Select>
-
-          <Select label="Cambiar modalidad (opcional)" value={reschedForm.modality} onChange={(e: any) => setReschedForm({ ...reschedForm, modality: e.target.value })}>
-            <option value="">— Mantener la actual —</option>
-            <option value="online">Online</option>
-            <option value="presencial">Presencial</option>
-            <option value="hibrida">Híbrida</option>
           </Select>
 
           <Button onClick={doReschedule} className="w-full" size="lg" disabled={reschedSaving}>
@@ -1238,12 +1782,44 @@ export default function AdminSessionsPage() {
               value={seriesForm.video_provider}
               onChange={(v) => setSeriesForm({ ...seriesForm, video_provider: v })}
             />
-            <Input
-              label={seriesForm.video_provider === "dorismon" ? "Enlace de respaldo (recomendado)" : "Link Zoom/Meet/Teams"}
+            <MeetingUrlInput
+              label={seriesForm.video_provider === "dorismon" ? "Enlace de respaldo (opcional)" : "Link Zoom/Meet/Teams *"}
               value={seriesForm.meeting_url}
-              onChange={(e: any) => setSeriesForm({ ...seriesForm, meeting_url: e.target.value })}
-              placeholder="https://zoom.us/..." />
+              onChange={(v: string) => setSeriesForm({ ...seriesForm, meeting_url: v })}
+              required={seriesForm.video_provider !== "dorismon"}
+            />
             </>
+          )}
+
+          {/* V3.9.69 — Sede y aula al crear. Antes una serie presencial nacía
+              con todas sus clases en "Ubicación por confirmar". */}
+          {seriesForm.modality !== "online" && (
+            <div className="grid grid-cols-2 gap-2">
+              <Select
+                label="Sede"
+                value={seriesForm.branch_id}
+                onChange={async (e: any) => {
+                  const b = e.target.value;
+                  setSeriesForm({ ...seriesForm, branch_id: b, classroom_id: "" });
+                  if (b) {
+                    try { setSeriesClassrooms(safeArray(await adminApi.classrooms(Number(b)))); }
+                    catch { setSeriesClassrooms([]); }
+                  } else { setSeriesClassrooms([]); }
+                }}
+              >
+                <option value="">— Elige sede —</option>
+                {branches.map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </Select>
+              <Select
+                label="Aula"
+                value={seriesForm.classroom_id}
+                onChange={(e: any) => setSeriesForm({ ...seriesForm, classroom_id: e.target.value })}
+                disabled={!seriesForm.branch_id}
+              >
+                <option value="">— Sin aula —</option>
+                {seriesClassrooms.map((r: any) => <option key={r.id} value={r.id}>{r.name}</option>)}
+              </Select>
+            </div>
           )}
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-900">
