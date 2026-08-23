@@ -191,7 +191,15 @@ export default function AdminDashboard() {
     },
     {
       label: "Clases programadas", valor: s.scheduled_classes ?? 0,
-      sub: clases.length ? `${clases.length} próximas` : null,
+      // V3.9.72 — El subtítulo decía "N próximas" usando `clases.length`, que
+      // NO mide lo mismo que el número grande:
+      //   · el número grande cuenta las clases `scheduled` de los PRÓXIMOS 7 DÍAS;
+      //   · `clases` venía de /admin/sessions?filter_period=upcoming (sin límite
+      //     de días), recortado por el endpoint a 6 y luego por .slice(0,5).
+      // Por eso podía verse "2" arriba y "3 próximas" abajo. Peor aún: con
+      // muchas clases futuras el subtítulo se habría quedado clavado en "5".
+      // Ahora el subtítulo describe la ventana real del número que acompaña.
+      sub: "En los próximos 7 días",
       Icono: Calendar, color: "text-sky-600 bg-sky-50",
       href: "/dashboard/admin/sessions",
     },

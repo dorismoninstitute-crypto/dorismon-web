@@ -31,7 +31,19 @@ const TONOS: Record<string, { bg: string; border: string; text: string; icon: st
 };
 
 const DESTINOS: Record<string, string> = {
-  ungraded: "/dashboard/admin/students",
+  // ⚠️ V3.9.72 — Esto apuntaba a "/dashboard/admin/students", que NO EXISTE.
+  // La carpeta `app/dashboard/admin/students/` solo contiene `[id]/profile`,
+  // sin `page.tsx` en la raíz, así que el botón "Ver" daba 404 en blanco.
+  //
+  // Seguimiento académico es la vista que ya muestra "Pendientes de calificar"
+  // y los profesores con entregas sin corregir, que es justo lo que el
+  // administrador busca al pulsar esta alerta.
+  //
+  // MEJORA FUTURA (no implementada a propósito): lo ideal sería abrir la
+  // entrega concreta que está esperando, o una cola de calificación. Requiere
+  // decidir antes si Dirección califica o solo supervisa, y probablemente una
+  // vista nueva. Se dejó fuera para no mezclarlo con este arreglo de una línea.
+  ungraded: "/dashboard/admin/academic-overview",
   no_attendance: "/dashboard/admin/sessions",
 };
 
