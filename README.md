@@ -28,19 +28,10 @@ Module (Grammar, Speaking, etc — configurables)
 Lesson (con video, PDF, audio, recursos)
 ```
 
-## Credenciales del seed inicial
+## Cuentas de desarrollo
 
-```
-ADMIN:        admin@dorismon.do        / DorismonAdmin2026!
-PROFES (Profe2026!):
-  ana@dorismon.do
-  luis@dorismon.do
-  sara@dorismon.do
-ESTUDIANTES (Estudiante2026!):
-  maria.estudiante@dorismon.do  (B1)
-  carlos.estudiante@dorismon.do (A2)
-  juana.estudiante@dorismon.do  (A1)
-```
+Las cuentas de desarrollo las crea el backend (`seed.py`, solo con `ALLOW_DEV_SEED=true` y contraseñas que defines tú
+en `SEED_*_PASSWORD`). Este repositorio no publica contraseñas. Ver el README del backend.
 
 ## Estructura
 

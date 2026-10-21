@@ -1,16 +1,31 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { auth } from "@/lib/api";
 import { Button, Input, ErrorBox } from "@/components/ui";
 import Logo from "@/components/Logo";
+import { useRegistroCarga } from "@/components/Carga";
 
 export default function LoginPage() {
   const router = useRouter();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  // GATE 5A — Antes de aceptar las credenciales NO se tapa la pantalla: los
+  // errores (contraseña, cuenta desactivada, demasiados intentos) se ven al
+  // instante. Si el servidor tarda, se avisa debajo del botón. Una vez
+  // aceptadas, la experiencia de carga compartida toma el control.
+  const [aceptado, setAceptado] = useState(false);
+  const [lento, setLento] = useState<0 | 1 | 2>(0);
+  useRegistroCarga(aceptado);
+
+  useEffect(() => {
+    if (!loading || aceptado) { setLento(0); return; }
+    const t1 = setTimeout(() => setLento(1), 3000);
+    const t2 = setTimeout(() => setLento(2), 10000);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [loading, aceptado]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,6 +34,7 @@ export default function LoginPage() {
     try {
       const res = await auth.login(form);
       auth.saveToken(res.access_token);
+      setAceptado(true);
       if (typeof window !== "undefined") {
         localStorage.setItem("refresh_token", res.refresh_token);
       }
@@ -33,6 +49,7 @@ export default function LoginPage() {
       else if (me.role === "teacher") router.push("/dashboard/teacher");
       else router.push("/dashboard/student");
     } catch (e: any) {
+      setAceptado(false);
       setError(e.message);
       setLoading(false);
     }
@@ -76,6 +93,11 @@ export default function LoginPage() {
             <Button type="submit" disabled={loading} className="w-full" size="lg">
               {loading ? "Ingresando..." : "Iniciar sesión"}
             </Button>
+            {loading && !aceptado && lento > 0 && (
+              <p className="text-xs text-slate-500 text-center" role="status" aria-live="polite">
+                {lento === 1 ? "Conectando con Dorismon…" : "La conexión está tardando un poco más de lo habitual…"}
+              </p>
+            )}
           </form>
 
           <p className="text-sm text-slate-500 text-center mt-6">

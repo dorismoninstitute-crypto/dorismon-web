@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import {
   useRoomContext, useParticipants, useLocalParticipant,
 } from "@livekit/components-react";
+import { RoomEvent } from "livekit-client";
 import { api } from "@/lib/api";
 import { Hand, MicOff, Mic, UserX, Users, X, PictureInPicture2 } from "lucide-react";
 
@@ -101,23 +102,55 @@ export function PanelParticipantes({
   const participants = useParticipants();
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [aviso, setAviso] = useState("");
+  // GATE 6G-A — Retirados de ESTA clase (el backend decide; aquí solo se muestra)
+  const [retirados, setRetirados] = useState<{ user_id: string; name: string }[]>([]);
+  const cargarRetirados = useCallback(async () => {
+    if (!esModerador) return;
+    try {
+      const r: any = await api(`/video/sessions/${sessionId}/bloqueos`, { auth: true });
+      setRetirados(Array.isArray(r?.items) ? r.items : []);
+    } catch { /* sin lista: se ven igual los conectados */ }
+  }, [esModerador, sessionId]);
+  useEffect(() => { void cargarRetirados(); }, [cargarRetirados]);
 
-  const moderar = async (identity: string, action: "mute" | "remove") => {
-    if (action === "remove" && !confirm("¿Sacar a esta persona de la clase?")) return;
+  // GATE 6G-C — el estado de los permisos se lee de LiveKit (lo real), y se
+  // vuelve a pintar cuando cambia; nunca se "finge" un cambio en la interfaz.
+  const room = useRoomContext();
+  const [, repintar] = useState(0);
+  useEffect(() => {
+    const r = () => repintar((x) => x + 1);
+    room.on(RoomEvent.ParticipantPermissionsChanged, r);
+    return () => { room.off(RoomEvent.ParticipantPermissionsChanged, r); };
+  }, [room]);
+
+  const moderar = async (identity: string, action: AccionModeracion, reintento = false) => {
+    if (action === "remove" && !reintento && !confirm(
+      "¿Sacar a esta persona de la clase?\n\nNo podrá volver a entrar a esta clase hasta que pulses «Permitir volver».",
+    )) return;
     setOcupado(identity);
     setAviso("");
     try {
-      await api(`/video/sessions/${sessionId}/moderate`, {
+      const r: any = await api(`/video/sessions/${sessionId}/moderate`, {
         method: "POST", auth: true, body: { action, identity },
       });
-      if (action === "mute") setAviso("Micrófono silenciado");
-      if (action === "remove") setAviso("Participante retirado");
+      if (action === "mute") setAviso("Micrófono silenciado (puede volver a activarlo)");
+      if (action === "remove") {
+        setAviso(r?.desconectado === false
+          ? "Acceso bloqueado. No estaba conectado a la sala."
+          : "Participante retirado. No podrá volver hasta que pulses «Permitir volver».");
+      }
+      if (action === "allow") setAviso("Puede volver a entrar a la clase");
+      if (action in TEXTO_PERMISO) setAviso(TEXTO_PERMISO[action]);
     } catch (e: any) {
       setAviso(e?.message || "No se pudo aplicar");
     } finally {
       setOcupado(null);
+      if (action !== "mute") void cargarRetirados();
     }
   };
+  const esRetirado = (identity: string) => retirados.some((r) => r.user_id === identity);
+  const conectados = new Set(participants.map((p) => p.identity));
+  const retiradosFuera = retirados.filter((r) => !conectados.has(r.user_id));
 
   // Los que levantaron la mano primero van arriba
   const ordenados = [...participants].sort((a, b) => {
@@ -143,6 +176,10 @@ export function PanelParticipantes({
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {ordenados.map((p) => {
           const manoArriba = !!manos[p.identity];
+          const retirado = esModerador && esRetirado(p.identity);
+          // GATE 6G-A — al profesor de la clase y a Dirección no se les modera
+          // (el backend lo rechaza igual); su token lleva metadata "teacher".
+          const moderable = esModerador && !p.isLocal && p.metadata !== "teacher";
           return (
             <div key={p.identity} className="bg-white/5 rounded-xl p-3">
               <div className="flex items-center gap-2 mb-1">
@@ -157,7 +194,26 @@ export function PanelParticipantes({
               {manoArriba && (
                 <p className="text-[11px] text-amber-300/80 mb-2">Levantó la mano</p>
               )}
-              {esModerador && !p.isLocal && (
+              {moderable && (retirado ? (
+                <div className="flex gap-1.5 flex-wrap items-center" data-retirado={p.identity}>
+                  <span className="text-[11px] text-red-200">Retirado de la clase</span>
+                  {/* Sigue conectado (LiveKit no pudo desconectarlo): reintentar */}
+                  <button
+                    onClick={() => moderar(p.identity, "remove", true)}
+                    disabled={ocupado === p.identity}
+                    className="text-[11px] bg-red-500/20 hover:bg-red-500/30 text-red-200 px-2.5 py-1.5 rounded-lg transition disabled:opacity-50"
+                  >
+                    Volver a desconectar
+                  </button>
+                  <button
+                    onClick={() => moderar(p.identity, "allow")}
+                    disabled={ocupado === p.identity}
+                    className="text-[11px] bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-100 px-2.5 py-1.5 rounded-lg transition disabled:opacity-50"
+                  >
+                    Permitir volver
+                  </button>
+                </div>
+              ) : (
                 <div className="flex gap-1.5 flex-wrap">
                   <button
                     onClick={() => moderar(p.identity, "mute")}
@@ -181,11 +237,56 @@ export function PanelParticipantes({
                       Bajar mano
                     </button>
                   )}
+                  {/* GATE 6G-C — permisos de esa persona en ESTA clase (no encienden nada) */}
+                  <div className="w-full flex gap-1.5 flex-wrap pt-1" data-permisos={p.identity}>
+                    {([
+                      [FUENTE.pantalla, "permitir_pantalla", "quitar_pantalla", "Permitir pantalla", "Quitar pantalla"],
+                      [FUENTE.microfono, "permitir_microfono", "bloquear_microfono", "Permitir micrófono", "Bloquear micrófono"],
+                      [FUENTE.camara, "permitir_camara", "bloquear_camara", "Permitir cámara", "Bloquear cámara"],
+                    ] as const).map(([fuente, permitir, quitar, txtPermitir, txtQuitar]) => {
+                      const tiene = puedePublicar(p, fuente);
+                      return (
+                        <button
+                          key={permitir}
+                          onClick={() => moderar(p.identity, tiene ? quitar : permitir)}
+                          disabled={ocupado === p.identity}
+                          data-permiso={tiene ? quitar : permitir}
+                          className={`text-[11px] px-2.5 py-1.5 rounded-lg transition disabled:opacity-50 ${
+                            tiene ? "bg-white/10 hover:bg-white/20 text-white/80" : "bg-sky-500/20 hover:bg-sky-500/30 text-sky-100"
+                          }`}
+                        >
+                          {tiene ? txtQuitar : txtPermitir}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              )}
+              ))}
             </div>
           );
         })}
+
+        {/* GATE 6G-A — Retirados que ya no están conectados */}
+        {esModerador && retiradosFuera.length > 0 && (
+          <div className="pt-2" data-retirados="">
+            <p className="text-white/50 text-[11px] font-semibold uppercase tracking-wide mb-1.5 px-1">
+              Retirados de la clase
+            </p>
+            {retiradosFuera.map((r) => (
+              <div key={r.user_id} className="bg-red-500/10 rounded-xl p-3 mb-2 flex items-center gap-2" data-retirado={r.user_id}>
+                <UserX className="w-4 h-4 text-red-300 flex-shrink-0" />
+                <p className="text-white text-sm truncate flex-1">{r.name}</p>
+                <button
+                  onClick={() => moderar(r.user_id, "allow")}
+                  disabled={ocupado === r.user_id}
+                  className="text-[11px] bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-100 px-2.5 py-1.5 rounded-lg transition disabled:opacity-50"
+                >
+                  Permitir volver
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </aside>
   );
@@ -252,3 +353,29 @@ export function AvisoDePresencia({ sessionId }: { sessionId: string }) {
   }, [sessionId]);
   return null;
 }
+
+// ------------------------------------------------ GATE 6G-C — permisos dinámicos
+// TrackSource de LiveKit (protocol, livekit_models.proto): CAMERA = 1,
+// MICROPHONE = 2, SCREEN_SHARE = 3, SCREEN_SHARE_AUDIO = 4.
+export const FUENTE = { camara: 1, microfono: 2, pantalla: 3 } as const;
+
+/** ¿Puede publicar esa fuente? Misma regla que LiveKit: sin canPublish, nada;
+ *  con canPublish y lista vacía, todo. */
+export function puedePublicar(p: { permissions?: { canPublish: boolean; canPublishSources: number[] } }, fuente: number) {
+  const pm = p.permissions;
+  if (!pm || !pm.canPublish) return false;
+  return pm.canPublishSources.length === 0 || pm.canPublishSources.includes(fuente);
+}
+
+type AccionModeracion = "mute" | "remove" | "allow"
+  | "permitir_pantalla" | "quitar_pantalla" | "bloquear_microfono" | "permitir_microfono"
+  | "bloquear_camara" | "permitir_camara";
+
+const TEXTO_PERMISO: Record<string, string> = {
+  permitir_pantalla: "Puede compartir pantalla (no se activa sola: lo decide esa persona)",
+  quitar_pantalla: "Ya no puede compartir pantalla",
+  bloquear_microfono: "Micrófono bloqueado: no puede activarlo hasta que lo permitas",
+  permitir_microfono: "Micrófono permitido (no se enciende solo)",
+  bloquear_camara: "Cámara bloqueada: no puede activarla hasta que lo permitas",
+  permitir_camara: "Cámara permitida (no se enciende sola)",
+};

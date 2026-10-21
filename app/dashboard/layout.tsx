@@ -2,9 +2,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { auth, safeObj, progress, getLevelTheme } from "@/lib/api";
+import { auth, safeObj, progress, getLevelTheme, ApiError } from "@/lib/api";
 import { LoadingScreen } from "@/components/ui";
 import { CallProvider } from "@/components/CallProvider";  // V3.9.28
+import AvisoVersion from "@/components/AvisoVersion";  // GATE 5B
 import Avatar from "@/components/Avatar";
 import Logo from "@/components/Logo";
 import { NotificationCenter } from "@/components/NotificationCenter";
@@ -16,6 +17,7 @@ import {
   ClipboardList, FolderKanban, FileEdit, BookMarked, Layers, Wallet,
   MessageCircle, HelpCircle, Inbox, TrendingUp, Sparkles, Clock,
   Image as ImageIcon, Quote, Repeat, ClipboardCheck,
+  Video,  // GATE 6H-B
 } from "lucide-react";
 
 // V2.9.1: Items agrupados por área con encabezados de sección
@@ -29,6 +31,7 @@ const studentGroups = [
     { href: "/dashboard/student/calendar", label: "Calendario", Icon: Calendar },
     { href: "/dashboard/student/makeups", label: "Reponer clase", Icon: Repeat },  // V3.9.36
     { href: "/dashboard/student/library", label: "Biblioteca", Icon: Library },
+    { href: "/dashboard/student/grabaciones", label: "Grabaciones", Icon: Video },  // GATE 6H-B
     { href: "/dashboard/student/assignments", label: "Tareas", Icon: FileText },
     { href: "/dashboard/student/quizzes", label: "Quizzes", Icon: CheckCircle2 },
     { href: "/dashboard/student/events", label: "Eventos", Icon: Ticket },
@@ -57,6 +60,7 @@ const teacherGroups = [
   ]},
   { section: "Enseñanza", items: [
     { href: "/dashboard/teacher/sessions", label: "Mis clases", Icon: Calendar },
+    { href: "/dashboard/teacher/grabaciones", label: "Grabaciones", Icon: Video },  // GATE 6H-B
     { href: "/dashboard/teacher/students", label: "Mis estudiantes", Icon: Users },
     { href: "/dashboard/teacher/assignments", label: "Tareas", Icon: FileText },
     { href: "/dashboard/teacher/quizzes", label: "Quizzes", Icon: CheckCircle2 },
@@ -85,6 +89,7 @@ const adminGroups = [
   ]},
   { section: "Operación académica", items: [
     { href: "/dashboard/admin/sessions", label: "Clases", Icon: Calendar },
+    { href: "/dashboard/admin/grabaciones", label: "Grabaciones", Icon: Video },  // GATE 6H-B
     { href: "/dashboard/admin/groups", label: "Grupos y horarios", Icon: Users },
     { href: "/dashboard/admin/teachers-schedule", label: "Agenda de profesores", Icon: Clock },
     { href: "/dashboard/admin/attendance", label: "Asistencia", Icon: ClipboardCheck },
@@ -138,6 +143,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [user, setUser] = useState<any>(null);
   const [studentLevel, setStudentLevel] = useState<string>("B1");
   const [loaded, setLoaded] = useState(false);
+  const [sinConexion, setSinConexion] = useState(false);  // v3.9.76: caída de red / servidor, NO sesión inválida
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -153,19 +159,48 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           }).catch(() => {});
         }
       })
-      .catch(() => {
-        auth.logout();
-        if (typeof window !== "undefined") {
-          window.location.href = "/login";
+      .catch((e) => {
+        // v3.9.76: SOLO una respuesta de autenticación REAL (401 token inválido, 403 cuenta desactivada,
+        // 404 usuario inexistente) cierra la sesión. Una caída de red, un 5xx, un 429 o el arranque en
+        // frío del servidor NO deben borrar la sesión (tokens, borradores, cachés) ni mandar a /login.
+        const estado = e instanceof ApiError ? e.status : -1;
+        if (estado === 401 || estado === 403 || estado === 404) {
+          auth.logout();
+          if (typeof window !== "undefined") {
+            window.location.href = "/login";
+          }
+          return;
         }
+        setSinConexion(true);
       });
   }, [router]);
 
+  if (!loaded && sinConexion) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 bg-slate-50">
+        <div role="alert" data-sin-conexion="" className="max-w-sm w-full bg-white rounded-2xl shadow-xl border border-slate-200 p-6 text-center">
+          <p className="font-black text-lg text-slate-900">No pudimos conectar con Dorismon</p>
+          <p className="text-sm text-slate-600 mt-2">
+            Tu sesión sigue abierta. Puede ser tu conexión a internet o que el servidor esté despertando.
+            Inténtalo de nuevo en unos segundos.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 w-full py-2.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-bold"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
   if (!loaded) return <LoadingScreen message="Cargando..." />;
   const u = safeObj(user, {}) as any;
   const role = u.role || "student";
   const groups = role === "super_admin" ? adminGroups : role === "teacher" ? teacherGroups : studentGroups;
   const isAdmin = role === "super_admin";  // V3.9.60 — barra inferior móvil
+  const isTeacher = role === "teacher";    // GATE 2 — barra inferior móvil del profesor
+  const isStudent = role === "student";    // GATE 3 — barra inferior móvil del estudiante
 
   // Tema del sidebar: para estudiante usa colores por nivel, para admin/profe usa brand
   const theme = role === "student" ? getLevelTheme(studentLevel) : null;
@@ -258,11 +293,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       <div className="flex-1 min-w-0">
-        <header className="lg:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-20">
-          <button onClick={() => setSidebarOpen(true)} className="text-slate-600 hover:text-slate-900 p-1">
+        {/* GATE 4 — UNA sola cabecera y UN solo centro de avisos. Antes había
+            dos cabeceras (móvil y escritorio) con un NotificationCenter cada
+            una; la oculta por CSS seguía consultando: avisos y mensajes se
+            pedían el doble, también cada 45 s. Se ve igual que antes:
+            móvil = menú + logo + campana; escritorio (lg) = solo la campana. */}
+        <header className="bg-white border-b border-slate-200 px-4 py-3 lg:px-8 flex items-center justify-between lg:justify-end sticky top-0 z-20">
+          <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-slate-600 hover:text-slate-900 p-1">
             <Menu size={24} />
           </button>
-          <div className="flex items-center gap-2">
+          <div className="lg:hidden flex items-center gap-2">
             <div className="relative">
               <div className={clsx("w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white font-black text-sm shadow-md")}>D</div>
               <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-accent-500 rounded-full ring-2 ring-white" />
@@ -272,11 +312,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <span className="text-[8px] font-semibold uppercase tracking-[0.14em] text-slate-500 mt-0.5">Language Institute</span>
             </div>
           </div>
-          <NotificationCenter />
-        </header>
-
-        {/* V3.1: Header de escritorio con centro de avisos */}
-        <header className="hidden lg:flex bg-white border-b border-slate-200 px-8 py-3 items-center justify-end sticky top-0 z-20">
           <NotificationCenter />
         </header>
 
@@ -292,6 +327,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {isAdmin && (
           <nav
             aria-label="Navegación rápida"
+            data-barra-inferior=""  // GATE 6D — la ventana de la clase no la tapa
             className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-slate-200 flex"
             style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
           >
@@ -327,8 +363,93 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </button>
           </nav>
         )}
+
+        {/* GATE 2 — Barra inferior en móvil, solo para el PROFESOR. Mismo
+            patrón que la de Dirección (que no se toca): tres destinos diarios
+            y "Más" abre el menú completo. Estudiantes no la tienen. */}
+        {isTeacher && (
+          <nav
+            aria-label="Navegación rápida del profesor"
+            data-barra-inferior=""  // GATE 6D — la ventana de la clase no la tapa
+            className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-slate-200 flex"
+            style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+          >
+            {[
+              { href: "/dashboard/teacher", label: "Inicio", Icon: Home },
+              { href: "/dashboard/teacher/sessions", label: "Mis clases", Icon: Calendar },
+              { href: "/dashboard/teacher/assignments", label: "Tareas", Icon: FileText },
+            ].map((t) => {
+              const activo = pathname === t.href;
+              return (
+                <Link
+                  key={t.href}
+                  href={t.href}
+                  aria-current={activo ? "page" : undefined}
+                  className={clsx(
+                    "flex-1 flex flex-col items-center gap-0.5 py-2.5 min-h-[56px] transition",
+                    activo ? "text-brand-600" : "text-slate-500 hover:text-slate-700"
+                  )}
+                >
+                  <t.Icon className="w-5 h-5" />
+                  <span className="text-[10px] font-semibold">{t.label}</span>
+                </Link>
+              );
+            })}
+            <button
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Abrir el menú completo"
+              className="flex-1 flex flex-col items-center gap-0.5 py-2.5 min-h-[56px] text-slate-500 hover:text-slate-700 transition"
+            >
+              <Menu className="w-5 h-5" />
+              <span className="text-[10px] font-semibold">Más</span>
+            </button>
+          </nav>
+        )}
+
+        {/* GATE 3 — Barra inferior en móvil, solo para el ESTUDIANTE. Mismo
+            patrón que las de Dirección y profesor (que no se tocan). */}
+        {isStudent && (
+          <nav
+            aria-label="Navegación rápida del estudiante"
+            data-barra-inferior=""  // GATE 6D — la ventana de la clase no la tapa
+            className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-slate-200 flex"
+            style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+          >
+            {[
+              { href: "/dashboard/student", label: "Inicio", Icon: Home },
+              { href: "/dashboard/student/calendar", label: "Calendario", Icon: Calendar },
+              { href: "/dashboard/student/assignments", label: "Tareas", Icon: FileText },
+            ].map((t) => {
+              const activo = pathname === t.href;
+              return (
+                <Link
+                  key={t.href}
+                  href={t.href}
+                  aria-current={activo ? "page" : undefined}
+                  className={clsx(
+                    "flex-1 flex flex-col items-center gap-0.5 py-2.5 min-h-[56px] transition",
+                    activo ? "text-brand-600" : "text-slate-500 hover:text-slate-700"
+                  )}
+                >
+                  <t.Icon className="w-5 h-5" />
+                  <span className="text-[10px] font-semibold">{t.label}</span>
+                </Link>
+              );
+            })}
+            <button
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Abrir el menú completo"
+              className="flex-1 flex flex-col items-center gap-0.5 py-2.5 min-h-[56px] text-slate-500 hover:text-slate-700 transition"
+            >
+              <Menu className="w-5 h-5" />
+              <span className="text-[10px] font-semibold">Más</span>
+            </button>
+          </nav>
+        )}
       </div>
     </div>
+    {/* GATE 5B — aviso de versión nueva; dentro de CallProvider para saber si hay clase */}
+    <AvisoVersion />
     </CallProvider>
   );
 }

@@ -34,10 +34,32 @@ export function NotificationCenter() {
   };
 
   useEffect(() => {
-    loadCounts();
+    // V3.9.76 — Mismo intervalo de 45s, pero:
+    //  - con la pestaña oculta no se consulta (tráfico inútil);
+    //  - al volver a la pestaña o enfocar la ventana se refresca al instante.
+    // Volver suele disparar visibilitychange Y focus casi juntos: un refresco
+    // hecho hace menos de 2s no se repite.
+    let ultimo = 0;
+    const refrescar = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      const ahora = Date.now();
+      if (ahora - ultimo < 2000) return;
+      ultimo = ahora;
+      loadCounts();
+    };
+    refrescar();
     // Actualización periódica suave cada 45s
-    const t = setInterval(loadCounts, 45000);
-    return () => clearInterval(t);
+    const t = setInterval(refrescar, 45000);
+    const alCambiarVisibilidad = () => {
+      if (document.visibilityState === "visible") refrescar();
+    };
+    document.addEventListener("visibilitychange", alCambiarVisibilidad);
+    window.addEventListener("focus", refrescar);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", alCambiarVisibilidad);
+      window.removeEventListener("focus", refrescar);
+    };
   }, []);
 
   // Cerrar el panel al hacer click afuera

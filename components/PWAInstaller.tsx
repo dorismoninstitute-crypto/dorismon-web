@@ -18,18 +18,32 @@ export default function PWAInstaller() {
   const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
-    // Registrar Service Worker (solo HTTPS / localhost)
+    // GATE 5B — Service worker SOLO en la producción de Vercel. La decisión
+    // se tomó al construir (next.config.js); el navegador no conoce VERCEL_ENV.
+    // Cada build registra su propia versión: /sw.js?v=<commit>.
     if ("serviceWorker" in navigator && typeof window !== "undefined") {
-      const isLocalhost = window.location.hostname === "localhost";
-      const isHttps = window.location.protocol === "https:";
-      if (isHttps || isLocalhost) {
-        navigator.serviceWorker.register("/sw.js")
-          .then((reg) => {
-            // Service Worker registrado
-          })
+      if (process.env.NEXT_PUBLIC_SW_ENABLED === "1") {
+        const v = encodeURIComponent(process.env.NEXT_PUBLIC_APP_VERSION || "");
+        navigator.serviceWorker.register(`/sw.js?v=${v}`)
           .catch(() => {
             // Falla silenciosa, no es crítico
           });
+      } else {
+        // Preview, desarrollo o build local: quitar SOLO el SW de Dorismon
+        // (/sw.js de este mismo sitio) y SOLO las cachés "dorismon-*".
+        navigator.serviceWorker.getRegistrations()
+          .then((regs) => regs.forEach((reg) => {
+            const w = reg.active || reg.waiting || reg.installing;
+            if (!w) return;
+            const u = new URL(w.scriptURL);
+            if (u.origin === window.location.origin && u.pathname === "/sw.js") reg.unregister().catch(() => {});
+          }))
+          .catch(() => {});
+        if ("caches" in window) {
+          caches.keys()
+            .then((keys) => Promise.all(keys.filter((k) => k.startsWith("dorismon-")).map((k) => caches.delete(k))))
+            .catch(() => {});
+        }
       }
     }
 
@@ -131,7 +145,7 @@ export default function PWAInstaller() {
           ) : (
             <>
               <p className="text-sm text-slate-700 mb-3">
-                Accede a tus clases más rápido. Funciona offline, recibe notificaciones y abre como una app.
+                Accede a tus clases más rápido, recibe avisos en tu teléfono y abre Dorismon como una app. Necesita conexión a internet.
               </p>
               <div className="flex gap-2">
                 <button

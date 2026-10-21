@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { auth } from "@/lib/api";
 import Logo from "@/components/Logo";
+import { LoadingScreen } from "@/components/ui";
 import { ArrowRight, GraduationCap } from "lucide-react";
 
 /**
@@ -43,17 +44,19 @@ export default function WelcomePage() {
       });
   }, [router]);
 
+  // GATE 4 — Mientras se ve la bienvenida, el navegador descarga y prepara
+  // el CÓDIGO de la página del panel (solo eso: no se piden sus datos, para
+  // no adelantar ningún GET con efectos). Así "Ir a mi cuenta" responde ya.
+  useEffect(() => {
+    if (!loading) router.prefetch(dashboardPath);
+  }, [loading, dashboardPath, router]);
+
   const goToAccount = () => {
     router.push(dashboardPath);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-700 to-brand-900">
-        <div className="animate-pulse text-white/70">Cargando...</div>
-      </div>
-    );
-  }
+  // GATE 5A — misma experiencia de carga compartida que el resto de la app.
+  if (loading) return <LoadingScreen />;
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 text-white relative overflow-hidden">

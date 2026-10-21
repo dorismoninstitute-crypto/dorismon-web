@@ -15,7 +15,7 @@ export default function AdminEventsPage() {
         const all = safeArray(safeObj(d, {} as any).items);
         // Solo eventos abiertos (necesitamos hacer una request distinta o filtrar)
         // Hacemos fetch a /events/ que devuelve solo eventos
-        return fetch(`${process.env.NEXT_PUBLIC_API_URL || "https://dorismon-api.onrender.com"}/events/`, {
+        return fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/events/`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` }
         });
       })
