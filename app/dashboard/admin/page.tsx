@@ -60,34 +60,47 @@ export default function AdminDashboard() {
   const [alertas, setAlertas] = useState<any>({});
   const [clases, setClases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  // GATE 4 — ¿Llegaron ya los paneles secundarios? (alertas, finanzas, clases…)
+  const [secListo, setSecListo] = useState(false);
   const [autoAssignBusy, setAutoAssignBusy] = useState(false);
   const [err, setErr] = useState("");
 
   useEffect(() => {
     (async () => {
       try {
+        // V3.9.76 — Los dos grupos arrancan A LA VEZ (antes los secundarios
+        // esperaban a que terminara el principal: una ronda de red de más).
+        // Todos son endpoints existentes. Un panel secundario puede fallar sin
+        // impedir que Dirección vea el resto del dashboard.
+        // GATE 4 — Lo PRINCIPAL se pide PRIMERO: antes salía detrás de los 7
+        // secundarios y el servidor lo atendía compitiendo con todos ellos.
         // La identidad visible sale de /auth/me, la misma fuente que usan
         // el sidebar y Mi cuenta. Nunca usar listados/estadísticas del
         // dashboard como fuente de identidad del usuario autenticado.
-        const [dash, me] = await Promise.all([
+        const principal = Promise.all([
           adminApi.dashboard(),
           auth.me(),
         ]);
+        principal.catch(() => {});  // el error se trata abajo
+        const secundarios = Promise.allSettled([
+          api("/admin/students-without-schedule", { auth: true }),
+          api("/admin/at-risk-overview", { auth: true }),
+          api("/admin/completion-queue", { auth: true }),
+          api("/admin/payment-proofs?status=pending", { auth: true }),
+          api("/admin/sessions?filter_period=upcoming&limit=6", { auth: true }),
+          adminApi.financeSummary(),
+          api("/admin/alerts", { auth: true }),
+        ]);
+
+        const [dash, me] = await principal;
         setD(dash);
         setCurrentUser(me);
+        // GATE 4 — El contenido principal se muestra YA; los 7 paneles
+        // secundarios se rellenan al llegar (con su espacio reservado).
+        setLoading(false);
 
-        // Todos son endpoints existentes. Un panel secundario puede fallar sin
-        // impedir que Dirección vea el resto del dashboard.
         const [sinHorario, riesgo, revision, pagos, sesiones, finanzas, actionables] =
-          await Promise.allSettled([
-            api("/admin/students-without-schedule", { auth: true }),
-            api("/admin/at-risk-overview", { auth: true }),
-            api("/admin/completion-queue", { auth: true }),
-            api("/admin/payment-proofs?status=pending", { auth: true }),
-            api("/admin/sessions?filter_period=upcoming&limit=6", { auth: true }),
-            adminApi.financeSummary(),
-            api("/admin/alerts", { auth: true }),
-          ]);
+          await secundarios;
 
         const val = (r: PromiseSettledResult<any>) =>
           r.status === "fulfilled" ? r.value : null;
@@ -106,6 +119,7 @@ export default function AdminDashboard() {
         setErr(e.message);
       } finally {
         setLoading(false);
+        setSecListo(true);  // GATE 4
       }
     })();
   }, []);
@@ -173,7 +187,14 @@ export default function AdminDashboard() {
   const haySetupPendiente = s.total_modules === 0
     || s.unassigned_students > 0
     || s.teachers_without_students > 0;
-  const todoAlDia = filas.length === 0 && nActionables === 0 && !haySetupPendiente;
+  // GATE 4 — "Todo al día" solo cuando los secundarios YA llegaron (si no,
+  // filas vacías por estar cargando parecerían "nada pendiente").
+  const todoAlDia = secListo && filas.length === 0 && nActionables === 0 && !haySetupPendiente;
+  // GATE 4 — Marcador discreto mientras llega un dato secundario (mismo alto
+  // que el texto, para no mover el contenido cuando aparece el valor).
+  const Hueso = ({ w = "w-16" }: { w?: string }) => (
+    <span className={`inline-block h-5 ${w} rounded bg-slate-100 animate-pulse align-middle`} aria-hidden="true" />
+  );
 
   const kpis = [
     {
@@ -210,6 +231,7 @@ export default function AdminDashboard() {
         : null,
       Icono: DollarSign, color: "text-emerald-600 bg-emerald-50",
       href: "/dashboard/admin/finance", esTexto: true,
+      cargando: !secListo,  // GATE 4 — depende de finanzas (secundario)
     },
   ];
 
@@ -247,19 +269,28 @@ export default function AdminDashboard() {
             <p className={`font-black text-slate-800 leading-tight ${
               k.esTexto ? "text-lg md:text-xl" : "text-2xl md:text-3xl"
             }`}>
-              {k.valor}
+              {(k as any).cargando ? <Hueso w="w-24" /> : k.valor}
             </p>
             <p className="text-xs font-semibold text-slate-600 mt-0.5">{k.label}</p>
-            {k.sub && <p className="text-[11px] text-slate-400 mt-0.5">{k.sub}</p>}
+            {k.sub && !(k as any).cargando && <p className="text-[11px] text-slate-400 mt-0.5">{k.sub}</p>}
           </Link>
         ))}
       </div>
 
-      {/* Alertas accionables históricas: WhatsApp, resolver y posponer. */}
-      <AlertasAdmin initialData={alertas.actionables} showAllClear={false} />
+      {/* Alertas accionables históricas: WhatsApp, resolver y posponer.
+          GATE 4 — Se monta cuando YA llegaron sus datos: montarla antes haría
+          que pidiera /admin/alerts por su cuenta (petición duplicada). */}
+      {secListo ? (
+        <AlertasAdmin initialData={alertas.actionables} showAllClear={false} />
+      ) : (
+        <div className="bg-white rounded-2xl border border-slate-100 px-4 py-3 flex items-center gap-2 text-xs text-slate-400" aria-live="polite">
+          <span className="w-3 h-3 rounded-full border-2 border-slate-200 border-t-slate-400 animate-spin" />
+          Revisando pendientes…
+        </div>
+      )}
 
       {/* Pendientes que no pertenecen al motor de /admin/alerts */}
-      {filas.length > 0 && (
+      {secListo && filas.length > 0 && (
         <section className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
           <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-500" />
@@ -378,7 +409,20 @@ export default function AdminDashboard() {
             </Link>
           </div>
 
-          {clases.length === 0 ? (
+          {!secListo ? (
+            // GATE 4 — mientras llega la lista: filas fantasma del mismo alto
+            <div className="divide-y divide-slate-50" aria-hidden="true">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="px-4 py-3 flex items-center gap-3">
+                  <span className="w-9 h-9 rounded-lg bg-slate-100 animate-pulse" />
+                  <span className="flex-1 space-y-1.5">
+                    <span className="block h-3 w-2/3 rounded bg-slate-100 animate-pulse" />
+                    <span className="block h-2.5 w-1/3 rounded bg-slate-100 animate-pulse" />
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : clases.length === 0 ? (
             <div className="px-4 py-8 text-center">
               <Calendar className="w-8 h-8 text-slate-300 mx-auto mb-2" />
               <p className="text-sm text-slate-500 mb-1">No hay clases próximas.</p>
@@ -440,14 +484,15 @@ export default function AdminDashboard() {
           </div>
           <div className="p-3 space-y-1">
             {[
+              // GATE 4 — `sec`: el valor viene de un panel secundario
               { l: "En riesgo académico", v: nRiesgo, cls: "text-rose-600",
-                href: "/dashboard/admin/academic-overview" },
+                href: "/dashboard/admin/academic-overview", sec: true },
               { l: "Sin horario asignado", v: nSinHorario, cls: "text-amber-600",
-                href: "/dashboard/admin/groups" },
+                href: "/dashboard/admin/groups", sec: true },
               { l: "Listos para revisión final", v: nRevision, cls: "text-emerald-600",
-                href: "/dashboard/admin/completions" },
+                href: "/dashboard/admin/completions", sec: true },
               { l: "Certificados emitidos", v: s.certificates_issued ?? 0,
-                cls: "text-slate-700", href: "/dashboard/admin/certificates" },
+                cls: "text-slate-700", href: "/dashboard/admin/certificates", sec: false },
             ].map((x) => (
               <Link
                 key={x.l}
@@ -455,10 +500,10 @@ export default function AdminDashboard() {
                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 transition"
               >
                 <span className="text-sm text-slate-600 flex-1">{x.l}</span>
-                <span className={`text-lg font-black ${x.cls}`}>{x.v}</span>
+                <span className={`text-lg font-black ${x.cls}`}>{x.sec && !secListo ? <Hueso w="w-8" /> : x.v}</span>
               </Link>
             ))}
-            {nRiesgo === 0 && (
+            {secListo && nRiesgo === 0 && (
               <p className="text-[11px] text-emerald-700 bg-emerald-50 rounded-lg px-3 py-2 mx-1">
                 Ninguna matrícula en riesgo ahora mismo.
               </p>
@@ -488,7 +533,7 @@ export default function AdminDashboard() {
           ].map((x) => (
             <div key={x.l} className="px-4 py-3 border-b md:border-b-0 border-r last:border-r-0 border-slate-50">
               <p className="text-[11px] text-slate-500">{x.l}</p>
-              <p className={`text-lg font-black ${x.cls}`}>{x.v}</p>
+              <p className={`text-lg font-black ${x.cls}`}>{secListo ? x.v : <Hueso w="w-20" />}</p>
             </div>
           ))}
         </div>

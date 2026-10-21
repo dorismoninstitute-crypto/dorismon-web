@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { ToastContainer } from "@/components/ui";
 import PWAInstaller from "@/components/PWAInstaller";
+import { CargaProvider } from "@/components/Carga";
 import "./globals.css";
 
 const baseMetadata: Metadata = {
@@ -75,7 +76,7 @@ export const viewport: Viewport = {
 export async function generateMetadata(): Promise<Metadata> {
   let ogUrl: string | null = null;
   try {
-    const api = process.env.NEXT_PUBLIC_API_URL || "https://dorismon-api.onrender.com";
+    const api = process.env.NEXT_PUBLIC_API_URL || "";  // GATE 6H-A.1
     if (api) {
       const res = await fetch(`${api}/site-images`, { next: { revalidate: 300 } });
       if (res.ok) {
@@ -115,7 +116,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
       </head>
       <body className="bg-slate-50 text-slate-900 antialiased">
-        <ErrorBoundary>{children}</ErrorBoundary>
+        {/* GATE 5A — un solo controlador de carga para toda la app */}
+        <CargaProvider>
+          <ErrorBoundary>{children}</ErrorBoundary>
+        </CargaProvider>
         <ToastContainer />
         <PWAInstaller />
       </body>

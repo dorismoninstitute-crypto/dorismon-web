@@ -33,7 +33,7 @@ export default function TeacherAssignmentsPage() {
   const openModal = async () => {
     try {
       // Reusamos endpoint público de catálogo
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "https://dorismon-api.onrender.com"}/courses`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/courses`);
       setCourses(await res.json());
       setShowModal(true);
     } catch {}
@@ -43,7 +43,7 @@ export default function TeacherAssignmentsPage() {
     setForm({ ...form, course_id, level_id: "" });
     if (course_id) {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "https://dorismon-api.onrender.com"}/courses/${course_id}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/courses/${course_id}`);
         const d = await res.json();
         setLevels(safeArray(d.levels));
       } catch {}

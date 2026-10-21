@@ -87,3 +87,41 @@
 
 /* En la ventanita minimizada, ocultar los controles que no caben */
 .ds-mini .lk-control-bar { display: none; }
+
+/* GATE 6A — El aviso de conexión de LiveKit sale en inglés ("Connecting",
+   "Reconnecting") y tapaba los botones de la cabecera. Se oculta y en su lugar
+   la sala muestra el suyo en español (EstadoConexion). Solo presentación. */
+.ds-lk-stage .lk-toast-connection-state { display: none; }
+
+/* GATE 6D — Video Dorismon en el móvil.
+   Una sola salida visible: la de Dorismon ("Salir" de la cabecera / icono de la
+   ventanita). El "Leave" de LiveKit se oculta (su clic, si llegara a ocurrir,
+   sigue contando como salida voluntaria en Gate 6B). */
+.ds-capa-llamada .lk-disconnect-button { display: none !important; }
+/* Objetivos táctiles de ~44 px: cabecera, barra de LiveKit, panel de participantes */
+.ds-cabecera-llamada button { min-height: 44px; min-width: 44px; }
+.ds-capa-llamada .lk-control-bar .lk-button { min-height: 44px; min-width: 44px; }
+.ds-capa-llamada aside button { min-height: 44px; min-width: 44px; }
+.ds-capa-llamada .lk-chat .lk-button { min-height: 44px; min-width: 44px; }
+/* Chat: 16 px evita que iPhone haga zoom al escribir */
+.ds-capa-llamada .lk-chat input,
+.ds-capa-llamada .lk-chat textarea { font-size: 16px; }
+/* En la ventanita mini no cabe "fijar participante" (botón de 24 px) */
+.ds-mini .lk-focus-toggle-button { display: none; }
+/* Chat en teléfono: LiveKit lo fija a TODA la pantalla (position: fixed) y el
+   teclado lo tapa. Dentro de la clase se ancla a la zona de video, que se
+   ajusta a la parte visible de la pantalla; su cabecera conserva el botón
+   para cerrarlo y volver a los controles. */
+@media (max-width: 600px) {
+  .ds-capa-llamada .lk-chat { position: absolute; top: 0; right: 0; bottom: 0; left: 0; width: 100%; z-index: 20; }
+}
+
+/* GATE 6F-A — El foco del profesor se aplica dentro de <VideoConference /> como su
+   "SettingsComponent"; LiveKit añade por eso un botón "Settings" que aquí no tiene
+   uso: se oculta (su ventana nunca se abre). */
+.ds-lk-stage .lk-settings-toggle { display: none !important; }
+.ds-lk-stage .lk-settings-menu-modal { display: none !important; }
+/* Reacciones: aparecen suaves y no captan toques (no tapan controles) */
+@keyframes ds-reaccion-entra { from { opacity: 0; transform: translateY(8px) scale(.9); } to { opacity: 1; transform: none; } }
+.ds-reaccion { animation: ds-reaccion-entra .2s ease-out; }
+@media (prefers-reduced-motion: reduce) { .ds-reaccion { animation: none; } }

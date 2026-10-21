@@ -59,7 +59,9 @@ export default function AdminSessionsPage() {
     const t = setTimeout(async () => {
       try {
         const r: any = await adminApi.users({ role: "student", q, limit: 15 });
-        if (!cancelado) setStudentHits(safeArray(r?.items ?? r));
+        // GATE 1 — Un estudiante desactivado no se ofrece para una clase nueva
+        // (el backend también lo rechaza; aquí solo se evita el error).
+        if (!cancelado) setStudentHits(safeArray(r?.items ?? r).filter((u: any) => u?.is_active !== false));
       } catch {
         if (!cancelado) setStudentHits([]);
       } finally {
@@ -327,6 +329,24 @@ export default function AdminSessionsPage() {
   const saveEdit = async () => {
     if (!editing) return;
     try {
+      // ══ V3.9.73 — “TODA LA SERIE” ES NAVEGACIÓN, NO UN CAMBIO DE SESIÓN ══
+      //
+      // El botón dice “Continuar en Editar serie”, así que no debe exigir que
+      // el admin modifique artificialmente un campo de ESTA sesión para poder
+      // llegar al editor del grupo. Abrimos primero la serie real y dejamos
+      // que su propio editor calcule el delta.
+      if (editScope === "all" && editing.series_id) {
+        const serie = seriesList.find((g: any) => g.id === editing.series_id);
+        if (!serie) {
+          showToast("error", "No se encontró la serie de esta clase");
+          return;
+        }
+        setEditing(null);
+        openReschedule(serie);
+        showToast("success", "Edita aquí la programación habitual del grupo");
+        return;
+      }
+
       // Para clases pasadas, solo enviamos los campos permitidos (título/desc/notas)
       let body: any;
       if (isEditPast) {
@@ -442,28 +462,6 @@ export default function AdminSessionsPage() {
       // La tercera NO se reimplementa aquí: ese endpoint ya conserva el
       // historial, los IDs de sesión y la rotación de módulos. Duplicarlo
       // sería crear una segunda verdad.
-      if (editScope === "all" && editing.series_id) {
-        // ══ V3.9.67 — "TODA LA SERIE" NO REUTILIZA ESTE FORMULARIO ══
-        //
-        // ANTES esta rama mandaba al endpoint de serie la modalidad cargada en
-        // la pantalla. Peligroso: si abrías un miércoles que era una EXCEPCIÓN
-        // presencial dentro de una serie virtual y solo querías cambiar el
-        // enlace, se enviaba también "presencial" y toda la serie se volvía
-        // presencial. Los valores de una excepción no representan a la serie.
-        //
-        // Ahora se abre el editor de serie de verdad —el que ya está probado—
-        // precargado con el estado REAL del grupo, no con el de esta sesión.
-        const serie = seriesList.find((g: any) => g.id === editing.series_id);
-        if (!serie) {
-          showToast("error", "No se encontró la serie de esta clase");
-          return;
-        }
-        setEditing(null);
-        openReschedule(serie);
-        showToast("success", "Edita aquí la programación habitual del grupo");
-        return;
-      }
-
       {
         if (editScope === "this_and_following" && editing.series_id) {
           body.apply_to = "this_and_following";
@@ -910,6 +908,19 @@ export default function AdminSessionsPage() {
                   <p className="text-xs text-slate-500">1 sola clase para un grupo (lo común)</p>
                 </div>
               </button>
+              {/* GATE 1 — Atajo visible al MISMO formulario de clase única, con
+                  "Estudiantes específicos" ya elegido. No es otro tipo de clase:
+                  se envía igual, con student_ids, por el flujo de siempre. */}
+              <button
+                onClick={() => { setShowMenu(false); setAudienceMode("students"); openModal(); }}
+                className="w-full text-left p-3 rounded-xl hover:bg-slate-50 border border-slate-100 flex items-start gap-3 transition"
+              >
+                <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0 text-xl">👥</div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-sm">Clase para estudiantes seleccionados</p>
+                  <p className="text-xs text-slate-500">Eliges profesor, fecha y exactamente quiénes participan. Solo ellos la ven y pueden entrar</p>
+                </div>
+              </button>
               <button
                 onClick={openSeries}
                 className="w-full text-left p-3 rounded-xl hover:bg-slate-50 border border-slate-100 flex items-start gap-3 transition"
@@ -1033,6 +1044,8 @@ export default function AdminSessionsPage() {
                       {s.is_open_event && <Badge variant="warning">🎫 Evento</Badge>}
                       {s.series_id && <Badge variant="info">🔁 Recurrente</Badge>}
                       {s.student_id && <Badge variant="info">👤 Privada</Badge>}
+                      {/* GATE 1 — Clase con estudiantes concretos (SessionAudience) */}
+                      {s.audience_count > 0 && <Badge variant="success">👥 {s.audience_count} {s.audience_count === 1 ? "estudiante" : "estudiantes"}</Badge>}
                       {s.status === "cancelled" && <Badge variant="danger">Cancelada</Badge>}
                     </div>
                     <p className="font-semibold">{s.title}</p>

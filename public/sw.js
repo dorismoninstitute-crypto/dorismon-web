@@ -1,32 +1,31 @@
-// Service Worker V2.8 — SEGURIDAD MEJORADA
-// Solo cachea assets estáticos. NUNCA páginas detrás de auth.
+// Service Worker — GATE 5B: versionado automático por build.
+// Solo cachea assets estáticos DEL PROPIO DOMINIO. NUNCA páginas, datos ni API.
+//
+// La versión llega en la URL de registro (/sw.js?v=<commit>): cada deploy
+// registra un script distinto, el navegador instala este SW nuevo y al
+// activarse borra las cachés Dorismon anteriores. Nadie tiene que acordarse
+// de cambiar un número a mano.
+//
+// NO hay offline real (las páginas siempre van por red) y este SW NUNCA
+// recarga la aplicación: no existe "controllerchange -> reload".
 
-const CACHE_VERSION = "dorismon-v2.8";
-const STATIC_CACHE = `${CACHE_VERSION}-static`;
+const VERSION = new URL(self.location.href).searchParams.get("v") || "sin-version";
+const PREFIJO = "dorismon-";
+const CACHE = `${PREFIJO}${VERSION}`;
 
-const STATIC_ASSETS = [
-  "/manifest.json",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png",
-  "/favicon.ico",
-];
-
-// Instalación
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(STATIC_CACHE)
-      .then((cache) => cache.addAll(STATIC_ASSETS).catch(() => {}))
-      .then(() => self.skipWaiting())
-  );
+// Instalación: sin precache (no hay modo offline que lo necesite).
+self.addEventListener("install", () => {
+  self.skipWaiting();
 });
 
-// Activación: BORRAR TODOS los caches viejos (V2.6, V2.7, etc.)
+// Activación: conservar SOLO la caché de esta versión; borrar las Dorismon
+// anteriores (incluida "dorismon-v2.8-static"). Las cachés ajenas no se tocan.
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys()
       .then((keys) =>
         Promise.all(
-          keys.filter((key) => !key.startsWith(CACHE_VERSION))
+          keys.filter((key) => key.startsWith(PREFIJO) && key !== CACHE)
             .map((key) => caches.delete(key))
         )
       )
@@ -34,21 +33,53 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// V2.8 CRÍTICO: Páginas con auth NO se cachean NUNCA
-// Solo assets estáticos: imágenes, fonts, CSS, JS de Next.js
+// /_next/static/* lleva hash en el nombre: si está guardado, es correcto.
+function primeroCache(request) {
+  return caches.open(CACHE).then((cache) =>
+    cache.match(request).then((guardado) => {
+      if (guardado) return guardado;
+      return fetch(request).then((resp) => {
+        if (resp && resp.status === 200 && resp.type === "basic") cache.put(request, resp.clone());
+        return resp;
+      });
+    })
+  );
+}
+
+// Archivos SIN hash (logo, iconos, imágenes de /public, favicon): se responde
+// al instante con lo guardado y se renueva en segundo plano; el cambio se ve
+// en la siguiente carga.
+function guardadoYRenovar(event) {
+  const request = event.request;
+  return caches.open(CACHE).then((cache) =>
+    cache.match(request).then((guardado) => {
+      const deRed = fetch(request).then((resp) => {
+        if (resp && resp.status === 200 && resp.type === "basic") cache.put(request, resp.clone());
+        return resp;
+      });
+      if (guardado) {
+        event.waitUntil(deRed.catch(() => {}));
+        return guardado;
+      }
+      return deRed;
+    })
+  );
+}
+
+const SIN_HASH = /\.(svg|png|jpe?g|webp|gif|ico)$/i;
+
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
   if (event.request.method !== "GET") return;
 
-  // NO cachear API
-  if (url.pathname.startsWith("/api/") ||
-      url.hostname.includes("onrender.com") ||
-      url.hostname.includes("api.")) {
-    return;
-  }
+  // Otros dominios (API en Render, Cloudinary, LiveKit…): no se guardan aquí.
+  if (url.origin !== self.location.origin) return;
 
-  // V2.8 CRÍTICO: NO cachear páginas con datos de usuario
+  // NO cachear API ni la ruta de versión
+  if (url.pathname.startsWith("/api/") || url.pathname === "/version") return;
+
+  // NUNCA cachear páginas con datos de usuario (pasan directo al navegador)
   if (url.pathname.startsWith("/dashboard") ||
       url.pathname.startsWith("/checkout") ||
       url.pathname === "/login" ||
@@ -56,38 +87,20 @@ self.addEventListener("fetch", (event) => {
       url.pathname.startsWith("/verify-email") ||
       url.pathname.startsWith("/reset-password") ||
       url.pathname.startsWith("/forgot-password")) {
-    // Pass-through: dejar que el navegador maneje la request normalmente
     return;
   }
 
-  // Cache-first SOLO para assets estáticos (imágenes, fonts, CSS, JS bundles)
-  if (url.pathname.startsWith("/_next/static/") ||
-      url.pathname.startsWith("/icons/") ||
-      url.pathname.endsWith(".png") ||
-      url.pathname.endsWith(".jpg") ||
-      url.pathname.endsWith(".jpeg") ||
-      url.pathname.endsWith(".webp") ||
-      url.pathname.endsWith(".svg") ||
-      url.pathname.endsWith(".woff2") ||
-      url.pathname.endsWith(".woff") ||
-      url.pathname.endsWith(".ico") ||
-      url.pathname.endsWith(".css")) {
-    event.respondWith(
-      caches.match(event.request).then((cached) => {
-        if (cached) return cached;
-        return fetch(event.request).then((response) => {
-          if (!response || response.status !== 200) return response;
-          const responseClone = response.clone();
-          caches.open(STATIC_CACHE).then((cache) => cache.put(event.request, responseClone));
-          return response;
-        });
-      })
-    );
+  if (url.pathname.startsWith("/_next/static/")) {
+    event.respondWith(primeroCache(event.request));
     return;
   }
 
-  // Para todo lo demás (landing, etc.): network-first sin cachear
-  // El navegador maneja la request normalmente
+  if (url.pathname.startsWith("/icons/") || SIN_HASH.test(url.pathname)) {
+    event.respondWith(guardadoYRenovar(event));
+    return;
+  }
+
+  // Todo lo demás (HTML, RSC, manifest.webmanifest, sw.js…): red, sin guardar.
 });
 
 // Mensaje desde la app: skip waiting o LIMPIAR CACHE
@@ -96,7 +109,7 @@ self.addEventListener("message", (event) => {
     self.skipWaiting();
   }
   if (event.data && event.data.type === "CLEAR_CACHE") {
-    caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))));
+    caches.keys().then((keys) => Promise.all(keys.filter((k) => k.startsWith(PREFIJO)).map((k) => caches.delete(k))));
   }
 });
 

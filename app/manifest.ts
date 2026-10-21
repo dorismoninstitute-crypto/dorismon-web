@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 
 // V3.9.29: los iconos son el ESCUDO REAL del sitio. Antes apuntaban al
 // backend, que devolvía una "D" azul si no había logo en Configuración.
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://dorismon-api.onrender.com";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";  // GATE 6H-A.1
 
 export default function manifest(): MetadataRoute.Manifest {
   return {

@@ -1,8 +1,8 @@
 /**
  * Cliente API V1.0 — Dorismon
  */
-export const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://dorismon-api.onrender.com";
+// GATE 6H-A.1 — sin URL por defecto: next.config.js exige NEXT_PUBLIC_API_URL al compilar
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 type ApiOptions = { method?: string; body?: any; auth?: boolean };
 
@@ -78,7 +78,40 @@ async function refreshAccessToken(): Promise<string | null> {
   return refreshPromise;
 }
 
+// ══ GATE 4 — PETICIONES COMPARTIDAS (solo en memoria de la pestaña) ══
+//
+// Varias pantallas preguntaban lo mismo a la vez (/auth/me hasta 3 veces por
+// login, /progress/my-course y /institute-settings x2-3). Aquí se comparte la
+// petición EN CURSO y se reutiliza su resultado un tiempo corto.
+//  · NO es seguridad: el backend sigue autorizando cada petición.
+//  · NO persiste: vive en memoria; recargar la página la vacía.
+//  · La clave incluye el token: otro usuario/otro token = otra entrada.
+//  · Un error nunca se guarda: la siguiente llamada vuelve a preguntar.
+type Compartida = { promesa: Promise<any>; hasta: number };
+const compartidas = new Map<string, Compartida>();
+
+function compartida(clave: string, ttlMs: number, pedir: () => Promise<any>): Promise<any> {
+  const ahora = Date.now();
+  const previa = compartidas.get(clave);
+  if (previa && ahora < previa.hasta) return previa.promesa;
+  const entrada: Compartida = { promesa: Promise.resolve(null), hasta: Infinity };  // "en curso"
+  entrada.promesa = pedir().then(
+    (r) => { entrada.hasta = Date.now() + ttlMs; return r; },
+    (e) => { if (compartidas.get(clave) === entrada) compartidas.delete(clave); throw e; },
+  );
+  compartidas.set(clave, entrada);
+  return entrada.promesa;
+}
+
+/** Olvida todo lo compartido (login, logout, cambio de token, fallo de auth). */
+export function olvidarCompartidas() {
+  compartidas.clear();
+}
+
 export async function api(path: string, opts: ApiOptions = {}) {
+  // GATE 4 — CUALQUIER escritura (login, perfil, contraseña, ajustes del
+  // instituto, progreso…) invalida lo compartido: nada queda viejo tras guardar.
+  if ((opts.method || "GET") !== "GET") olvidarCompartidas();
   const doFetch = async (token: string | null) => {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (opts.auth && token) headers["Authorization"] = `Bearer ${token}`;
@@ -89,14 +122,23 @@ export async function api(path: string, opts: ApiOptions = {}) {
     });
   };
 
-  let res = await doFetch(opts.auth ? getToken() : null);
+  // v3.9.76: un fallo de RED (servidor caído, arrancando en frío, sin internet) llegaba como el texto
+  // crudo "Failed to fetch". Ahora es un ApiError de estado 0 con un mensaje claro; así el resto de la
+  // app puede distinguirlo de un 401 real (credenciales inválidas) y NO cerrar la sesión por una caída.
+  let res: Response;
+  try {
+    res = await doFetch(opts.auth ? getToken() : null);
+  } catch {
+    throw new ApiError("No pudimos conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.", 0);
+  }
 
   // V3.7: Si falla por token expirado (401) y es una petición autenticada,
   // renovar el token automáticamente y reintentar UNA vez.
   if (res.status === 401 && opts.auth && getRefreshToken()) {
     const newToken = await refreshAccessToken();
     if (newToken) {
-      res = await doFetch(newToken);
+      try { res = await doFetch(newToken); }
+      catch { throw new ApiError("No pudimos conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.", 0); }
     }
   }
 
@@ -122,6 +164,7 @@ export async function api(path: string, opts: ApiOptions = {}) {
  * Reintenta una vez si el token expiró, igual que `api`.
  */
 export async function apiUpload(path: string, file: File, fieldName = "file") {
+  olvidarCompartidas();  // GATE 4 — una subida también es una escritura
   const doFetch = async (token: string | null) => {
     const fd = new FormData();
     fd.append(fieldName, file);
@@ -155,7 +198,14 @@ export const auth = {
   register: (body: any) => api("/auth/register", { method: "POST", body }),
   login: (body: { email: string; password: string }) =>
     api("/auth/login", { method: "POST", body }),
-  me: () => api("/auth/me", { auth: true }),
+  // GATE 4 — Una sola consulta de "¿quién soy?" por token mientras la pestaña
+  // siga abierta (login → welcome → layout → /dashboard → panel). Si el token
+  // cambia, la clave cambia; si falla, no se guarda; al recargar se vacía.
+  me: () => {
+    const tok = getToken();
+    if (!tok) return api("/auth/me", { auth: true });
+    return compartida(`me:${tok}`, Number.POSITIVE_INFINITY, () => api("/auth/me", { auth: true }));
+  },
   // V2.9: feature gates
   myFeatures: () => api("/auth/me/features", { auth: true }) as Promise<{
     role: string;
@@ -165,6 +215,7 @@ export const auth = {
   logout: () => {
     // V2.8: limpieza TOTAL al cerrar sesión (seguridad)
     clearToken();
+    olvidarCompartidas();  // GATE 4
     if (typeof window !== "undefined") {
       // Limpiar localStorage (excepto preferencias PWA)
       const pwaInstall = localStorage.getItem("pwa-install-dismissed");
@@ -176,7 +227,8 @@ export const auth = {
       sessionStorage.clear();
       // Limpiar caches del Service Worker
       if ("caches" in window) {
-        caches.keys().then((keys) => keys.forEach((k) => caches.delete(k)));
+        // Solo las cachés de Dorismon; las de otras apps del mismo origen no se tocan.
+        caches.keys().then((keys) => keys.filter((k) => k.startsWith("dorismon-")).forEach((k) => caches.delete(k)));
       }
       // Notificar al SW para que limpie su cache también
       if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
@@ -184,7 +236,8 @@ export const auth = {
       }
     }
   },
-  saveToken: setToken,
+  // GATE 4 — Guardar un token nuevo (otro login) olvida lo compartido.
+  saveToken: (t: string) => { olvidarCompartidas(); setToken(t); },
   getToken,
   isLoggedIn: () => !!getToken(),
 };
@@ -413,7 +466,10 @@ export const adminInsights = {
 
 // V1.3 — Progreso del estudiante
 export const progress = {
-  myCourse: () => api("/progress/my-course", { auth: true }),
+  // GATE 4 — El layout (color del menú) y el panel del estudiante la piden a
+  // la vez al entrar: se comparte. Dato académico → solo 5 s, por token.
+  myCourse: () => compartida(`myCourse:${getToken() || ""}`, 5000,
+    () => api("/progress/my-course", { auth: true })),
   recompute: () => api("/progress/recompute", { method: "POST", auth: true }),
 };
 
@@ -522,10 +578,7 @@ export const meetingValidator = {
 // V1.4 — Calendar
 export const calendarApi = {
   googleLink: (sessionId: string) => api(`/calendar/session/${sessionId}/google-link`, { auth: true }),
-  icsUrl: (sessionId: string) => {
-    const base = (typeof window !== "undefined" ? (window as any).__API_BASE__ : "") || process.env.NEXT_PUBLIC_API_URL || "";
-    return `${base}/calendar/session/${sessionId}.ics`;
-  },
+  icsUrl: (sessionId: string) => `${API_URL}/calendar/session/${sessionId}.ics`,
 };
 
 
@@ -669,7 +722,10 @@ export const adminStudentsByTeacher = {
 
 // V2.5 — Logo, settings públicos, finance
 export const publicApi = {
-  instituteSettings: () => api("/institute-settings"),
+  // GATE 4 — Pública y estable (nombre, logo, teléfono). El logo de cada
+  // pantalla y el panel del estudiante la pedían por separado: se comparte 60 s.
+  instituteSettings: () => compartida("institute-settings", 60000,
+    () => api("/institute-settings")),
   // V3.9.23 — Contenido de la landing
   siteImages: () => api("/site-images"),
   testimonials: () => api("/testimonials"),
