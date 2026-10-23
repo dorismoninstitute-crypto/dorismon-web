@@ -16,7 +16,9 @@ import { aFecha, VENTANA_MIN_GRACIA } from "@/components/ClaseProfesor";
 import PreEntrada, { type Eleccion, type InfoClase } from "@/components/PreEntrada";
 import {
   BotonMano, PanelParticipantes, AvisoDePresencia,
+  BotonCompartirPantalla,  // HOTFIX v3.9.76
 } from "@/components/ClassRoomExtras";
+import { accionesDirectasVista } from "@/lib/videoControles";  // HOTFIX v3.9.76
 // GATE 6F-A — mano (ahora sincronizada para todos), reacciones, turno, temporizador y foco
 import {
   useInteraccionClase, useReacciones, BarraClase, CapaReacciones, BotonReacciones,
@@ -849,6 +851,10 @@ function ContenidoLlamada({
   avisosMedios, avisarMedio, quitarAvisoMedio,
 }: any) {
   const minimizada = modo === "mini";
+  // HOTFIX v3.9.76 — en "split" el panel mide ~min(42vw,560px), pero los breakpoints (sm/lg) miran
+  // la ventana: la cabecera no se ajustaba y "Más opciones" quedaba fuera. En split la fila se
+  // ajusta en varias líneas y "Agrandar" / "Minimizar" quedan como botones directos.
+  const dividida = modo === "split";
   const room = useRoomContext();
   useDispositivoPerdido(avisarMedio);
   // GATE 6F-A — Antes la mano viajaba solo por mensajes de datos: quien entraba
@@ -972,8 +978,15 @@ function ContenidoLlamada({
       {/* GATE 6D — En el móvil el título va en su propia línea (no lo cortan los
           botones) y los controles, de 44 px, en la siguiente. Orden de
           prioridad: estado, mano, (cambiar cámara), participantes, menú, salir. */}
-      <header className="ds-cabecera-llamada flex flex-wrap sm:flex-nowrap items-center justify-between px-3 sm:px-4 py-2 border-b border-white/10 flex-shrink-0 gap-x-2 gap-y-1.5">
-        <div className="flex items-center gap-2 min-w-0 w-full sm:w-auto sm:flex-1">
+      <header
+        data-cabecera-modo={modo}
+        className={dividida
+          ? "ds-cabecera-llamada flex flex-wrap items-center justify-between px-3 py-2 border-b border-white/10 flex-shrink-0 gap-x-2 gap-y-1.5"
+          : "ds-cabecera-llamada flex flex-wrap sm:flex-nowrap items-center justify-between px-3 sm:px-4 py-2 border-b border-white/10 flex-shrink-0 gap-x-2 gap-y-1.5"}
+      >
+        <div className={dividida
+          ? "flex items-center gap-2 min-w-0 w-full"
+          : "flex items-center gap-2 min-w-0 w-full sm:w-auto sm:flex-1"}>
           <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
           <p className="text-white text-sm font-semibold leading-snug line-clamp-2 break-words" data-titulo-clase="">{datos.title}</p>
           {datos.is_moderator && (
@@ -986,7 +999,25 @@ function ContenidoLlamada({
         {/* V3.9.39 — En celular solo lo esencial: mano, participantes y salir.
             Lo demás va en un menú, para que nada quede fuera de la pantalla.
             Antes había 6 botones apretados y varios quedaban ocultos. */}
-        <div className="flex items-center gap-1.5 flex-shrink-0 ml-auto">
+        <div className={dividida
+          ? "flex flex-wrap items-center justify-end gap-1.5 w-full"
+          : "flex items-center gap-1.5 flex-shrink-0 ml-auto"}>
+          {/* HOTFIX v3.9.76 — en split, volver a pantalla completa o minimizar sin depender del menú */}
+          {accionesDirectasVista(modo).map((destino) => (
+            <button
+              key={destino}
+              onClick={() => onModo(destino)}
+              title={destino === "full" ? "Ver la clase en pantalla completa" : "Minimizar la clase y seguir navegando"}
+              data-accion-vista={destino}
+              className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 min-h-[40px] rounded-xl transition ${
+                destino === "full" ? "bg-white/15 hover:bg-white/25 text-white" : "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-100"
+              }`}
+            >
+              {destino === "full" ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
+              <span>{destino === "full" ? "Agrandar" : "Minimizar"}</span>
+            </button>
+          ))}
+          <BotonCompartirPantalla esModerador={!!datos.is_moderator} />
           <BotonMano miMano={miMano} onToggle={toggleMano} />
           <BotonReacciones onReaccion={reaccionar} />
           <BotonCambiarCamara />
@@ -1000,7 +1031,7 @@ function ContenidoLlamada({
             className="relative inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white text-sm font-semibold px-3 py-2 rounded-xl transition"
           >
             <Users className="w-4 h-4" />
-            <span className="hidden lg:inline">Participantes</span>
+            <span className={dividida ? "hidden" : "hidden lg:inline"}>Participantes</span>
             {manosArriba > 0 && (
               <span className="absolute -top-1.5 -right-1.5 bg-amber-400 text-amber-950 text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
                 {manosArriba}
@@ -1098,7 +1129,7 @@ function ContenidoLlamada({
             className="inline-flex items-center gap-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-200 text-sm font-semibold px-3 py-2 rounded-xl transition"
           >
             <PhoneOff className="w-4 h-4" />
-            <span className="hidden lg:inline">Salir</span>
+            <span className={dividida ? "hidden" : "hidden lg:inline"}>Salir</span>
           </button>
         </div>
       </header>

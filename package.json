@@ -8,7 +8,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test:video": "node --experimental-strip-types --test \"tests/*.test.mjs\""
   },
   "dependencies": {
     "@livekit/components-react": "^2.9.23",

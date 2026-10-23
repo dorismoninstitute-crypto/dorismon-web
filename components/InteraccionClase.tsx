@@ -681,7 +681,7 @@ export function AvisoPermisos({ compacto = false }: { compacto?: boolean }) {
     if (!perm) return;
     if (anterior.current !== null && anterior.current !== pantalla) {
       setCambio(pantalla
-        ? "El profesor te permitió compartir pantalla. Puedes hacerlo con el botón de la barra inferior."
+        ? "El profesor te permitió compartir pantalla. Usa el botón «Compartir pantalla» de la parte superior cuando quieras."
         : "El profesor retiró el permiso para compartir pantalla.");
     }
     anterior.current = pantalla;
