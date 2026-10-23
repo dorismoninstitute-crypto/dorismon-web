@@ -1,11 +1,12 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import {
-  useRoomContext, useParticipants, useLocalParticipant,
+  useRoomContext, useParticipants, useLocalParticipant, useLocalParticipantPermissions,
 } from "@livekit/components-react";
 import { RoomEvent } from "livekit-client";
 import { api } from "@/lib/api";
-import { Hand, MicOff, Mic, UserX, Users, X, PictureInPicture2 } from "lucide-react";
+import { FUENTE, puedePublicar, estadoCompartirPantalla, mensajeErrorPantalla } from "@/lib/videoControles";
+import { Hand, MicOff, Mic, UserX, Users, X, PictureInPicture2, MonitorUp, MonitorX } from "lucide-react";
 
 /**
  * V3.9.27 — Lo que le faltaba a la sala de clase.
@@ -355,16 +356,74 @@ export function AvisoDePresencia({ sessionId }: { sessionId: string }) {
 }
 
 // ------------------------------------------------ GATE 6G-C — permisos dinámicos
-// TrackSource de LiveKit (protocol, livekit_models.proto): CAMERA = 1,
-// MICROPHONE = 2, SCREEN_SHARE = 3, SCREEN_SHARE_AUDIO = 4.
-export const FUENTE = { camara: 1, microfono: 2, pantalla: 3 } as const;
+// La regla vive en lib/videoControles (lógica pura, la misma que usan las pruebas).
+export { FUENTE, puedePublicar };
 
-/** ¿Puede publicar esa fuente? Misma regla que LiveKit: sin canPublish, nada;
- *  con canPublish y lista vacía, todo. */
-export function puedePublicar(p: { permissions?: { canPublish: boolean; canPublishSources: number[] } }, fuente: number) {
-  const pm = p.permissions;
-  if (!pm || !pm.canPublish) return false;
-  return pm.canPublishSources.length === 0 || pm.canPublishSources.includes(fuente);
+// ------------------------------------- HOTFIX v3.9.76 — compartir pantalla visible
+/** Botón Dorismon "Compartir pantalla" / "Dejar de compartir" para quien no modera.
+ *  - Solo aparece si LiveKit permite REALMENTE publicar SCREEN_SHARE (el profesor lo concede con
+ *    "Permitir pantalla"); el permiso se lee de LiveKit y se repinta con sus eventos, sin recargar.
+ *  - Nunca empieza a compartir solo: lo decide la persona con un clic.
+ *  - Si el profesor retira el permiso mientras comparte, se detiene la pista local.
+ *  - El moderador conserva su comportamiento actual (botón de la barra de LiveKit). */
+export function BotonCompartirPantalla({ esModerador }: { esModerador: boolean }) {
+  const { localParticipant, isScreenShareEnabled } = useLocalParticipant();
+  const permisos = useLocalParticipantPermissions();
+  const [ocupado, setOcupado] = useState(false);
+  const [error, setError] = useState("");
+  const estado = estadoCompartirPantalla({ permisos, compartiendo: isScreenShareEnabled, esModerador });
+
+  useEffect(() => {
+    if (!estado.detenerPorPermisoRetirado) return;
+    localParticipant.setScreenShareEnabled(false).catch(() => { /* LiveKit ya la retiró */ });
+  }, [estado.detenerPorPermisoRetirado, localParticipant]);
+
+  useEffect(() => {
+    if (!error) return;
+    const t = setTimeout(() => setError(""), 8000);
+    return () => clearTimeout(t);
+  }, [error]);
+
+  if (!estado.mostrar) return null;
+
+  const alternar = async () => {
+    if (ocupado) return;
+    setOcupado(true);
+    setError("");
+    try {
+      await localParticipant.setScreenShareEnabled(!isScreenShareEnabled);
+    } catch (e) {
+      setError(mensajeErrorPantalla(e));
+    } finally {
+      setOcupado(false);
+    }
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={alternar}
+        disabled={ocupado}
+        title={estado.etiqueta || undefined}
+        aria-label={estado.etiqueta || undefined}
+        aria-pressed={isScreenShareEnabled}
+        data-compartir-pantalla={isScreenShareEnabled ? "activo" : "disponible"}
+        className={`inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 min-h-[40px] rounded-xl transition disabled:opacity-60 ${
+          isScreenShareEnabled ? "bg-red-500/25 hover:bg-red-500/35 text-red-100" : "bg-emerald-500/25 hover:bg-emerald-500/35 text-emerald-50"
+        }`}
+      >
+        {isScreenShareEnabled ? <MonitorX className="w-4 h-4" /> : <MonitorUp className="w-4 h-4" />}
+        {/* En el móvil solo el icono (con aria-label y title); la etiqueta completa desde sm */}
+        <span className="hidden sm:inline" data-etiqueta-pantalla="">{estado.etiqueta}</span>
+      </button>
+      {error && (
+        <p role="alert" data-error-pantalla=""
+          className="absolute right-0 top-full mt-1.5 z-40 w-64 bg-[#182338] border border-red-400/40 text-red-100 text-xs rounded-xl px-3 py-2 shadow-2xl">
+          {error}
+        </p>
+      )}
+    </div>
+  );
 }
 
 type AccionModeracion = "mute" | "remove" | "allow"
