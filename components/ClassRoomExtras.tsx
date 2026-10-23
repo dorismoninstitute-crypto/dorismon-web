@@ -405,6 +405,7 @@ export function BotonCompartirPantalla({ esModerador }: { esModerador: boolean }
         onClick={alternar}
         disabled={ocupado}
         title={estado.etiqueta || undefined}
+        aria-label={estado.etiqueta || undefined}
         aria-pressed={isScreenShareEnabled}
         data-compartir-pantalla={isScreenShareEnabled ? "activo" : "disponible"}
         className={`inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 min-h-[40px] rounded-xl transition disabled:opacity-60 ${
@@ -412,7 +413,8 @@ export function BotonCompartirPantalla({ esModerador }: { esModerador: boolean }
         }`}
       >
         {isScreenShareEnabled ? <MonitorX className="w-4 h-4" /> : <MonitorUp className="w-4 h-4" />}
-        <span>{estado.etiqueta}</span>
+        {/* En el móvil solo el icono (con aria-label y title); la etiqueta completa desde sm */}
+        <span className="hidden sm:inline" data-etiqueta-pantalla="">{estado.etiqueta}</span>
       </button>
       {error && (
         <p role="alert" data-error-pantalla=""

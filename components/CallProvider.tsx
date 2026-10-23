@@ -1001,7 +1001,9 @@ function ContenidoLlamada({
             Antes había 6 botones apretados y varios quedaban ocultos. */}
         <div className={dividida
           ? "flex flex-wrap items-center justify-end gap-1.5 w-full"
-          : "flex items-center gap-1.5 flex-shrink-0 ml-auto"}>
+          // HOTFIX v3.9.76 (auditoría) — en el móvil la fila puede envolver: con el botón de
+          // pantalla ningún control queda fuera a 320–375 px. Desde sm (640 px) sigue en una línea.
+          : "flex flex-wrap sm:flex-nowrap items-center justify-end gap-1.5 flex-shrink-0 ml-auto max-w-full"}>
           {/* HOTFIX v3.9.76 — en split, volver a pantalla completa o minimizar sin depender del menú */}
           {accionesDirectasVista(modo).map((destino) => (
             <button

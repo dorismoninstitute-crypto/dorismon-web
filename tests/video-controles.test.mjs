@@ -94,6 +94,20 @@ test("errores del navegador al compartir pantalla con mensaje claro", () => {
   assert.match(mensajeErrorPantalla(null), /No se pudo compartir la pantalla/);
 });
 
+// ----------------------------------------------------------------------------- 8. móvil (auditoría)
+test("8. móvil con permiso de pantalla: la fila de full puede envolver y el botón no desaparece", () => {
+  // full: en el móvil la fila envuelve (nada se sale a 320–375 px); desde sm sigue en una línea
+  assert.match(cp, /: "flex flex-wrap sm:flex-nowrap items-center justify-end gap-1\.5 flex-shrink-0 ml-auto max-w-full"/);
+  assert.doesNotMatch(cp, /"flex items-center gap-1\.5 flex-shrink-0 ml-auto"/);
+  // el botón de pantalla en el móvil es solo icono (con nombre accesible); la etiqueta completa desde sm
+  assert.match(cre, /aria-label=\{estado\.etiqueta \|\| undefined\}/);
+  assert.match(cre, /<span className="hidden sm:inline" data-etiqueta-pantalla="">\{estado\.etiqueta\}<\/span>/);
+  // y no está escondido: el propio botón no lleva hidden
+  assert.match(cre, /data-compartir-pantalla=\{isScreenShareEnabled \? "activo" : "disponible"\}\s*\n\s*className=\{`inline-flex items-center/);
+  // la acción sigue siendo la real de LiveKit
+  assert.match(cre, /await localParticipant\.setScreenShareEnabled\(!isScreenShareEnabled\);/);
+});
+
 // ----------------------------------------------------------------------------- 7. sin regresiones
 test("7. moderadores conservan su comportamiento (sin botón Dorismon nuevo)", () => {
   for (const c of [false, true]) {
